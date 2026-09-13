@@ -1,0 +1,240 @@
+/* CommitDrive Design System: Study Corner (Light, Warm, Energetic) & Terminal Zone (Dark Green) */
+
+:root {
+  /* Shared Base Metrics */
+  --nav-height: 70px;
+  --max-content-width: 1280px;
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-pill: 9999px;
+  
+  /* Fonts */
+  --font-serif: 'Source Serif 4', Georgia, serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-code: 'JetBrains Mono', monospace;
+}
+
+/* ==========================================================================
+   THEME 1: Learning Path — "Study Corner"
+   Light, warm, energetic palette:
+   Base: #fdf6ec, Surface: #fffaf3, Accent: #e8604a (coral),
+   Secondary: #2f5233 (forest green), Text: #2b2420 (rich espresso)
+   ========================================================================== */
+html[data-theme="learning"] {
+  --bg-base: #fdf6ec;
+  --bg-surface: #fffaf3;
+  --bg-surface-elevated: #ffffff;
+  --bg-surface-subtle: #f7eee2;
+  --border-subtle: #ede1d1;
+  --border-strong: #ddcfbc;
+  
+  --accent-primary: #e8604a; /* Vibrant coral */
+  --accent-secondary: #2f5233; /* Forest green */
+  --accent-hover: #d34e38;
+  --accent-glow: rgba(232, 96, 74, 0.2);
+  --accent-surface: rgba(232, 96, 74, 0.08);
+  --accent-flash: #e8604a;
+
+  --secondary-surface: rgba(47, 82, 51, 0.09);
+  --secondary-text: #2f5233;
+  --secondary-border: rgba(47, 82, 51, 0.25);
+
+  --text-primary: #2b2420; /* Rich warm espresso */
+  --text-secondary: #66584f;
+  --text-muted: #948479;
+
+  --font-heading: var(--font-serif);
+  --font-body: var(--font-sans);
+
+  --badge-bg: rgba(232, 96, 74, 0.1);
+  --badge-text: #d34e38;
+  --badge-border: rgba(232, 96, 74, 0.25);
+
+  --shadow-sm: 0 2px 8px rgba(60, 40, 25, 0.05);
+  --shadow-md: 0 8px 24px rgba(60, 40, 25, 0.08);
+  --shadow-lg: 0 16px 36px rgba(60, 40, 25, 0.12);
+  --shadow-accent: 0 8px 25px rgba(232, 96, 74, 0.15);
+
+  --nav-backdrop: rgba(253, 246, 236, 0.92);
+  --toggle-track-bg: #eddccb;
+  --toggle-thumb-bg: #ffffff;
+  --toggle-thumb-border: #d8c4b0;
+
+  --theme-transition-duration: 0.45s;
+}
+
+/* ==========================================================================
+   THEME 2: Practical Path — "Terminal Zone"
+   Deep terminal green-black, muted teal, amber flashes, JetBrains Mono
+   ========================================================================== */
+html[data-theme="practical"] {
+  --bg-base: #0d1210;
+  --bg-surface: #151b18;
+  --bg-surface-elevated: #1b2420;
+  --bg-surface-subtle: #111714;
+  --border-subtle: #232f2a;
+  --border-strong: #33433c;
+  
+  --accent-primary: #588b8b;
+  --accent-secondary: #74a8a8;
+  --accent-hover: #679f9f;
+  --accent-glow: rgba(88, 139, 139, 0.25);
+  --accent-surface: rgba(88, 139, 139, 0.12);
+  --accent-flash: #f4a261; /* Amber success flash */
+
+  --secondary-surface: rgba(88, 139, 139, 0.16);
+  --secondary-text: #74a8a8;
+  --secondary-border: rgba(88, 139, 139, 0.35);
+
+  --text-primary: #dce8e2;
+  --text-secondary: #8b9e95;
+  --text-muted: #5e7269;
+
+  --font-heading: var(--font-code);
+  --font-body: var(--font-code);
+
+  --badge-bg: rgba(88, 139, 139, 0.16);
+  --badge-text: #74a8a8;
+  --badge-border: rgba(88, 139, 139, 0.35);
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.75);
+  --shadow-accent: 0 8px 25px rgba(88, 139, 139, 0.18);
+
+  --nav-backdrop: rgba(13, 18, 16, 0.92);
+  --toggle-track-bg: #090c0b;
+  --toggle-thumb-bg: #1a221e;
+  --toggle-thumb-border: #2e3e36;
+
+  --theme-transition-duration: 0.22s;
+}
+
+/* ==========================================================================
+   Global Reset & Base Styling
+   ========================================================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  min-height: 100vh;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  line-height: 1.6;
+  overflow-x: hidden;
+  transition: background-color 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Smooth crossfade for surfaces and borders */
+.theme-transition {
+  transition: background-color 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.45s ease,
+              box-shadow 0.45s ease,
+              fill 0.45s ease,
+              stroke 0.45s ease;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  color: var(--text-primary);
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  transition: color 0.45s ease;
+}
+
+a {
+  color: var(--accent-primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--accent-hover);
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-base);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: var(--radius-pill);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+
+/* ==========================================================================
+   Interactive Keyframes
+   ========================================================================== */
+@keyframes terminalBlink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+@keyframes floatGentle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes amberSuccessFlash {
+  0% { box-shadow: 0 0 0 0 rgba(244, 162, 97, 0.7); }
+  70% { box-shadow: 0 0 0 12px rgba(244, 162, 97, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(244, 162, 97, 0); }
+}
+
+.cursor-blink {
+  display: inline-block;
+  width: 9px;
+  height: 1.15em;
+  background-color: var(--accent-flash);
+  vertical-align: middle;
+  margin-left: 2px;
+  animation: terminalBlink 1s infinite;
+}
+
+/* Utility Layouts */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.content-wrapper {
+  max-width: var(--max-content-width);
+  margin: 0 auto;
+  padding: 0 24px;
+  width: 100%;
+}
