@@ -878,10 +878,119 @@ export const mockTestQuestions = {
   ],
 
   linux: [
+    // --- 4 EASIER QUESTIONS (Basic Commands: ls, cd, chmod basics, simple grep) ---
     {
       id: 'lx-q1',
-      category: 'Process Termination & Signals',
-      question: 'A runaway Node.js script is consuming 100% CPU on a production server. You tried `kill 4892` (SIGTERM), but the process is stuck in an unyielding loop and refuses to shut down. What command instructs the Linux kernel to immediately and forcefully terminate process 4892?',
+      category: 'Basic Navigation & Listing',
+      question: 'You just cloned a full-stack project repository and opened your terminal in the project directory. You want to see all files in the folder, including essential hidden configuration files like `.env` and `.gitignore`, along with file permissions and sizes. Which basic command do you run?',
+      options: [
+        'cat .env',
+        'ls -la',
+        'pwd',
+        'touch -a'
+      ],
+      correctIndex: 1,
+      explanation: 'The standard `ls` command hides files that start with a dot (`.`). Adding `-a` shows all files including hidden dotfiles, and `-l` provides the long listing format showing permissions, ownership, file size, and modification timestamp.'
+    },
+    {
+      id: 'lx-q2',
+      category: 'Directory Navigation',
+      question: 'You are working deeply nested inside `/var/www/ecommerce-api/src/controllers` and need to jump straight back to your current user\'s personal home directory (`~/`). Which simple command takes you directly home from anywhere in the filesystem?',
+      options: [
+        'cd',
+        'back',
+        'exit',
+        'pwd ~'
+      ],
+      correctIndex: 0,
+      explanation: 'In Linux shells, running `cd` without any arguments (or `cd ~`) automatically changes your working directory directly to your user\'s home directory (`$HOME`).'
+    },
+    {
+      id: 'lx-q3',
+      category: 'Permissions & Executables',
+      question: 'You wrote a quick bash script named `start_dev.sh` to launch your frontend and backend servers together. When you type `./start_dev.sh`, the terminal responds with `-bash: ./start_dev.sh: Permission denied`. What simple command grants you execute permission on the script?',
+      options: [
+        'chmod +x start_dev.sh',
+        'chown guest start_dev.sh',
+        'run start_dev.sh',
+        'touch start_dev.sh'
+      ],
+      correctIndex: 0,
+      explanation: 'Newly created text files default to non-executable permissions (typically 0644). Adding the execute bit with `chmod +x <file>` tells the operating system kernel that the file can be executed as a program or script.'
+    },
+    {
+      id: 'lx-q4',
+      category: 'Text Searching',
+      question: 'You need to verify whether a user named "devops" exists on your Ubuntu server by inspecting the system accounts file `/etc/passwd`. Which simple command searches for the line containing "devops" in that file?',
+      options: [
+        'grep "devops" /etc/passwd',
+        'find "devops" /etc/passwd',
+        'cat /etc/passwd --search "devops"',
+        'ls /etc/passwd "devops"'
+      ],
+      correctIndex: 0,
+      explanation: '`grep <pattern> <file>` is the standard tool to search plain-text files for lines matching a specified string or regular expression and print them to standard output.'
+    },
+
+    // --- 4 MEDIUM QUESTIONS (Pipes, Redirection, Find, Stream Viewing) ---
+    {
+      id: 'lx-q5',
+      category: 'I/O Redirection',
+      question: 'You are creating an automated deployment script and want to append a completion message "Deploy finished" to the end of `deploy.log` without overwriting the existing history of earlier deployments. Which command should you use?',
+      options: [
+        'echo "Deploy finished" > deploy.log',
+        'echo "Deploy finished" >> deploy.log',
+        'echo "Deploy finished" < deploy.log',
+        'echo "Deploy finished" | deploy.log'
+      ],
+      correctIndex: 1,
+      explanation: 'The single `>` operator truncates the file and overwrites it from the beginning. The double `>>` append operator opens the file with the `O_APPEND` flag, preserving existing contents and writing new data to the very end of the file.'
+    },
+    {
+      id: 'lx-q6',
+      category: 'Pipelines & Word Counts',
+      question: 'You want to find out how many error entries were logged in `error.log` that contain the keyword "CRITICAL". Which command pipeline filters the matching lines and counts them?',
+      options: [
+        'grep "CRITICAL" error.log | wc -l',
+        'grep "CRITICAL" error.log > wc -l',
+        'count error.log "CRITICAL"',
+        'cat error.log | find "CRITICAL"'
+      ],
+      correctIndex: 0,
+      explanation: 'The pipe operator (`|`) connects the standard output of `grep "CRITICAL" error.log` directly to the standard input of `wc -l` (word count lines), which counts and displays the exact number of matching lines in the stream.'
+    },
+    {
+      id: 'lx-q7',
+      category: 'Filesystem Search',
+      question: 'You are working in a large repository and forgot where the configuration file `database.yml` is saved. Which command searches the current directory and all subdirectories to find files named `database.yml`?',
+      options: [
+        'find . -name "database.yml"',
+        'which database.yml',
+        'ls -r database.yml',
+        'whereis -f database.yml'
+      ],
+      correctIndex: 0,
+      explanation: '`find <path> -name "<pattern>"` traverses directory inodes recursively starting from the given path (here `.` for current folder) and matches file names against the pattern.'
+    },
+    {
+      id: 'lx-q8',
+      category: 'Log Inspection & Streaming',
+      question: 'Your local backend API is running, and you are about to trigger a login request from your browser. You want your terminal to stay open and display new log messages as they are actively written to `/var/log/app.log`. Which command does this?',
+      options: [
+        'cat /var/log/app.log',
+        'tail -f /var/log/app.log',
+        'head -n 20 /var/log/app.log',
+        'less /var/log/app.log'
+      ],
+      correctIndex: 1,
+      explanation: '`tail -f` (follow) prints the final lines of the file and keeps the file descriptor open, actively streaming newly appended lines to the terminal in real time until stopped with Ctrl+C.'
+    },
+
+    // --- 2 HARDER / SCENARIO-BASED QUESTIONS (Production Incident & Systems Depth) ---
+    {
+      id: 'lx-q9',
+      category: 'Process Hunting & Signals',
+      question: 'A runaway Node.js backend server crashed into an infinite CPU loop and hung on port 3000. Normal termination with `kill <PID>` (SIGTERM) was ignored by the process. What command instructs the Linux kernel to immediately and forcefully terminate process ID 4892 without allowing it to block?',
       options: [
         'kill -1 4892 (SIGHUP)',
         'kill -9 4892 (SIGKILL)',
@@ -889,12 +998,12 @@ export const mockTestQuestions = {
         'kill -15 4892 (SIGTERM)'
       ],
       correctIndex: 1,
-      explanation: '`SIGKILL` (signal 9) is handled directly by the operating system kernel. Unlike `SIGTERM` (signal 15), a process cannot catch, handle, or ignore `SIGKILL`; the kernel immediately reclaims its memory and terminates the process.'
+      explanation: '`SIGKILL` (signal 9) is handled directly by the operating system kernel. Unlike `SIGTERM` (signal 15), user-space applications cannot catch, trap, or ignore `SIGKILL`; the kernel immediately halts the process and reclaims its memory and port.'
     },
     {
-      id: 'lx-q2',
-      category: 'SSH Key Permissions',
-      question: 'You downloaded your cloud instance\'s private key `deploy_key.pem` and tried running `ssh -i deploy_key.pem ubuntu@192.168.1.5`. The connection is rejected with: "Permissions 0644 for deploy_key.pem are too open. It is required that your private key files are NOT accessible by others." What command sets the exact required permissions?',
+      id: 'lx-q10',
+      category: 'Security & File Permissions',
+      question: 'You downloaded your cloud instance\'s private key `deploy_key.pem` and attempted to connect using `ssh -i deploy_key.pem ubuntu@10.0.0.1`. The connection was rejected with: "Permissions 0644 for deploy_key.pem are too open. It is required that your private key files are NOT accessible by others." What command sets the exact secure permissions required?',
       options: [
         'chmod 777 deploy_key.pem',
         'chmod 600 deploy_key.pem',
@@ -902,111 +1011,7 @@ export const mockTestQuestions = {
         'chown root deploy_key.pem'
       ],
       correctIndex: 1,
-      explanation: 'SSH strictly requires that private key files cannot be read or modified by group or other users. `chmod 600` sets permissions to `rw-------` (read and write for the file owner only, zero access for everyone else).'
-    },
-    {
-      id: 'lx-q3',
-      category: 'Live Log Troubleshooting',
-      question: 'Your API is experiencing intermittent 500 errors during a traffic spike. You are logged into the Ubuntu server and need to watch new log lines appear in `/var/log/nginx/access.log` continuously in real time as incoming requests hit the server. Which command should you run?',
-      options: [
-        'cat /var/log/nginx/access.log',
-        'tail -f /var/log/nginx/access.log',
-        'head -n 100 /var/log/nginx/access.log',
-        'less /var/log/nginx/access.log'
-      ],
-      correctIndex: 1,
-      explanation: '`tail -f` (follow) outputs the last 10 lines and then waits on the file descriptor, appending any newly written lines to stdout in real time as the web server writes them.'
-    },
-    {
-      id: 'lx-q4',
-      category: 'Storage Crisis & Disk Usage',
-      question: 'Your root partition `/var` alert just fired at 96% disk capacity. You need to inspect which subdirectories inside `/var` are consuming the most gigabytes, displayed in human-readable units (e.g. GB, MB) and sorted from largest to smallest. Which command pipeline achieves this?',
-      options: [
-        'df -h /var',
-        'du -sh /var/* | sort -hr',
-        'ls -la /var',
-        'free -m'
-      ],
-      correctIndex: 1,
-      explanation: '`du -sh /var/*` calculates the disk usage summary of each directory in human-readable units. Piping into `sort -hr` sorts the output numerically in reverse order so the largest storage hogs appear at the very top.'
-    },
-    {
-      id: 'lx-q5',
-      category: 'Streaming Log Analysis',
-      question: 'You have an 8 GB production log file `app.log` and need to find out how many times the exact error string "DatabaseConnectionException" occurred. Opening the file in an editor will freeze the terminal. What command quickly counts the occurrences without loading the whole file into RAM?',
-      options: [
-        'grep "DatabaseConnectionException" app.log | wc -l',
-        'cat app.log | nano',
-        'find app.log -name "DatabaseConnectionException"',
-        'wc -w app.log'
-      ],
-      correctIndex: 0,
-      explanation: 'Unix pipes stream data in 64KB kernel ring buffers. `grep` inspects the file line by line and pipes only matching lines to `wc -l` (word count lines), determining the exact match count in seconds with minimal RAM usage.'
-    },
-    {
-      id: 'lx-q6',
-      category: 'Script Execution Permissions',
-      question: 'You created an automated database backup script `backup.sh`. When you attempt to run it with `./backup.sh`, your shell returns `-bash: ./backup.sh: Permission denied`. What command grants execution rights to run the script?',
-      options: [
-        'chmod +x backup.sh',
-        'touch backup.sh',
-        'chown guest backup.sh',
-        'chmod 644 backup.sh'
-      ],
-      correctIndex: 0,
-      explanation: 'New text files created with editors default to non-executable permissions (typically 0644). Adding the execute bit with `chmod +x backup.sh` (or `chmod 755`) allows the OS program loader to execute the script.'
-    },
-    {
-      id: 'lx-q7',
-      category: 'Locating Files in File Hierarchy',
-      question: 'You need to adjust Redis server settings on an unfamiliar Debian server, but you don\'t know where the configuration file `redis.conf` was installed. Which command searches the entire `/etc` directory tree for any file named exactly `redis.conf`?',
-      options: [
-        'find /etc -name "redis.conf"',
-        'grep -rn "redis.conf" /etc',
-        'which redis.conf',
-        'ls /etc/redis.conf'
-      ],
-      correctIndex: 0,
-      explanation: '`find /etc -name "redis.conf"` walks the filesystem directory tree starting at `/etc` and compares inode directory entry names against the target string. `which` only searches PATH binaries, and `grep` searches text inside files.'
-    },
-    {
-      id: 'lx-q8',
-      category: 'Environment Variables & Child Processes',
-      question: 'You assigned a port variable in your shell session with `PORT=4000`, but when you launch your backend app with `node server.js`, `process.env.PORT` prints undefined. Why did the Node.js process fail to read the variable, and how do you fix it?',
-      options: [
-        'Variables defined without `export` are local to the current shell; run `export PORT=4000` so child processes inherit the variable.',
-        'Linux variables must be written in lowercase: `port=4000`.',
-        'Node.js cannot read environment variables from Linux shells.',
-        'You must reboot the Linux server for variables to take effect.'
-      ],
-      correctIndex: 0,
-      explanation: 'In Bash/sh, assigning `VAR=val` creates a shell-local variable that is never copied to the environment of spawned child processes. Running `export VAR=val` places it into the shell environment table inherited by child processes.'
-    },
-    {
-      id: 'lx-q9',
-      category: 'Job Control & Backgrounding',
-      question: 'You ran a lengthy database migration command `python migrate.py` in the foreground, but you need your terminal prompt back to inspect logs while the migration finishes. How do you pause the foreground process and resume it safely in the background?',
-      options: [
-        'Press Ctrl+Z to send SIGTSTP (suspend), then type `bg` to resume it as a background job.',
-        'Press Ctrl+C and run `continue`.',
-        'Press Ctrl+D to disconnect.',
-        'Close the terminal and open a new session.'
-      ],
-      correctIndex: 0,
-      explanation: 'Pressing Ctrl+Z sends the `SIGTSTP` signal, pausing the running foreground task and returning the prompt. Typing `bg` tells the job control subsystem to resume execution of the paused job in the background.'
-    },
-    {
-      id: 'lx-q10',
-      category: 'Codebase Text Searching',
-      question: 'A production exception logs: "Error: STRIPE_SECRET_KEY missing". You need to find all occurrences of "STRIPE_SECRET_KEY" inside your project directory `/var/www/app`, searching recursively and displaying file names and line numbers. Which command accomplishes this?',
-      options: [
-        'grep -rn "STRIPE_SECRET_KEY" /var/www/app',
-        'find /var/www/app -name "STRIPE_SECRET_KEY"',
-        'cat /var/www/app | grep "STRIPE_SECRET_KEY"',
-        'which STRIPE_SECRET_KEY'
-      ],
-      correctIndex: 0,
-      explanation: '`grep -rn` combines recursive directory traversal (`-r`) with line number printing (`-n`), outputting `file:line:content` for every match across all files in the directory.'
+      explanation: 'OpenSSH strictly enforces that private keys cannot be readable by other users on the system. `chmod 600` sets permissions to `rw-------` (read and write for the file owner only, with zero permissions for group or others).'
     }
   ],
 
