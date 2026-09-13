@@ -179,7 +179,7 @@ export default function Dashboard({ currentUser, onNavigate }) {
                   <Terminal size={14} />
                   <span>Hands-on lab • Terminal Zone</span>
                 </div>
-                <span className="topic-num-pill practical-pill">Mission 2 of 6</span>
+                <span className="topic-num-pill practical-pill">Mission 2 of 8</span>
               </div>
 
               <div className="continue-card-body">
@@ -196,10 +196,10 @@ export default function Dashboard({ currentUser, onNavigate }) {
                 <div className="card-progress-block">
                   <div className="progress-labels">
                     <span>Module Progress</span>
-                    <strong>1 of 6 Missions Passed</strong>
+                    <strong>1 of 8 Missions Passed</strong>
                   </div>
                   <div className="continue-bar-track">
-                    <div className="continue-bar-fill practical-fill" style={{ width: '25%' }} />
+                    <div className="continue-bar-fill practical-fill" style={{ width: '12.5%' }} />
                   </div>
                 </div>
               </div>
@@ -288,12 +288,12 @@ export default function Dashboard({ currentUser, onNavigate }) {
                   <GitBranch size={16} className="item-icon" />
                   <span className="item-name">Git Lab & Collaboration</span>
                 </div>
-                <span className="item-percentage">33%</span>
+                <span className="item-percentage alert-percentage">25%</span>
               </div>
               <div className="metric-track">
-                <div className="metric-fill" style={{ width: '33%' }} />
+                <div className="metric-fill alert-fill" style={{ width: '25%' }} />
               </div>
-              <span className="item-sub">2/6 missions passed</span>
+              <span className="item-sub alert-sub">Needs Attention (2/8 missions)</span>
             </div>
 
             {/* Linux */}
@@ -303,12 +303,12 @@ export default function Dashboard({ currentUser, onNavigate }) {
                   <Terminal size={16} className="item-icon" />
                   <span className="item-name">Linux CLI & SysAdmin</span>
                 </div>
-                <span className="item-percentage alert-percentage">16%</span>
+                <span className="item-percentage alert-percentage">13%</span>
               </div>
               <div className="metric-track">
-                <div className="metric-fill alert-fill" style={{ width: '16%' }} />
+                <div className="metric-fill alert-fill" style={{ width: '13%' }} />
               </div>
-              <span className="item-sub alert-sub">Needs Attention (1/6 missions)</span>
+              <span className="item-sub alert-sub">Needs Attention (1/8 missions)</span>
             </div>
 
             {/* SQL */}
@@ -323,7 +323,7 @@ export default function Dashboard({ currentUser, onNavigate }) {
               <div className="metric-track">
                 <div className="metric-fill" style={{ width: '50%' }} />
               </div>
-              <span className="item-sub">3/6 missions passed</span>
+              <span className="item-sub">4/8 missions passed</span>
             </div>
 
           </div>

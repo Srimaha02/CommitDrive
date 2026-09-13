@@ -3,6 +3,7 @@ import Navbar from './components/layout/Navbar';
 import ShellPreview from './components/layout/ShellPreview';
 import Dashboard from './components/dashboard/Dashboard';
 import LearningPathView from './components/learning/LearningPathView';
+import PracticalPathView from './components/practical/PracticalPathView';
 import AuthModal from './components/auth/AuthModal';
 import { BookOpen, Terminal, LayoutDashboard, Shield, LogIn } from 'lucide-react';
 import './App.css';
@@ -95,9 +96,8 @@ export default function App() {
           onNavigate={setCurrentView}
         />
       ) : (
-        <ShellPreview 
-          activePath={currentView}
-          onSwitchPath={setCurrentView}
+        <PracticalPathView 
+          onNavigate={setCurrentView}
         />
       )}
 
