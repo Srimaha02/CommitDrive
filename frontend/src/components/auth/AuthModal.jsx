@@ -14,12 +14,16 @@ import {
 } from 'lucide-react';
 import './AuthModal.css';
 
+import { authApi } from '../../services/api';
+
 export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
   const [activeTab, setActiveTab] = useState('signin'); // 'signin' | 'signup'
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   
   // Sign In Form State
   const [signInEmail, setSignInEmail] = useState('cs.placement@prep.edu');
-  const [signInPassword, setSignInPassword] = useState('••••••••');
+  const [signInPassword, setSignInPassword] = useState('student123');
   
   // Sign Up Form State
   const [signUpName, setSignUpName] = useState('');
@@ -35,6 +39,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
     }
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown);
+      setErrorMessage('');
     }
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
@@ -42,41 +47,96 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
   if (!isOpen) return null;
 
   // Demo Login Handler
-  const handleDemoLogin = () => {
-    onLoginSuccess({
-      name: 'Mikro Student',
-      email: 'cs.placement@prep.edu',
-      role: 'SDE Aspirant 2026',
-      targetYear: '2026',
-      streak: 3,
-      targetCompanyTier: 'Tier 1 Product Companies'
-    });
-    onClose();
-  };
-
-  // Submit Handler
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (activeTab === 'signin') {
+  const handleDemoLogin = async () => {
+    setIsSubmitting(true);
+    try {
+      const res = await authApi.getDemoUser();
+      const user = res.data?.user || res.data || {
+        id: 'a0000000-0000-0000-0000-000000000001',
+        name: 'Mikro Student',
+        email: 'cs.placement@prep.edu',
+        role: 'SDE Aspirant 2026',
+        targetYear: '2026',
+        streak: 3
+      };
       onLoginSuccess({
-        name: signInEmail.split('@')[0] || 'Mikro Student',
-        email: signInEmail,
+        id: user.id,
+        name: user.fullName || user.name || 'Mikro Student',
+        email: user.email,
+        role: user.role || 'SDE Aspirant 2026',
+        targetYear: user.targetYear || '2026',
+        streak: user.streak || 3,
+        targetCompanyTier: 'Tier 1 Product Companies'
+      });
+      onClose();
+    } catch {
+      onLoginSuccess({
+        id: 'a0000000-0000-0000-0000-000000000001',
+        name: 'Mikro Student',
+        email: 'cs.placement@prep.edu',
         role: 'SDE Aspirant 2026',
         targetYear: '2026',
         streak: 3,
         targetCompanyTier: 'Tier 1 Product Companies'
       });
-    } else {
-      onLoginSuccess({
-        name: signUpName || 'New Aspirant',
-        email: signUpEmail || 'engineer@prep.edu',
-        role: targetRole,
-        targetYear: targetYear,
-        streak: 1,
-        targetCompanyTier: 'Tier 1 Product Companies'
-      });
+      onClose();
+    } finally {
+      setIsSubmitting(false);
     }
-    onClose();
+  };
+
+  // Submit Handler
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setErrorMessage('');
+    try {
+      if (activeTab === 'signin') {
+        const res = await authApi.login(signInEmail, signInPassword);
+        if (res.success) {
+          const user = res.data?.user || res.data;
+          onLoginSuccess({
+            id: user.id,
+            name: user.fullName || user.name || signInEmail.split('@')[0],
+            email: user.email || signInEmail,
+            role: user.role || 'SDE Aspirant 2026',
+            targetYear: user.targetYear || '2026',
+            streak: user.streak || 3,
+            targetCompanyTier: 'Tier 1 Product Companies'
+          });
+          onClose();
+        } else {
+          setErrorMessage(res.error || 'Login failed. Please check credentials.');
+        }
+      } else {
+        const res = await authApi.register({
+          email: signUpEmail,
+          password: signUpPassword,
+          fullName: signUpName,
+          role: targetRole,
+          targetYear
+        });
+        if (res.success) {
+          const user = res.data?.user || res.data;
+          onLoginSuccess({
+            id: user.id,
+            name: user.fullName || signUpName,
+            email: user.email || signUpEmail,
+            role: user.role || targetRole,
+            targetYear: user.targetYear || targetYear,
+            streak: user.streak || 1,
+            targetCompanyTier: 'Tier 1 Product Companies'
+          });
+          onClose();
+        } else {
+          setErrorMessage(res.error || 'Registration failed.');
+        }
+      }
+    } catch (err) {
+      setErrorMessage(err.message || 'An unexpected error occurred.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

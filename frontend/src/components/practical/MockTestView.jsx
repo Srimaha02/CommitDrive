@@ -22,6 +22,7 @@ import {
   Layers
 } from 'lucide-react';
 import { getModuleQuestions, getPracticalModule, evaluateMockTest } from '../../data/practicalCurriculum';
+import { practicalApi } from '../../services/api';
 
 export default function MockTestView({ moduleId, onSwitchToPractice }) {
   const currentModule = getPracticalModule(moduleId);
@@ -103,6 +104,17 @@ export default function MockTestView({ moduleId, onSwitchToPractice }) {
     });
     setExpandedReviews(allExpanded);
     setTestState('submitted');
+
+    // Persist mock test attempt to backend / local history
+    practicalApi.submitMockTest({
+      moduleId,
+      score: result.score,
+      totalQuestions: result.totalQuestions,
+      percentage: result.percentage,
+      timeTakenSeconds: (15 * 60) - Math.max(0, timeLeftSeconds),
+      breakdown: result.breakdown || {},
+      weakAreas: result.weakAreas || []
+    }).catch(() => {});
   };
 
   // Manual Submit Test
@@ -123,6 +135,17 @@ export default function MockTestView({ moduleId, onSwitchToPractice }) {
     });
     setExpandedReviews(allExpanded);
     setTestState('submitted');
+
+    // Persist mock test attempt to backend / local history
+    practicalApi.submitMockTest({
+      moduleId,
+      score: result.score,
+      totalQuestions: result.totalQuestions,
+      percentage: result.percentage,
+      timeTakenSeconds: (15 * 60) - Math.max(0, timeLeftSeconds),
+      breakdown: result.breakdown || {},
+      weakAreas: result.weakAreas || []
+    }).catch(() => {});
   };
 
   // Retake Mock Test

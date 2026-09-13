@@ -191,7 +191,7 @@ export default function PracticeTerminal({ moduleId, completedMissions, onComple
       // SUCCESS: Command Validated
       const isAlreadyCompleted = completedMissions.includes(activeMission.id);
       if (!isAlreadyCompleted) {
-        onCompleteMission(activeMission.id);
+        onCompleteMission(activeMission.id, failedAttempts + 1, isAnswerUnlocked);
       }
 
       const successLogs = [

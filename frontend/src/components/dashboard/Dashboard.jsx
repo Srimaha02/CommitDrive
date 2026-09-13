@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, 
   Flame, 
@@ -12,11 +12,12 @@ import {
   Database, 
   Network, 
   AlertTriangle, 
-  Award,
-  Play,
-  TrendingUp,
-  Target
+  Award, 
+  Play, 
+  TrendingUp, 
+  Target 
 } from 'lucide-react';
+import { dashboardApi } from '../../services/api';
 import './Dashboard.css';
 
 export default function Dashboard({ currentUser, onNavigate }) {
@@ -26,6 +27,31 @@ export default function Dashboard({ currentUser, onNavigate }) {
     targetYear: '2026',
     streak: 3
   };
+
+  const [stats, setStats] = useState({
+    overallReadinessPct: 68,
+    streak: student.streak || 3,
+    osMasteredCount: 4,
+    dbmsMasteredCount: 6,
+    cnMasteredCount: 2,
+    gitMissionsPassedCount: 2,
+    linuxMissionsPassedCount: 1,
+    sqlMissionsPassedCount: 4,
+    diagnosticAlerts: [
+      'Prioritize Computer Networks (TCP 3-Way Handshake & Congestion Control)',
+      'Review Linux Pipeline Commands (grep | wc) before your screening test'
+    ]
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    dashboardApi.getStats().then(res => {
+      if (isMounted && res && res.data) {
+        setStats(prev => ({ ...prev, ...res.data }));
+      }
+    }).catch(() => {});
+    return () => { isMounted = false; };
+  }, []);
 
   // Streak days: Mon - Sun
   const weekDays = [
@@ -55,7 +81,7 @@ export default function Dashboard({ currentUser, onNavigate }) {
               Welcome back, <span className="highlight-name">{student.name}</span> 👋
             </h1>
             <p className="dash-sub">
-              Your placement preparation is <strong className="readiness-percent">68% ready</strong> for upcoming campus drives and technical screening rounds.
+              Your placement preparation is <strong className="readiness-percent">{stats.overallReadinessPct || 68}% ready</strong> for upcoming campus drives and technical screening rounds.
             </p>
           </div>
 
@@ -84,7 +110,7 @@ export default function Dashboard({ currentUser, onNavigate }) {
                 <Flame size={22} className="flame-pulse" />
               </div>
               <div>
-                <h3 className="streak-heading">{student.streak || 3}-Day Study Streak!</h3>
+                <h3 className="streak-heading">{stats.streak || student.streak || 3}-Day Study Streak!</h3>
                 <p className="streak-sub">Practice today in either Study Corner or Terminal Zone to maintain streak multiplier.</p>
               </div>
             </div>
@@ -222,121 +248,149 @@ export default function Dashboard({ currentUser, onNavigate }) {
         {/* =================================================================
             4. Overall Placement Readiness Matrix
             ================================================================= */}
-        <section className="readiness-matrix-section theme-transition">
-          <div className="readiness-header">
-            <div>
-              <div className="readiness-eyebrow">Comprehensive syllabus audit</div>
-              <h2 className="readiness-heading">Placement Readiness Matrix</h2>
-            </div>
-            <div className="overall-score-badge">
-              <TrendingUp size={18} />
-              <span>Overall Readiness: <strong>68%</strong></span>
-            </div>
-          </div>
+        {(() => {
+          const osPct = Math.min(100, Math.round(((stats.osMasteredCount ?? 4) / 10) * 100));
+          const dbmsPct = Math.min(100, Math.round(((stats.dbmsMasteredCount ?? 6) / 10) * 100));
+          const cnPct = Math.min(100, Math.round(((stats.cnMasteredCount ?? 2) / 10) * 100));
+          const gitPct = Math.min(100, Math.round(((stats.gitMissionsPassedCount ?? 2) / 8) * 100));
+          const linuxPct = Math.min(100, Math.round(((stats.linuxMissionsPassedCount ?? 1) / 8) * 100));
+          const sqlPct = Math.min(100, Math.round(((stats.sqlMissionsPassedCount ?? 4) / 8) * 100));
 
-          <div className="readiness-grid">
-            
-            {/* OS */}
-            <div className="readiness-item theme-transition">
-              <div className="readiness-item-header">
-                <div className="item-name-group">
-                  <Cpu size={16} className="item-icon" />
-                  <span className="item-name">Operating Systems</span>
+          return (
+            <section className="readiness-matrix-section theme-transition">
+              <div className="readiness-header">
+                <div>
+                  <div className="readiness-eyebrow">Comprehensive syllabus audit</div>
+                  <h2 className="readiness-heading">Placement Readiness Matrix</h2>
                 </div>
-                <span className="item-percentage">40%</span>
-              </div>
-              <div className="metric-track">
-                <div className="metric-fill" style={{ width: '40%' }} />
-              </div>
-              <span className="item-sub">4/10 topics mastered</span>
-            </div>
-
-            {/* DBMS */}
-            <div className="readiness-item theme-transition">
-              <div className="readiness-item-header">
-                <div className="item-name-group">
-                  <Database size={16} className="item-icon" />
-                  <span className="item-name">Database Management (DBMS)</span>
+                <div className="overall-score-badge">
+                  <TrendingUp size={18} />
+                  <span>Overall Readiness: <strong>{stats.overallReadinessPct || 68}%</strong></span>
                 </div>
-                <span className="item-percentage">60%</span>
               </div>
-              <div className="metric-track">
-                <div className="metric-fill" style={{ width: '60%' }} />
-              </div>
-              <span className="item-sub">6/10 topics mastered</span>
-            </div>
 
-            {/* Computer Networks */}
-            <div className="readiness-item theme-transition">
-              <div className="readiness-item-header">
-                <div className="item-name-group">
-                  <Network size={16} className="item-icon" />
-                  <span className="item-name">Computer Networks</span>
+              <div className="readiness-grid">
+                
+                {/* OS */}
+                <div className="readiness-item theme-transition">
+                  <div className="readiness-item-header">
+                    <div className="item-name-group">
+                      <Cpu size={16} className="item-icon" />
+                      <span className="item-name">Operating Systems</span>
+                    </div>
+                    <span className={`item-percentage ${osPct < 40 ? 'alert-percentage' : ''}`}>{osPct}%</span>
+                  </div>
+                  <div className="metric-track">
+                    <div className={`metric-fill ${osPct < 40 ? 'alert-fill' : ''}`} style={{ width: `${osPct}%` }} />
+                  </div>
+                  <span className={`item-sub ${osPct < 40 ? 'alert-sub' : ''}`}>
+                    {osPct < 40 ? 'Needs Attention (' : ''}{stats.osMasteredCount ?? 4}/10 topics mastered{osPct < 40 ? ')' : ''}
+                  </span>
                 </div>
-                <span className="item-percentage alert-percentage">20%</span>
-              </div>
-              <div className="metric-track">
-                <div className="metric-fill alert-fill" style={{ width: '20%' }} />
-              </div>
-              <span className="item-sub alert-sub">Needs Attention (2/10 topics)</span>
-            </div>
 
-            {/* Git */}
-            <div className="readiness-item theme-transition">
-              <div className="readiness-item-header">
-                <div className="item-name-group">
-                  <GitBranch size={16} className="item-icon" />
-                  <span className="item-name">Git Lab & Collaboration</span>
+                {/* DBMS */}
+                <div className="readiness-item theme-transition">
+                  <div className="readiness-item-header">
+                    <div className="item-name-group">
+                      <Database size={16} className="item-icon" />
+                      <span className="item-name">Database Management (DBMS)</span>
+                    </div>
+                    <span className={`item-percentage ${dbmsPct < 40 ? 'alert-percentage' : ''}`}>{dbmsPct}%</span>
+                  </div>
+                  <div className="metric-track">
+                    <div className={`metric-fill ${dbmsPct < 40 ? 'alert-fill' : ''}`} style={{ width: `${dbmsPct}%` }} />
+                  </div>
+                  <span className={`item-sub ${dbmsPct < 40 ? 'alert-sub' : ''}`}>
+                    {dbmsPct < 40 ? 'Needs Attention (' : ''}{stats.dbmsMasteredCount ?? 6}/10 topics mastered{dbmsPct < 40 ? ')' : ''}
+                  </span>
                 </div>
-                <span className="item-percentage alert-percentage">25%</span>
-              </div>
-              <div className="metric-track">
-                <div className="metric-fill alert-fill" style={{ width: '25%' }} />
-              </div>
-              <span className="item-sub alert-sub">Needs Attention (2/8 missions)</span>
-            </div>
 
-            {/* Linux */}
-            <div className="readiness-item theme-transition">
-              <div className="readiness-item-header">
-                <div className="item-name-group">
-                  <Terminal size={16} className="item-icon" />
-                  <span className="item-name">Linux CLI & SysAdmin</span>
+                {/* Computer Networks */}
+                <div className="readiness-item theme-transition">
+                  <div className="readiness-item-header">
+                    <div className="item-name-group">
+                      <Network size={16} className="item-icon" />
+                      <span className="item-name">Computer Networks</span>
+                    </div>
+                    <span className={`item-percentage ${cnPct < 40 ? 'alert-percentage' : ''}`}>{cnPct}%</span>
+                  </div>
+                  <div className="metric-track">
+                    <div className={`metric-fill alert-fill`} style={{ width: `${cnPct}%` }} />
+                  </div>
+                  <span className={`item-sub ${cnPct < 40 ? 'alert-sub' : ''}`}>
+                    {cnPct < 40 ? 'Needs Attention (' : ''}{stats.cnMasteredCount ?? 2}/10 topics mastered{cnPct < 40 ? ')' : ''}
+                  </span>
                 </div>
-                <span className="item-percentage alert-percentage">13%</span>
-              </div>
-              <div className="metric-track">
-                <div className="metric-fill alert-fill" style={{ width: '13%' }} />
-              </div>
-              <span className="item-sub alert-sub">Needs Attention (1/8 missions)</span>
-            </div>
 
-            {/* SQL */}
-            <div className="readiness-item theme-transition">
-              <div className="readiness-item-header">
-                <div className="item-name-group">
-                  <Database size={16} className="item-icon" />
-                  <span className="item-name">SQL Query Optimization</span>
+                {/* Git */}
+                <div className="readiness-item theme-transition">
+                  <div className="readiness-item-header">
+                    <div className="item-name-group">
+                      <GitBranch size={16} className="item-icon" />
+                      <span className="item-name">Git Lab & Collaboration</span>
+                    </div>
+                    <span className={`item-percentage ${gitPct < 40 ? 'alert-percentage' : ''}`}>{gitPct}%</span>
+                  </div>
+                  <div className="metric-track">
+                    <div className={`metric-fill alert-fill`} style={{ width: `${gitPct}%` }} />
+                  </div>
+                  <span className={`item-sub ${gitPct < 40 ? 'alert-sub' : ''}`}>
+                    {gitPct < 40 ? 'Needs Attention (' : ''}{stats.gitMissionsPassedCount ?? 2}/8 missions passed{gitPct < 40 ? ')' : ''}
+                  </span>
                 </div>
-                <span className="item-percentage">50%</span>
+
+                {/* Linux */}
+                <div className="readiness-item theme-transition">
+                  <div className="readiness-item-header">
+                    <div className="item-name-group">
+                      <Terminal size={16} className="item-icon" />
+                      <span className="item-name">Linux CLI & SysAdmin</span>
+                    </div>
+                    <span className={`item-percentage ${linuxPct < 40 ? 'alert-percentage' : ''}`}>{linuxPct}%</span>
+                  </div>
+                  <div className="metric-track">
+                    <div className={`metric-fill alert-fill`} style={{ width: `${linuxPct}%` }} />
+                  </div>
+                  <span className={`item-sub ${linuxPct < 40 ? 'alert-sub' : ''}`}>
+                    {linuxPct < 40 ? 'Needs Attention (' : ''}{stats.linuxMissionsPassedCount ?? 1}/8 missions passed{linuxPct < 40 ? ')' : ''}
+                  </span>
+                </div>
+
+                {/* SQL */}
+                <div className="readiness-item theme-transition">
+                  <div className="readiness-item-header">
+                    <div className="item-name-group">
+                      <Database size={16} className="item-icon" />
+                      <span className="item-name">SQL Query Optimization</span>
+                    </div>
+                    <span className={`item-percentage ${sqlPct < 40 ? 'alert-percentage' : ''}`}>{sqlPct}%</span>
+                  </div>
+                  <div className="metric-track">
+                    <div className={`metric-fill`} style={{ width: `${sqlPct}%` }} />
+                  </div>
+                  <span className={`item-sub ${sqlPct < 40 ? 'alert-sub' : ''}`}>
+                    {sqlPct < 40 ? 'Needs Attention (' : ''}{stats.sqlMissionsPassedCount ?? 4}/8 missions passed{sqlPct < 40 ? ')' : ''}
+                  </span>
+                </div>
+
               </div>
-              <div className="metric-track">
-                <div className="metric-fill" style={{ width: '50%' }} />
+
+              {/* Weak Area Diagnostic Notice */}
+              <div className="weak-area-alert-box theme-transition">
+                <AlertTriangle size={18} className="alert-icon" />
+                <div className="alert-text">
+                  <strong>Diagnostic Recommendation:</strong>{' '}
+                  {stats.diagnosticAlerts && stats.diagnosticAlerts.length > 0 ? (
+                    stats.diagnosticAlerts.join(' • ')
+                  ) : (
+                    'Prioritize Computer Networks (TCP 3-Way Handshake & Congestion Control) and Linux Pipeline Commands (`grep | awk | sed`) before scheduling your first timed Mock Test.'
+                  )}
+                </div>
               </div>
-              <span className="item-sub">4/8 missions passed</span>
-            </div>
 
-          </div>
-
-          {/* Weak Area Diagnostic Notice */}
-          <div className="weak-area-alert-box theme-transition">
-            <AlertTriangle size={18} className="alert-icon" />
-            <div className="alert-text">
-              <strong>Diagnostic Recommendation:</strong> Prioritize <em>Computer Networks (TCP 3-Way Handshake & Congestion Control)</em> and <em>Linux Pipeline Commands (`grep | awk | sed`)</em> before scheduling your first timed Mock Test.
-            </div>
-          </div>
-
-        </section>
+            </section>
+          );
+        })()}
 
       </div>
     </main>

@@ -11,6 +11,7 @@ import {
   ChevronRight 
 } from 'lucide-react';
 import { practicalModules, calculateModuleProgress } from '../../data/practicalCurriculum';
+import { practicalApi } from '../../services/api';
 import PracticeTerminal from './PracticeTerminal';
 import MockTestView from './MockTestView';
 import './PracticalPathView.css';
@@ -54,6 +55,17 @@ export default function PracticalPathView({ onNavigate }) {
     }
   }, [activeModuleId, activeMode]);
 
+  // Load missions from backend / fallback on mount
+  useEffect(() => {
+    let isMounted = true;
+    practicalApi.getMissions().then(res => {
+      if (isMounted && res && res.data && Array.isArray(res.data) && res.data.length > 0) {
+        setCompletedMissions(res.data);
+      }
+    }).catch(() => {});
+    return () => { isMounted = false; };
+  }, []);
+
   // Sync completed missions to localStorage
   useEffect(() => {
     try {
@@ -64,11 +76,12 @@ export default function PracticalPathView({ onNavigate }) {
   }, [completedMissions]);
 
   // Handle mission completion
-  const handleCompleteMission = (missionId) => {
+  const handleCompleteMission = (missionId, attemptsCount = 1, unlockedSolutionUsed = false) => {
     setCompletedMissions(prev => {
       if (prev.includes(missionId)) return prev;
       return [...prev, missionId];
     });
+    practicalApi.completeMission(activeModuleId, missionId, attemptsCount, unlockedSolutionUsed).catch(() => {});
   };
 
   // Module Icon Component Helper

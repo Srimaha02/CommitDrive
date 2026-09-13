@@ -33,6 +33,7 @@ import {
   getSubjectTopics, 
   calculateSubjectProgress 
 } from '../../data/learningCurriculum';
+import { learningApi } from '../../services/api';
 import './LearningPathView.css';
 
 export default function LearningPathView({ onNavigate }) {
@@ -91,6 +92,17 @@ export default function LearningPathView({ onNavigate }) {
     }
   }, [activeSubjectId, activeTopicId]);
 
+  // Load topics from backend / fallback on mount
+  useEffect(() => {
+    let isMounted = true;
+    learningApi.getTopics().then(res => {
+      if (isMounted && res && res.data && Array.isArray(res.data) && res.data.length > 0) {
+        setCompletedTopicIds(res.data);
+      }
+    }).catch(() => {});
+    return () => { isMounted = false; };
+  }, []);
+
   // Sync completed topics to localStorage
   useEffect(() => {
     try {
@@ -128,6 +140,7 @@ export default function LearningPathView({ onNavigate }) {
 
   // Toggle topic completion
   const handleToggleCompletion = (topicId) => {
+    const isCompleted = !completedTopicIds.includes(topicId);
     setCompletedTopicIds(prev => {
       if (prev.includes(topicId)) {
         return prev.filter(id => id !== topicId);
@@ -135,6 +148,7 @@ export default function LearningPathView({ onNavigate }) {
         return [...prev, topicId];
       }
     });
+    learningApi.toggleTopic(activeSubjectId, topicId, isCompleted).catch(() => {});
   };
 
   // Toggle Interview Q&A Accordion
@@ -158,6 +172,7 @@ export default function LearningPathView({ onNavigate }) {
       ...prev,
       [cardId]: status
     }));
+    learningApi.saveFlashcardReview(activeSubjectId, activeTopicId, cardId, status).catch(() => {});
   };
 
   // Navigate to Next / Previous Topic
