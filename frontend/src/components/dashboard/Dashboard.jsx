@@ -133,7 +133,7 @@ export default function Dashboard({ currentUser, onNavigate }) {
               <div className="continue-card-top">
                 <div className="track-indicator learning-indicator">
                   <BookOpen size={14} />
-                  <span>THEORY TRACK • STUDY CORNER</span>
+                  <span>Theory track • Study Corner</span>
                 </div>
                 <span className="topic-num-pill">Topic 4 of 10</span>
               </div>
@@ -177,7 +177,7 @@ export default function Dashboard({ currentUser, onNavigate }) {
               <div className="continue-card-top">
                 <div className="track-indicator practical-indicator">
                   <Terminal size={14} />
-                  <span>HANDS-ON LAB • TERMINAL ZONE</span>
+                  <span>Hands-on lab • Terminal Zone</span>
                 </div>
                 <span className="topic-num-pill practical-pill">Mission 2 of 6</span>
               </div>
@@ -225,7 +225,7 @@ export default function Dashboard({ currentUser, onNavigate }) {
         <section className="readiness-matrix-section theme-transition">
           <div className="readiness-header">
             <div>
-              <div className="readiness-eyebrow">COMPREHENSIVE SYLLABUS AUDIT</div>
+              <div className="readiness-eyebrow">Comprehensive syllabus audit</div>
               <h2 className="readiness-heading">Placement Readiness Matrix</h2>
             </div>
             <div className="overall-score-badge">

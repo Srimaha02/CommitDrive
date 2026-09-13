@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from './components/layout/Navbar';
 import ShellPreview from './components/layout/ShellPreview';
 import Dashboard from './components/dashboard/Dashboard';
+import LearningPathView from './components/learning/LearningPathView';
 import AuthModal from './components/auth/AuthModal';
 import { BookOpen, Terminal, LayoutDashboard, Shield, LogIn } from 'lucide-react';
 import './App.css';
@@ -87,6 +88,10 @@ export default function App() {
       {currentView === 'dashboard' ? (
         <Dashboard 
           currentUser={currentUser}
+          onNavigate={setCurrentView}
+        />
+      ) : currentView === 'learning' ? (
+        <LearningPathView 
           onNavigate={setCurrentView}
         />
       ) : (

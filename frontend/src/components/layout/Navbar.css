@@ -162,11 +162,10 @@
 }
 
 .switcher-badge {
-  font-size: 0.62rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-size: 0.65rem;
   font-weight: 700;
-  padding: 2px 6px;
+  letter-spacing: 0.02em;
+  padding: 2px 7px;
   border-radius: var(--radius-pill);
   transition: all 0.25s ease;
 }

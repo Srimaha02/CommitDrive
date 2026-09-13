@@ -163,7 +163,7 @@ export default function ShellPreview({ activePath, onSwitchPath }) {
             <div className="hero-section">
               <div className="hero-pill theme-transition">
                 <Sparkles size={14} className="hero-pill-icon" />
-                <span>STUDY CORNER • THEORETICAL RIGOR</span>
+                <span>Study Corner • Theoretical rigor</span>
               </div>
               <h1 className="hero-title">
                 Master Core Computer Science for Top Product Companies
@@ -257,7 +257,7 @@ export default function ShellPreview({ activePath, onSwitchPath }) {
             <section className="horizontal-stepper-section theme-transition">
               <div className="stepper-section-header">
                 <div>
-                  <div className="section-eyebrow">PEDAGOGICAL FRAMEWORK</div>
+                  <div className="section-eyebrow">Pedagogical framework</div>
                   <h3 className="section-card-title">The 5-Step Topic Deep-Dive</h3>
                 </div>
                 <span className="stepper-click-hint">Click any step to inspect curriculum breakdown</span>
@@ -331,7 +331,7 @@ export default function ShellPreview({ activePath, onSwitchPath }) {
             <div className="flashcard-section-wrapper">
               <div className="flashcard-preview-container theme-transition">
                 <div className="flashcard-header">
-                  <div className="card-badge">LIVE 3D FLASHCARD DEMO</div>
+                  <div className="card-badge">Live 3D flashcard demo</div>
                   <span className="card-meta">Topic: Virtual Memory • OS</span>
                 </div>
 
@@ -341,7 +341,7 @@ export default function ShellPreview({ activePath, onSwitchPath }) {
                 >
                   <div className="flashcard-face flashcard-front theme-transition">
                     <div className="face-header">
-                      <span className="face-badge question-badge">QUESTION (Click to flip)</span>
+                      <span className="face-badge question-badge">Question (Click to flip)</span>
                       <RotateCw size={16} className="flip-icon" />
                     </div>
                     <div className="face-content">
@@ -356,7 +356,7 @@ export default function ShellPreview({ activePath, onSwitchPath }) {
 
                   <div className="flashcard-face flashcard-back theme-transition">
                     <div className="face-header">
-                      <span className="face-badge answer-badge">MODEL ANSWER</span>
+                      <span className="face-badge answer-badge">Model answer</span>
                       <RotateCw size={16} className="flip-icon" />
                     </div>
                     <div className="face-content">
@@ -402,7 +402,7 @@ export default function ShellPreview({ activePath, onSwitchPath }) {
             <div className="hero-section">
               <div className="hero-pill terminal-pill theme-transition">
                 <TerminalIcon size={14} className="hero-pill-icon" />
-                <span>TERMINAL ZONE • HANDS-ON COMMAND LAB</span>
+                <span>Terminal Zone • Hands-on command lab</span>
               </div>
               <h1 className="hero-title">
                 Develop True Terminal Fluency for Production Systems
@@ -528,7 +528,7 @@ export default function ShellPreview({ activePath, onSwitchPath }) {
 
               {/* Right: Modes Breakdown (Practice Mode vs Mock Test Mode) */}
               <div className="modes-breakdown-card theme-transition">
-                <div className="section-eyebrow">PRACTICAL MODES</div>
+                <div className="section-eyebrow">Practical modes</div>
                 <h3 className="section-card-title">Two Training Disciplines</h3>
 
                 <div className="mode-selection-box practice-box theme-transition">

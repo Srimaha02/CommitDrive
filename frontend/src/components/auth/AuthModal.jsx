@@ -107,7 +107,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
         {/* Instant Demo Student Login Banner */}
         <div className="demo-login-box theme-transition">
           <div className="demo-info">
-            <span className="demo-tag">RECOMMENDED FOR REVIEW</span>
+            <span className="demo-tag">Recommended for review</span>
             <p className="demo-title">Explore with preloaded progress & 3-day streak</p>
           </div>
           <button 
