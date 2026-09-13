@@ -747,216 +747,266 @@ export const mockTestQuestions = {
   git: [
     {
       id: 'gt-q1',
-      category: 'Git Architecture & Objects',
-      question: 'Which underlying Git object stores the mapping of file names, permissions, and SHA-1 blob hashes representing a directory snapshot?',
-      options: ['Blob Object', 'Tree Object', 'Tag Object', 'Index Pointer'],
+      category: 'Branching & Safety',
+      question: 'You accidentally made and committed 2 commits directly on the `main` branch instead of creating your new feature branch `feature-auth`. You have NOT pushed to remote yet. What is the cleanest, non-destructive way to move those commits onto `feature-auth` and restore `main`?',
+      options: [
+        'Delete the repository and re-clone from GitHub.',
+        'Run `git checkout -b feature-auth` to preserve commits on the new branch, switch back to `main`, and run `git reset --hard HEAD~2`.',
+        'Run `git revert HEAD` twice on main and cherry-pick the commits.',
+        'Force-push `main` to remote immediately.'
+      ],
       correctIndex: 1,
-      explanation: 'In Git\'s object database, a Tree Object represents a directory snapshot. It stores entries containing Unix file mode permissions, object type (blob or subtree), SHA-1 hash, and the human-readable filename.'
+      explanation: 'Since a Git branch is just a 41-byte pointer to a commit, running `git checkout -b feature-auth` captures the current commits under the new branch. Switching back to `main` and running `git reset --hard HEAD~2` resets the `main` pointer back to where it was before your commits, leaving your work safely on `feature-auth`.'
     },
     {
       id: 'gt-q2',
-      category: 'Branching & Head',
-      question: 'What happens physically inside the `.git` directory when you run `git branch feature-auth`?',
+      category: 'Stash & Workflow',
+      question: 'You are halfway through refactoring payment logic when an urgent production bug alert fires. You must switch to `hotfix-v1` immediately, but your current files are half-broken and will not compile. You do not want to make a messy commit. How should you safely park your uncommitted changes?',
       options: [
-        'Git duplicates all tracked project files into a new hidden directory.',
-        'Git creates a 41-byte text file inside `.git/refs/heads/` containing the current commit hash.',
-        'Git creates a new detached HEAD pointer in the object store.',
-        'Git initializes a fresh staging area index.'
+        'Run `git reset --hard` to discard all edits and restart from scratch tomorrow.',
+        'Run `git stash save "wip payments"`, switch branches to fix the hotfix, and later run `git stash pop` to resume your work.',
+        'Force checkout using `git checkout -f hotfix-v1`, overwriting modified files.',
+        'Copy each file manually to your Desktop and run `git clean -fd`.'
       ],
       correctIndex: 1,
-      explanation: 'Git branches are extraordinarily lightweight pointers. Creating a branch merely writes a 41-byte file (40 hex characters plus a newline) into `.git/refs/heads/<branch>` pointing to the current commit hash.'
+      explanation: '`git stash` snapshots both staged and unstaged modifications into a temporary commit stack in `.git/refs/stash` and cleans your working tree. Running `git stash pop` re-applies those exact modifications onto your working tree once you return to your branch.'
     },
     {
       id: 'gt-q3',
-      category: 'History & Logs',
-      question: 'A developer accidentally ran `git reset --hard HEAD~1` and lost a commit. Which Git command can recover the lost commit SHA?',
-      options: ['git status', 'git reflog', 'git fsck --lost-found', 'git log --recovered'],
+      category: 'Public Branches & Revert',
+      question: 'A teammate merged and pushed commit `c84a12f` to the shared `production` branch, which immediately broke live checkout. Company policy strictly forbids force-pushing or rewriting shared Git history. How do you safely undo the broken commit?',
+      options: [
+        'Run `git reset --hard c84a12f~1` followed by `git push --force`.',
+        'Run `git revert c84a12f` to create a new forward-moving commit that applies the exact inverse changes.',
+        'Delete the commit from the GitHub web UI directly.',
+        'Run `git rebase -i` to delete the commit from the branch history.'
+      ],
       correctIndex: 1,
-      explanation: '`git reflog` records every update made to the local repository\'s HEAD pointer (including commits, resets, checkouts). Even after a hard reset, the lost commit hash remains in the reflog for typically 30-90 days.'
+      explanation: '`git revert` is the industry standard for public shared branches. Instead of rewriting past commit history (which desynchronizes teammates\' local clones), it creates a brand-new commit that records the exact inverse diff of `c84a12f`, cleanly restoring the codebase.'
     },
     {
       id: 'gt-q4',
-      category: 'Merge vs Rebase',
-      question: 'What is the primary difference between `git merge` and `git rebase`?',
+      category: 'Linear History & Rebase',
+      question: 'Your team lead requires pull requests to maintain a clean, strictly linear commit history without diamond-shaped merge bubbles. Before opening a PR from your branch `feature-search` into `main`, how do you update your branch with the latest `main` commits?',
       options: [
-        'Merge deletes old commits; rebase preserves them.',
-        'Merge creates a 3-way merge commit with two parents; rebase rewrites project history by replaying commits sequentially on top of the target branch.',
-        'Merge can only be used on local branches; rebase can only be used on remote repositories.',
-        'Merge modifies commit SHAs; rebase preserves exact original commit SHAs.'
+        'Run `git merge main --no-ff` on your branch.',
+        'Switch to `feature-search` and run `git rebase main` to replay your commits on top of the latest main tip.',
+        'Run `git reset --soft main` and squash everything into one untracked diff.',
+        'Run `git pull origin main --force`.'
       ],
       correctIndex: 1,
-      explanation: '`git merge` joins two divergent branches using a 3-way merge commit with two parent references. `git rebase` rewrites history by creating brand-new commit SHAs for each replayed commit, creating a linear history.'
+      explanation: '`git rebase main` temporarily stashes your feature branch commits, fast-forwards your branch to the tip of `main`, and then replays your commits one by one on top. This avoids diamond-shaped 3-way merge commits and keeps project history strictly linear.'
     },
     {
       id: 'gt-q5',
-      category: 'Staging & Index',
-      question: 'What command removes a file from the staging area while leaving its changes intact in the working directory?',
-      options: ['git rm -f <file>', 'git restore --staged <file>', 'git clean -fd', 'git checkout -- <file>'],
+      category: 'Staging & Accidental Adds',
+      question: 'While preparing a commit, you accidentally ran `git add .` and staged a private `.env` file containing production database credentials. The file has NOT been committed yet. Which command safely removes `.env` from the staging area without deleting your local changes?',
+      options: [
+        'git rm -f .env',
+        'git restore --staged .env',
+        'git clean -df',
+        'git checkout -- .env'
+      ],
       correctIndex: 1,
-      explanation: '`git restore --staged <file>` (or legacy `git reset HEAD <file>`) unstages the file from the index while keeping your working directory edits completely untouched.'
+      explanation: '`git restore --staged .env` (or legacy `git reset HEAD .env`) clears the file from Git\'s index (staging area) while leaving your file contents in the working directory completely untouched.'
     },
     {
       id: 'gt-q6',
-      category: 'Cherry-Pick & Revert',
-      question: 'You want to safely undo a bug introduced by commit `a1b2c3d` on a shared production branch without rewriting commit history. What command should you use?',
-      options: ['git reset --hard a1b2c3d^', 'git revert a1b2c3d', 'git rebase -i a1b2c3d', 'git checkout a1b2c3d'],
+      category: 'Commit Amending',
+      question: 'You just ran `git commit -m "feat: user profile upload"` but realized within seconds that you forgot to include `avatar-helper.js` and had a typo in the commit message. You haven\'t pushed yet. What command allows you to fix both issues in the same commit?',
+      options: [
+        'Run `git reset --hard HEAD~1` and re-type all your code.',
+        'Stage the missing file with `git add avatar-helper.js`, then run `git commit --amend` to update both contents and commit message.',
+        'Create a second commit named `fix: typo and helper` and merge them.',
+        'Run `git rebase --abort`.'
+      ],
       correctIndex: 1,
-      explanation: '`git revert` creates a new commit that records the exact inverse changes of the specified commit, safely undoing the bug without rewriting public branch history.'
+      explanation: '`git commit --amend` replaces the current tip commit with a new commit containing your staged index additions plus your updated message, preserving a clean single commit before pushing.'
     },
     {
       id: 'gt-q7',
-      category: 'Stash & Recovery',
-      question: 'What happens when you run `git stash pop` vs `git stash apply`?',
+      category: 'Merge Conflicts',
+      question: 'During a merge, Git stops with `CONFLICT (content): Merge conflict in api.js`. You open `api.js`, edit the code to keep the correct lines, and delete the `<<<<<<< HEAD`, `=======`, and `>>>>>>>` markers. What must you do next to finalize the merge?',
       options: [
-        'Both apply the stashed changes and delete the stash.',
-        '`git stash pop` applies changes and removes the stash from the stack; `git stash apply` applies changes but keeps the stash on the stack.',
-        '`git stash pop` overwrites the working tree; `git stash apply` creates a new branch.',
-        '`git stash pop` can only be run once per repository.'
+        'Run `git merge --abort` to let Git resolve it automatically.',
+        'Run `git add api.js` to mark the conflict resolved, then run `git commit` (or `git merge --continue`) to record the merge commit.',
+        'Run `git checkout api.js` to reload original files.',
+        'Push immediately with `git push origin main`.'
       ],
       correctIndex: 1,
-      explanation: '`git stash pop` applies the top stash (`stash@{0}`) and immediately drops it from the stash list. `git stash apply` re-applies the stashed changes while preserving the stash in case you need it again.'
+      explanation: 'In Git, staging a conflicted file with `git add <file>` tells the index that the conflict markers have been manually resolved. Running `git commit` with no arguments will prompt with Git\'s default merge commit message to complete the merge.'
     },
     {
       id: 'gt-q8',
-      category: 'Conflict Resolution',
-      question: 'In a Git merge conflict, what does the marker `<<<<<<< HEAD` signify?',
+      category: 'Emergency Recovery & Reflog',
+      question: 'A junior engineer panicked during a rebase and executed `git reset --hard HEAD~3`, wiping out 3 days of unpushed commits. `git log` no longer shows any of those commits. How can you find and recover the lost commit SHA hashes?',
       options: [
-        'The common base ancestor commit version.',
-        'The version of the code that exists on the currently checked-out branch.',
-        'The incoming changes from the branch being merged in.',
-        'The suggested automated resolution from Git.'
+        'Those commits are permanently wiped from the hard drive and cannot be recovered.',
+        'Run `git reflog` to inspect the chronological log of every local HEAD pointer movement, find the commit SHA prior to the reset, and checkout or branch from it.',
+        'Check the browser history on GitHub.',
+        'Re-clone the repository from origin.'
       ],
       correctIndex: 1,
-      explanation: 'In conflict markers, the section between `<<<<<<< HEAD` and `=======` shows changes on your currently checked-out branch. The section between `=======` and `>>>>>>> <branch>` shows the incoming changes from the target branch.'
+      explanation: 'Git rarely deletes committed data immediately. `git reflog` maintains an append-only journal of all HEAD updates in `.git/logs/HEAD`. Even after a hard reset, the commit objects remain in the repository for weeks until garbage collected (`git gc`).'
     },
     {
       id: 'gt-q9',
-      category: 'Remotes & Fetch',
-      question: 'What is the difference between `git fetch` and `git pull`?',
+      category: 'Local File Discard',
+      question: 'You were experimenting with performance tweaks in `queryEngine.js`. The experiment failed and the code is broken. You want to discard all local uncommitted modifications in `queryEngine.js` and restore it to the clean state of the last commit without touching any other files. Which command does this?',
       options: [
-        '`git fetch` updates local branches; `git pull` only inspects remote refs.',
-        '`git fetch` downloads remote objects and updates remote-tracking refs without merging; `git pull` executes `git fetch` followed immediately by `git merge`.',
-        '`git fetch` overwrites uncommitted local files; `git pull` safely stashes them.',
-        '`git pull` is deprecated in favor of `git push --pull`.'
+        'git clean -fd',
+        'git restore queryEngine.js',
+        'git rm queryEngine.js',
+        'git reset --hard'
       ],
       correctIndex: 1,
-      explanation: '`git fetch` safely retrieves new commits from the remote repository and updates remote tracking branches (e.g. `origin/main`) without modifying local files. `git pull` runs fetch and automatically attempts to merge.'
+      explanation: '`git restore queryEngine.js` (or legacy `git checkout -- queryEngine.js`) replaces your working tree copy of that single file with the pristine version from the index/HEAD without discarding changes in your other files.'
     },
     {
       id: 'gt-q10',
-      category: 'Git Internals',
-      question: 'What hashing algorithm did Git historically use to generate 40-character object identifiers?',
-      options: ['MD5', 'SHA-1', 'AES-256', 'CRC-32'],
+      category: 'Branch Housekeeping',
+      question: 'You finished merging feature branch `feature-notifications` into `main` and pushed everything to remote. You want to delete your local copy of `feature-notifications` safely, ensuring Git warns you if there were any unmerged commits you might have overlooked. Which command should you use?',
+      options: [
+        'git branch -D feature-notifications (uppercase -D)',
+        'git branch -d feature-notifications (lowercase -d)',
+        'git push origin --delete feature-notifications',
+        'git branch --wipe feature-notifications'
+      ],
       correctIndex: 1,
-      explanation: 'Git historically used SHA-1 (producing 160-bit / 40-hex-character hashes) to content-address all objects in `.git/objects/`. Newer Git versions are gradually adding support for SHA-256.'
+      explanation: 'The lowercase `-d` flag is a safe delete: Git checks if the branch has been fully merged into its upstream branch or current HEAD before deleting. If unmerged commits exist, Git aborts with a warning. The uppercase `-D` forces deletion regardless of merge status.'
     }
   ],
 
   linux: [
     {
       id: 'lx-q1',
-      category: 'Permissions & Chmod',
-      question: 'What permissions are represented by the octal mode `754` on a Linux file?',
+      category: 'Process Termination & Signals',
+      question: 'A runaway Node.js script is consuming 100% CPU on a production server. You tried `kill 4892` (SIGTERM), but the process is stuck in an unyielding loop and refuses to shut down. What command instructs the Linux kernel to immediately and forcefully terminate process 4892?',
       options: [
-        'Owner: rwx, Group: r-x, Others: r--',
-        'Owner: r-x, Group: rwx, Others: --x',
-        'Owner: rw-, Group: r--, Others: rwx',
-        'Owner: rwx, Group: rw-, Others: --x'
+        'kill -1 4892 (SIGHUP)',
+        'kill -9 4892 (SIGKILL)',
+        'kill -2 4892 (SIGINT)',
+        'kill -15 4892 (SIGTERM)'
       ],
-      correctIndex: 0,
-      explanation: '7 = 4+2+1 = rwx (read, write, execute for owner); 5 = 4+1 = r-x (read and execute for group); 4 = 4 = r-- (read-only for others).'
+      correctIndex: 1,
+      explanation: '`SIGKILL` (signal 9) is handled directly by the operating system kernel. Unlike `SIGTERM` (signal 15), a process cannot catch, handle, or ignore `SIGKILL`; the kernel immediately reclaims its memory and terminates the process.'
     },
     {
       id: 'lx-q2',
-      category: 'Processes & Signals',
-      question: 'Which Linux signal cannot be caught, blocked, or ignored by any user-space process?',
-      options: ['SIGTERM (15)', 'SIGINT (2)', 'SIGKILL (9)', 'SIGHUP (1)'],
-      correctIndex: 2,
-      explanation: '`SIGKILL` (signal 9) and `SIGSTOP` (signal 19) are handled directly by the operating system kernel and cannot be caught, blocked, or ignored by application signal handlers.'
+      category: 'SSH Key Permissions',
+      question: 'You downloaded your cloud instance\'s private key `deploy_key.pem` and tried running `ssh -i deploy_key.pem ubuntu@192.168.1.5`. The connection is rejected with: "Permissions 0644 for deploy_key.pem are too open. It is required that your private key files are NOT accessible by others." What command sets the exact required permissions?',
+      options: [
+        'chmod 777 deploy_key.pem',
+        'chmod 600 deploy_key.pem',
+        'chmod 755 deploy_key.pem',
+        'chown root deploy_key.pem'
+      ],
+      correctIndex: 1,
+      explanation: 'SSH strictly requires that private key files cannot be read or modified by group or other users. `chmod 600` sets permissions to `rw-------` (read and write for the file owner only, zero access for everyone else).'
     },
     {
       id: 'lx-q3',
-      category: 'File Navigation & Inodes',
-      question: 'What happens to a file\'s inode when it is moved using the `mv` command within the SAME filesystem partition?',
+      category: 'Live Log Troubleshooting',
+      question: 'Your API is experiencing intermittent 500 errors during a traffic spike. You are logged into the Ubuntu server and need to watch new log lines appear in `/var/log/nginx/access.log` continuously in real time as incoming requests hit the server. Which command should you run?',
       options: [
-        'A new inode is allocated and data blocks are copied.',
-        'The inode number remains identical; only the directory entry string is updated.',
-        'The inode number increments by 1.',
-        'The file is converted into a symbolic link.'
+        'cat /var/log/nginx/access.log',
+        'tail -f /var/log/nginx/access.log',
+        'head -n 100 /var/log/nginx/access.log',
+        'less /var/log/nginx/access.log'
       ],
       correctIndex: 1,
-      explanation: 'Moving a file within the same filesystem is an $O(1)$ metadata operation: the inode number remains exactly the same. Only the directory entry mapping in the parent directory is modified.'
+      explanation: '`tail -f` (follow) outputs the last 10 lines and then waits on the file descriptor, appending any newly written lines to stdout in real time as the web server writes them.'
     },
     {
       id: 'lx-q4',
-      category: 'Pipes & Redirection',
-      question: 'What file descriptor corresponds to `stderr` (Standard Error) in Linux?',
-      options: ['0', '1', '2', '3'],
-      correctIndex: 2,
-      explanation: 'Standard file descriptors in Unix/Linux: 0 is `stdin`, 1 is `stdout`, and 2 is `stderr`. To redirect errors to a log file, you use `2> error.log`.'
+      category: 'Storage Crisis & Disk Usage',
+      question: 'Your root partition `/var` alert just fired at 96% disk capacity. You need to inspect which subdirectories inside `/var` are consuming the most gigabytes, displayed in human-readable units (e.g. GB, MB) and sorted from largest to smallest. Which command pipeline achieves this?',
+      options: [
+        'df -h /var',
+        'du -sh /var/* | sort -hr',
+        'ls -la /var',
+        'free -m'
+      ],
+      correctIndex: 1,
+      explanation: '`du -sh /var/*` calculates the disk usage summary of each directory in human-readable units. Piping into `sort -hr` sorts the output numerically in reverse order so the largest storage hogs appear at the very top.'
     },
     {
       id: 'lx-q5',
-      category: 'Process Inspection',
-      question: 'Which command displays an interactive real-time dashboard of running processes, CPU core utilization, and memory consumption?',
-      options: ['ps -ef', 'top', 'df -h', 'uptime'],
-      correctIndex: 1,
-      explanation: '`top` (and its enhanced version `htop`) provides an interactive, real-time updated view of system processes, load averages, memory allocation, and CPU thread states.'
+      category: 'Streaming Log Analysis',
+      question: 'You have an 8 GB production log file `app.log` and need to find out how many times the exact error string "DatabaseConnectionException" occurred. Opening the file in an editor will freeze the terminal. What command quickly counts the occurrences without loading the whole file into RAM?',
+      options: [
+        'grep "DatabaseConnectionException" app.log | wc -l',
+        'cat app.log | nano',
+        'find app.log -name "DatabaseConnectionException"',
+        'wc -w app.log'
+      ],
+      correctIndex: 0,
+      explanation: 'Unix pipes stream data in 64KB kernel ring buffers. `grep` inspects the file line by line and pipes only matching lines to `wc -l` (word count lines), determining the exact match count in seconds with minimal RAM usage.'
     },
     {
       id: 'lx-q6',
-      category: 'Text Wrangling & Grep',
-      question: 'What does the command `sort names.txt | uniq -c` accomplish?',
+      category: 'Script Execution Permissions',
+      question: 'You created an automated database backup script `backup.sh`. When you attempt to run it with `./backup.sh`, your shell returns `-bash: ./backup.sh: Permission denied`. What command grants execution rights to run the script?',
       options: [
-        'Removes all duplicates without sorting.',
-        'Sorts the lines alphabetically and counts the occurrences of each unique line.',
-        'Replaces duplicate lines with blank lines.',
-        'Prints only lines that occur exactly once.'
+        'chmod +x backup.sh',
+        'touch backup.sh',
+        'chown guest backup.sh',
+        'chmod 644 backup.sh'
       ],
-      correctIndex: 1,
-      explanation: '`uniq` only detects adjacent duplicate lines, which is why input must be piped through `sort` first. The `-c` flag prefixes each line with its total count of occurrences.'
+      correctIndex: 0,
+      explanation: 'New text files created with editors default to non-executable permissions (typically 0644). Adding the execute bit with `chmod +x backup.sh` (or `chmod 755`) allows the OS program loader to execute the script.'
     },
     {
       id: 'lx-q7',
-      category: 'Storage & Disk Usage',
-      question: 'What is the difference between `df -h` and `du -sh <dir>`?',
+      category: 'Locating Files in File Hierarchy',
+      question: 'You need to adjust Redis server settings on an unfamiliar Debian server, but you don\'t know where the configuration file `redis.conf` was installed. Which command searches the entire `/etc` directory tree for any file named exactly `redis.conf`?',
       options: [
-        '`df` inspects files; `du` inspects network interfaces.',
-        '`df -h` reports total filesystem disk space usage per mounted partition; `du -sh` calculates the summary size of a specific directory on disk.',
-        '`df` requires root permissions; `du` does not.',
-        'Both commands produce identical output.'
+        'find /etc -name "redis.conf"',
+        'grep -rn "redis.conf" /etc',
+        'which redis.conf',
+        'ls /etc/redis.conf'
       ],
-      correctIndex: 1,
-      explanation: '`df` (disk free) queries filesystem superblock metadata to report partition-level capacity and free space. `du` (disk usage) traverses directory trees to sum the space consumed by files.'
+      correctIndex: 0,
+      explanation: '`find /etc -name "redis.conf"` walks the filesystem directory tree starting at `/etc` and compares inode directory entry names against the target string. `which` only searches PATH binaries, and `grep` searches text inside files.'
     },
     {
       id: 'lx-q8',
-      category: 'Networking & Sockets',
-      question: 'Which modern command is used to inspect active listening TCP ports and sockets on a Linux server?',
-      options: ['ss -tulpn', 'ifconfig -a', 'ping -c 4', 'traceroute'],
+      category: 'Environment Variables & Child Processes',
+      question: 'You assigned a port variable in your shell session with `PORT=4000`, but when you launch your backend app with `node server.js`, `process.env.PORT` prints undefined. Why did the Node.js process fail to read the variable, and how do you fix it?',
+      options: [
+        'Variables defined without `export` are local to the current shell; run `export PORT=4000` so child processes inherit the variable.',
+        'Linux variables must be written in lowercase: `port=4000`.',
+        'Node.js cannot read environment variables from Linux shells.',
+        'You must reboot the Linux server for variables to take effect.'
+      ],
       correctIndex: 0,
-      explanation: '`ss` (Socket Statistics) is the modern, faster replacement for legacy `netstat`. The flags `-tulpn` display TCP, UDP, listening sockets, numeric ports, and owning process names.'
+      explanation: 'In Bash/sh, assigning `VAR=val` creates a shell-local variable that is never copied to the environment of spawned child processes. Running `export VAR=val` places it into the shell environment table inherited by child processes.'
     },
     {
       id: 'lx-q9',
-      category: 'Environment & Shell',
-      question: 'What is the purpose of the `export` command in Bash (e.g. `export NODE_ENV=production`)?',
+      category: 'Job Control & Backgrounding',
+      question: 'You ran a lengthy database migration command `python migrate.py` in the foreground, but you need your terminal prompt back to inspect logs while the migration finishes. How do you pause the foreground process and resume it safely in the background?',
       options: [
-        'Saves the variable permanently to hard disk storage.',
-        'Makes the environment variable available to child processes spawned by this shell.',
-        'Encrypts the variable value in memory.',
-        'Restricts the variable to read-only access.'
+        'Press Ctrl+Z to send SIGTSTP (suspend), then type `bg` to resume it as a background job.',
+        'Press Ctrl+C and run `continue`.',
+        'Press Ctrl+D to disconnect.',
+        'Close the terminal and open a new session.'
       ],
-      correctIndex: 1,
-      explanation: 'Without `export`, a variable is local only to the current shell. The `export` command marks the variable so that any child processes spawned by the shell inherit a copy of it in their environment.'
+      correctIndex: 0,
+      explanation: 'Pressing Ctrl+Z sends the `SIGTSTP` signal, pausing the running foreground task and returning the prompt. Typing `bg` tells the job control subsystem to resume execution of the paused job in the background.'
     },
     {
       id: 'lx-q10',
-      category: 'Package Management & Systemd',
-      question: 'Which command restarts the Nginx web server daemon using the modern Linux service manager?',
-      options: ['service nginx restart', 'systemctl restart nginx', 'init.d/nginx reload', 'reboot nginx'],
-      correctIndex: 1,
-      explanation: 'On modern systemd-based Linux distributions (Ubuntu, Debian, RHEL, CentOS), `systemctl restart <service_name>` is the standard control command to manage background daemons.'
+      category: 'Codebase Text Searching',
+      question: 'A production exception logs: "Error: STRIPE_SECRET_KEY missing". You need to find all occurrences of "STRIPE_SECRET_KEY" inside your project directory `/var/www/app`, searching recursively and displaying file names and line numbers. Which command accomplishes this?',
+      options: [
+        'grep -rn "STRIPE_SECRET_KEY" /var/www/app',
+        'find /var/www/app -name "STRIPE_SECRET_KEY"',
+        'cat /var/www/app | grep "STRIPE_SECRET_KEY"',
+        'which STRIPE_SECRET_KEY'
+      ],
+      correctIndex: 0,
+      explanation: '`grep -rn` combines recursive directory traversal (`-r`) with line number printing (`-n`), outputting `file:line:content` for every match across all files in the directory.'
     }
   ],
 

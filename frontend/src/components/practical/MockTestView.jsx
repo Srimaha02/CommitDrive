@@ -14,7 +14,12 @@ import {
   ChevronDown,
   Terminal,
   HelpCircle,
-  BarChart3
+  BarChart3,
+  Sparkles,
+  Filter,
+  Check,
+  X,
+  Layers
 } from 'lucide-react';
 import { getModuleQuestions, getPracticalModule, evaluateMockTest } from '../../data/practicalCurriculum';
 
@@ -84,10 +89,19 @@ export default function MockTestView({ moduleId, onSwitchToPractice }) {
     }));
   };
 
+  // Active review filter: 'all' | 'incorrect' | 'correct'
+  const [reviewFilter, setReviewFilter] = useState('all');
+
   // Auto-Submit on Timeout
   const handleAutoSubmit = () => {
     const result = evaluateMockTest(moduleId, userAnswers);
     setEvaluationResult(result);
+    // Expand ALL reviews by default so user immediately sees answers & explanations!
+    const allExpanded = {};
+    result.questionReviews.forEach(r => {
+      allExpanded[r.id] = true;
+    });
+    setExpandedReviews(allExpanded);
     setTestState('submitted');
   };
 
@@ -102,6 +116,12 @@ export default function MockTestView({ moduleId, onSwitchToPractice }) {
     }
     const result = evaluateMockTest(moduleId, userAnswers);
     setEvaluationResult(result);
+    // Expand ALL reviews by default so user immediately sees answers & explanations!
+    const allExpanded = {};
+    result.questionReviews.forEach(r => {
+      allExpanded[r.id] = true;
+    });
+    setExpandedReviews(allExpanded);
     setTestState('submitted');
   };
 
@@ -112,6 +132,8 @@ export default function MockTestView({ moduleId, onSwitchToPractice }) {
     setCurrentQuestionIndex(0);
     setTimeLeftSeconds(15 * 60);
     setEvaluationResult(null);
+    setExpandedReviews({});
+    setReviewFilter('all');
     setTestState('in-progress');
   };
 
@@ -395,76 +417,161 @@ export default function MockTestView({ moduleId, onSwitchToPractice }) {
 
           {/* 3. Detailed Question-by-Question Review Vault */}
           <section className="question-review-section theme-transition">
-            <h3 className="review-section-heading">Detailed Question Review & Model Solutions</h3>
-            <p className="review-section-desc">
-              Inspect model answers, evaluation traps, and detailed technical rationale for every question:
-            </p>
+            <div className="review-section-header-bar">
+              <div>
+                <h3 className="review-section-heading">Detailed Question Review & Model Solutions</h3>
+                <p className="review-section-desc">
+                  Every question includes the model solution, your selection, and the engineering rationale explaining why the answer is correct:
+                </p>
+              </div>
+
+              {/* Review Filter Tabs & Expand All Controls */}
+              <div className="review-controls-row">
+                <div className="review-filter-tabs">
+                  <button 
+                    className={`filter-tab-btn ${reviewFilter === 'all' ? 'active' : ''} theme-transition`}
+                    onClick={() => setReviewFilter('all')}
+                  >
+                    <span>All ({evaluationResult.questionReviews.length})</span>
+                  </button>
+
+                  <button 
+                    className={`filter-tab-btn filter-incorrect ${reviewFilter === 'incorrect' ? 'active' : ''} theme-transition`}
+                    onClick={() => setReviewFilter('incorrect')}
+                  >
+                    <span>Incorrect ({evaluationResult.questionReviews.filter(r => !r.isCorrect).length})</span>
+                  </button>
+
+                  <button 
+                    className={`filter-tab-btn filter-correct ${reviewFilter === 'correct' ? 'active' : ''} theme-transition`}
+                    onClick={() => setReviewFilter('correct')}
+                  >
+                    <span>Correct ({evaluationResult.score})</span>
+                  </button>
+                </div>
+
+                <button 
+                  className="toggle-expand-all-btn theme-transition"
+                  onClick={() => {
+                    const isAnyCollapsed = evaluationResult.questionReviews.some(r => !expandedReviews[r.id]);
+                    const nextState = {};
+                    evaluationResult.questionReviews.forEach(r => {
+                      nextState[r.id] = isAnyCollapsed;
+                    });
+                    setExpandedReviews(nextState);
+                  }}
+                  title="Expand or collapse all question explanations"
+                >
+                  <Layers size={13} />
+                  <span>
+                    {evaluationResult.questionReviews.some(r => !expandedReviews[r.id]) 
+                      ? 'Expand All' 
+                      : 'Collapse All'}
+                  </span>
+                </button>
+              </div>
+            </div>
 
             <div className="question-reviews-list">
-              {evaluationResult.questionReviews.map((review) => {
-                const isExpanded = !!expandedReviews[review.id];
+              {evaluationResult.questionReviews
+                .filter(review => {
+                  if (reviewFilter === 'incorrect') return !review.isCorrect;
+                  if (reviewFilter === 'correct') return review.isCorrect;
+                  return true;
+                })
+                .map((review) => {
+                  const isExpanded = !!expandedReviews[review.id];
+                  const isUnanswered = review.selectedOption === undefined || review.selectedOption === null;
 
-                return (
-                  <div key={review.id} className={`review-accordion-item ${review.isCorrect ? 'correct' : 'incorrect'} theme-transition`}>
-                    <button 
-                      className="review-header-bar theme-transition"
-                      onClick={() => setExpandedReviews(prev => ({ ...prev, [review.id]: !prev[review.id] }))}
-                    >
-                      <div className="review-status-indicator">
-                        {review.isCorrect ? (
-                          <CheckCircle2 size={18} className="review-icon-correct" />
-                        ) : (
-                          <XCircle size={18} className="review-icon-wrong" />
-                        )}
-                        <span className="review-q-number">Q{review.questionNumber}</span>
-                      </div>
-
-                      <div className="review-q-title-col">
-                        <span className="review-q-text">{review.question}</span>
-                        <div className="review-meta-row">
-                          <span className="review-category-badge">{review.category}</span>
-                          <span className={`review-result-badge ${review.isCorrect ? 'correct' : 'incorrect'}`}>
-                            {review.isCorrect ? 'Correct (+1)' : 'Incorrect (0)'}
-                          </span>
-                        </div>
-                      </div>
-
-                      <ChevronDown size={18} className={`review-chevron ${isExpanded ? 'rotated' : ''}`} />
-                    </button>
-
-                    {isExpanded && (
-                      <div className="review-expanded-panel theme-transition">
-                        <div className="review-options-comparison">
-                          {review.options.map((opt, oIdx) => {
-                            const isUserSelected = review.selectedOption === oIdx;
-                            const isCorrectOpt = review.correctIndex === oIdx;
-
-                            let optClass = '';
-                            if (isCorrectOpt) optClass = 'opt-correct-answer';
-                            if (isUserSelected && !isCorrectOpt) optClass = 'opt-user-wrong';
-
-                            return (
-                              <div key={oIdx} className={`review-option-pill ${optClass}`}>
-                                <span className="review-option-letter">
-                                  {['A', 'B', 'C', 'D'][oIdx]}:
-                                </span>
-                                <span className="review-option-desc">{opt}</span>
-                                {isCorrectOpt && <span className="answer-tag-pill">Correct Answer</span>}
-                                {isUserSelected && !isCorrectOpt && <span className="user-tag-pill">Your Answer</span>}
-                              </div>
-                            );
-                          })}
+                  return (
+                    <div key={review.id} className={`review-accordion-item ${review.isCorrect ? 'correct' : 'incorrect'} theme-transition`}>
+                      <button 
+                        className="review-header-bar theme-transition"
+                        onClick={() => setExpandedReviews(prev => ({ ...prev, [review.id]: !prev[review.id] }))}
+                      >
+                        <div className="review-status-indicator">
+                          {review.isCorrect ? (
+                            <CheckCircle2 size={20} className="review-icon-correct" />
+                          ) : (
+                            <XCircle size={20} className="review-icon-wrong" />
+                          )}
+                          <span className="review-q-number">Q0{review.questionNumber}</span>
                         </div>
 
-                        <div className="review-explanation-box">
-                          <strong className="explanation-title">Technical Rationale & Placement Trap:</strong>
-                          <p className="explanation-body">{review.explanation}</p>
+                        <div className="review-q-title-col">
+                          <span className="review-q-text">{review.question}</span>
+                          <div className="review-meta-row">
+                            <span className="review-category-badge">{review.category}</span>
+                            <span className={`review-result-badge ${review.isCorrect ? 'correct' : 'incorrect'}`}>
+                              {review.isCorrect ? '✔ Correct (+1)' : isUnanswered ? '⚠ Unanswered (0/1)' : '✘ Incorrect (0/1)'}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+
+                        <ChevronDown size={18} className={`review-chevron ${isExpanded ? 'rotated' : ''}`} />
+                      </button>
+
+                      {isExpanded && (
+                        <div className="review-expanded-panel theme-transition animate-fadeIn">
+                          
+                          {/* Options Breakdown with Clear Visual Indicators */}
+                          <div className="review-options-comparison">
+                            {review.options.map((opt, oIdx) => {
+                              const isUserSelected = review.selectedOption === oIdx;
+                              const isCorrectOpt = review.correctIndex === oIdx;
+
+                              let optClass = '';
+                              if (isCorrectOpt) optClass = 'opt-correct-answer';
+                              if (isUserSelected && !isCorrectOpt) optClass = 'opt-user-wrong';
+
+                              return (
+                                <div key={oIdx} className={`review-option-pill ${optClass} theme-transition`}>
+                                  <span className="review-option-letter">
+                                    {['A', 'B', 'C', 'D'][oIdx]}:
+                                  </span>
+                                  <span className="review-option-desc">{opt}</span>
+                                  
+                                  {isCorrectOpt && !isUserSelected && (
+                                    <span className="answer-tag-pill">
+                                      <Check size={11} /> Correct Solution
+                                    </span>
+                                  )}
+
+                                  {isCorrectOpt && isUserSelected && (
+                                    <span className="answer-tag-pill user-correct-pill">
+                                      <Check size={11} /> Your Choice (Correct!)
+                                    </span>
+                                  )}
+
+                                  {isUserSelected && !isCorrectOpt && (
+                                    <span className="user-tag-pill">
+                                      <X size={11} /> Your Choice (Incorrect)
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Dedicated Model Solution & Pedagogical Explanation Card */}
+                          <div className="review-explanation-box theme-transition">
+                            <div className="explanation-header-row">
+                              <Sparkles size={15} className="explanation-sparkle" />
+                              <strong className="explanation-title">
+                                Model Answer: Option {['A', 'B', 'C', 'D'][review.correctIndex]} — "{review.options[review.correctIndex]}"
+                              </strong>
+                            </div>
+                            <div className="explanation-body-wrapper">
+                              <span className="explanation-label">Engineering Explanation & Rationale:</span>
+                              <p className="explanation-body">{review.explanation}</p>
+                            </div>
+                          </div>
+
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
             </div>
           </section>
 

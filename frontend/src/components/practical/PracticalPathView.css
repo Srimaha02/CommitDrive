@@ -1588,21 +1588,387 @@
   background-color: var(--bg-surface);
   border-left: 3px solid var(--accent-primary);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  padding: 12px 16px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.explanation-header-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.explanation-sparkle {
+  color: #f4a261;
+  flex-shrink: 0;
+}
+
+.explanation-title {
+  font-family: var(--font-code);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #f4a261;
+}
+
+.explanation-body-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.explanation-label {
+  font-size: 0.72rem;
+  font-family: var(--font-code);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.explanation-body {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.user-correct-pill {
+  color: #588b8b;
+  border: 1px solid #588b8b;
+  background-color: rgba(88, 139, 139, 0.25);
+}
+
+/* --------------------------------------------------------------------------
+   Review Controls Header & Filters
+   -------------------------------------------------------------------------- */
+.review-section-header-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.review-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.review-filter-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  padding: 4px;
+}
+
+.filter-tab-btn {
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: transparent;
+  font-family: var(--font-code);
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-tab-btn:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-surface-elevated);
+}
+
+.filter-tab-btn.active {
+  background-color: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+}
+
+.filter-tab-btn.filter-incorrect.active {
+  color: #e8604a;
+  border-color: rgba(232, 96, 74, 0.4);
+}
+
+.filter-tab-btn.filter-correct.active {
+  color: #588b8b;
+  border-color: rgba(88, 139, 139, 0.4);
+}
+
+.toggle-expand-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-family: var(--font-code);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggle-expand-all-btn:hover {
+  background-color: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-focus);
+}
+
+/* --------------------------------------------------------------------------
+   Practice Terminal: Attempt Indicator & Unlocked Solution Styles
+   -------------------------------------------------------------------------- */
+.briefing-attempt-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  background-color: rgba(232, 96, 74, 0.12);
+  border: 1px solid rgba(232, 96, 74, 0.3);
+  color: #e8604a;
+  font-family: var(--font-code);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.briefing-attempt-indicator.unlocked {
+  background-color: rgba(244, 162, 97, 0.16);
+  border-color: rgba(244, 162, 97, 0.5);
+  color: #f4a261;
+}
+
+.briefing-btn.solution-trigger-btn {
+  border-color: rgba(244, 162, 97, 0.4);
+  color: #f4a261;
+  background-color: rgba(244, 162, 97, 0.08);
+}
+
+.briefing-btn.solution-trigger-btn:hover,
+.briefing-btn.solution-trigger-btn.active {
+  background-color: rgba(244, 162, 97, 0.18);
+  border-color: #f4a261;
+  color: #f4a261;
+}
+
+.hint-sub-attempt {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Mission Unlocked Solution Callout (Briefing Card) */
+.mission-solution-callout {
+  margin-top: 14px;
+  padding: 16px;
+  background-color: rgba(244, 162, 97, 0.06);
+  border: 1px solid rgba(244, 162, 97, 0.4);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.2);
+}
+
+.solution-callout-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.solution-badge-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #f4a261;
+  font-size: 0.85rem;
+}
+
+.solution-unlock-icon {
+  color: #f4a261;
+}
+
+.solution-callout-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sol-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-code);
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sol-action-btn.copy-btn {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.sol-action-btn.copy-btn:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-surface-elevated);
+}
+
+.sol-action-btn.insert-btn {
+  background-color: #f4a261;
+  border: 1px solid #f4a261;
+  color: #0d1210;
+}
+
+.sol-action-btn.insert-btn:hover {
+  background-color: #e78c43;
+  box-shadow: 0 2px 8px rgba(244, 162, 97, 0.35);
+}
+
+.solution-code-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #0d1210;
+  border: 1px solid rgba(244, 162, 97, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+
+.code-label {
+  font-family: var(--font-code);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.solution-cmd-text {
+  font-family: var(--font-code);
+  font-size: 0.92rem;
+  color: #dce8e2;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  word-break: break-all;
+}
+
+.solution-pedagogical-box {
+  background-color: rgba(21, 27, 24, 0.7);
+  border-left: 3px solid #588b8b;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pedagogical-label {
+  font-family: var(--font-code);
+  font-size: 0.74rem;
+  color: #588b8b;
+}
+
+.pedagogical-desc {
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Terminal Log: Interactive Solution Entry */
+.log-solution-entry {
+  background-color: rgba(244, 162, 97, 0.08);
+  border: 1px solid rgba(244, 162, 97, 0.35);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.log-sol-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #f4a261;
+  font-family: var(--font-code);
+  font-size: 0.82rem;
+}
+
+.sol-icon-gold {
+  color: #f4a261;
+}
+
+.log-sol-body {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.explanation-title {
-  font-family: var(--font-code);
-  font-size: 0.78rem;
-  color: var(--accent-primary);
+.log-sol-cmd-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.explanation-body {
-  font-size: 0.86rem;
-  line-height: 1.6;
-  color: var(--text-primary);
+.cmd-tag {
+  font-family: var(--font-code);
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.cmd-code {
+  font-family: var(--font-code);
+  font-size: 0.88rem;
+  color: #dce8e2;
+  background-color: #0d1210;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.log-insert-btn {
+  background-color: rgba(244, 162, 97, 0.2);
+  border: 1px solid #f4a261;
+  color: #f4a261;
+  padding: 3px 10px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-code);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.log-insert-btn:hover {
+  background-color: #f4a261;
+  color: #0d1210;
+}
+
+.log-sol-explanation {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
   margin: 0;
 }
+

@@ -13,7 +13,11 @@ import {
   ArrowRight,
   ShieldAlert,
   Code2,
-  FolderTree
+  FolderTree,
+  Unlock,
+  KeyRound,
+  Copy,
+  Check
 } from 'lucide-react';
 import { getModuleMissions, getPracticalModule } from '../../data/practicalCurriculum';
 
@@ -37,6 +41,11 @@ export default function PracticeTerminal({ moduleId, completedMissions, onComple
   const [showHint, setShowHint] = useState(false);
   const [hintIndex, setHintIndex] = useState(0);
 
+  // Failed attempts & solution unlock state (fallback after 3 failed attempts)
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [isAnswerUnlocked, setIsAnswerUnlocked] = useState(false);
+  const [copiedSolution, setCopiedSolution] = useState(false);
+
   // Reference for auto-scrolling terminal to bottom
   const logsEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -54,6 +63,9 @@ export default function PracticeTerminal({ moduleId, completedMissions, onComple
       setShowHint(false);
       setHintIndex(0);
       setTerminalInput('');
+      setFailedAttempts(0);
+      setIsAnswerUnlocked(false);
+      setCopiedSolution(false);
     }
   }, [activeMissionId, moduleId]);
 
@@ -77,6 +89,12 @@ export default function PracticeTerminal({ moduleId, completedMissions, onComple
       return `student@commitdrive:~/codebase (${branchName})$ `;
     }
     return 'student@commitdrive-prod:/var/www$ ';
+  };
+
+  // Helper to insert command into terminal and focus
+  const insertCommandIntoTerminal = (cmd) => {
+    setTerminalInput(cmd);
+    inputRef.current?.focus();
   };
 
   // Handle Command Submission
@@ -110,6 +128,7 @@ export default function PracticeTerminal({ moduleId, completedMissions, onComple
         { type: 'info', text: 'CommitDrive Simulated Terminal Utilities:' },
         { type: 'output', text: '  clear       - Clear the terminal screen' },
         { type: 'output', text: '  hint        - Display a contextual mission hint' },
+        { type: 'output', text: '  solution    - Unlock full answer and explanation (after 3 attempts)' },
         { type: 'output', text: '  reset       - Reset the current mission logs' },
         { type: 'output', text: '  status      - Display current mission objective' }
       ]);
@@ -124,6 +143,34 @@ export default function PracticeTerminal({ moduleId, completedMissions, onComple
         userLog,
         { type: 'warning', text: `💡 ${activeMission.hints[hintIndex] || activeMission.hints[0]}` }
       ]);
+      setTerminalInput('');
+      return;
+    }
+
+    if (rawInput.toLowerCase() === 'solution' || rawInput.toLowerCase() === 'answer') {
+      if (failedAttempts >= 3 || isAnswerUnlocked) {
+        setIsAnswerUnlocked(true);
+        setTerminalLogs(prev => [
+          ...prev,
+          userLog,
+          {
+            type: 'solution-unlock',
+            title: 'Full Solution Unlocked',
+            targetCommand: activeMission.targetCommand,
+            explanation: activeMission.explanationOnSuccess,
+            text: `🔓 Full Solution: ${activeMission.targetCommand}\n\nWhy this works:\n${activeMission.explanationOnSuccess}`
+          }
+        ]);
+      } else {
+        setTerminalLogs(prev => [
+          ...prev,
+          userLog,
+          { 
+            type: 'warning', 
+            text: `🔒 Full solution unlocks automatically after 3 failed attempts (Current: ${failedAttempts}/3). Try your best with hints first!` 
+          }
+        ]);
+      }
       setTerminalInput('');
       return;
     }
@@ -174,21 +221,44 @@ export default function PracticeTerminal({ moduleId, completedMissions, onComple
       setTerminalInput('');
     } else {
       // FAILURE: Command did not match expected regex
-      const failureHint = activeMission.hints[hintIndex] || activeMission.hints[0];
-      setTerminalLogs(prev => [
-        ...prev,
-        userLog,
-        { 
-          type: 'error', 
-          text: `command not recognized or syntax incomplete: "${rawInput}"` 
-        },
-        { 
-          type: 'warning', 
-          text: `💡 Hint: ${failureHint}` 
-        }
-      ]);
-      // Advance hint index for next retry
-      setHintIndex(prev => (prev + 1) % activeMission.hints.length);
+      const newAttempts = failedAttempts + 1;
+      setFailedAttempts(newAttempts);
+
+      if (newAttempts >= 3) {
+        // Unlock full answer fallback after 3 failed attempts!
+        setIsAnswerUnlocked(true);
+        const solutionLogs = [
+          userLog,
+          { 
+            type: 'error', 
+            text: `command not recognized: "${rawInput}" (Attempt ${newAttempts} failed)` 
+          },
+          {
+            type: 'solution-unlock',
+            title: '🔓 Full Solution Unlocked (After 3 Failed Attempts)',
+            targetCommand: activeMission.targetCommand,
+            explanation: activeMission.explanationOnSuccess,
+            text: `Target Command: ${activeMission.targetCommand}\nWhy this works: ${activeMission.explanationOnSuccess}`
+          }
+        ];
+        setTerminalLogs(prev => [...prev, ...solutionLogs]);
+      } else {
+        const failureHint = activeMission.hints[hintIndex] || activeMission.hints[0];
+        setTerminalLogs(prev => [
+          ...prev,
+          userLog,
+          { 
+            type: 'error', 
+            text: `command not recognized or syntax incomplete: "${rawInput}" (Attempt ${newAttempts} of 3)` 
+          },
+          { 
+            type: 'warning', 
+            text: `💡 Hint: ${failureHint}${newAttempts === 2 ? ' (⚠️ 1 more failed attempt unlocks the full answer & explanation)' : ''}` 
+          }
+        ]);
+        // Advance hint index for next retry
+        setHintIndex(prev => (prev + 1) % activeMission.hints.length);
+      }
       setTerminalInput('');
     }
   };
@@ -302,6 +372,30 @@ export default function PracticeTerminal({ moduleId, completedMissions, onComple
             </div>
             
             <div className="briefing-action-buttons">
+              {failedAttempts > 0 && (
+                <div className={`briefing-attempt-indicator ${failedAttempts >= 3 ? 'unlocked' : ''}`}>
+                  {failedAttempts >= 3 ? (
+                    <>
+                      <Unlock size={12} />
+                      <span>Solution Unlocked</span>
+                    </>
+                  ) : (
+                    <span>Failed Attempts: {failedAttempts}/3</span>
+                  )}
+                </div>
+              )}
+
+              {(isAnswerUnlocked || failedAttempts >= 3) && (
+                <button 
+                  className={`briefing-btn solution-trigger-btn ${isAnswerUnlocked ? 'active' : ''} theme-transition`}
+                  onClick={() => setIsAnswerUnlocked(!isAnswerUnlocked)}
+                  title="Toggle full unlocked solution"
+                >
+                  <KeyRound size={13} />
+                  <span>{isAnswerUnlocked ? 'Hide Solution' : 'View Solution'}</span>
+                </button>
+              )}
+
               <button 
                 className={`briefing-btn hint-btn ${showHint ? 'active' : ''} theme-transition`}
                 onClick={() => setShowHint(!showHint)}
@@ -342,6 +436,54 @@ export default function PracticeTerminal({ moduleId, completedMissions, onComple
               <div className="hint-content">
                 <strong>Pedagogical Hint:</strong>
                 <p>{activeMission.hints[hintIndex] || activeMission.hints[0]}</p>
+                {failedAttempts < 3 && (
+                  <span className="hint-sub-attempt">
+                    {3 - failedAttempts} more failed {3 - failedAttempts === 1 ? 'attempt' : 'attempts'} will unlock the full solution & explanation.
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Fallback Unlocked Solution Callout (After 3 Failed Attempts) */}
+          {(isAnswerUnlocked || failedAttempts >= 3) && (
+            <div className="mission-solution-callout animate-fadeIn theme-transition">
+              <div className="solution-callout-top">
+                <div className="solution-badge-title">
+                  <Unlock size={16} className="solution-unlock-icon" />
+                  <strong>Full Answer Unlocked (3 Attempts Fallback)</strong>
+                </div>
+                <div className="solution-callout-actions">
+                  <button 
+                    className="sol-action-btn copy-btn theme-transition"
+                    onClick={() => {
+                      navigator.clipboard?.writeText(activeMission.targetCommand);
+                      setCopiedSolution(true);
+                      setTimeout(() => setCopiedSolution(false), 2000);
+                    }}
+                  >
+                    {copiedSolution ? <Check size={13} /> : <Copy size={13} />}
+                    <span>{copiedSolution ? 'Copied!' : 'Copy'}</span>
+                  </button>
+
+                  <button 
+                    className="sol-action-btn insert-btn theme-transition"
+                    onClick={() => insertCommandIntoTerminal(activeMission.targetCommand)}
+                  >
+                    <Code2 size={13} />
+                    <span>Insert into Terminal</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="solution-code-container">
+                <span className="code-label">Target Command:</span>
+                <code className="solution-cmd-text">{activeMission.targetCommand}</code>
+              </div>
+
+              <div className="solution-pedagogical-box">
+                <strong className="pedagogical-label">Why This Command Works Under The Hood:</strong>
+                <p className="pedagogical-desc">{activeMission.explanationOnSuccess}</p>
               </div>
             </div>
           )}
@@ -380,6 +522,30 @@ export default function PracticeTerminal({ moduleId, completedMissions, onComple
                 ) : log.type === 'explanation' ? (
                   <div className="log-explanation-card">
                     <pre className="explanation-pre">{log.text}</pre>
+                  </div>
+                ) : log.type === 'solution-unlock' ? (
+                  <div className="log-solution-entry animate-fadeIn">
+                    <div className="log-sol-header">
+                      <Unlock size={14} className="sol-icon-gold" />
+                      <strong>{log.title}</strong>
+                    </div>
+                    <div className="log-sol-body">
+                      <div className="log-sol-cmd-line">
+                        <span className="cmd-tag">Target:</span>
+                        <code className="cmd-code">{log.targetCommand}</code>
+                        <button 
+                          type="button" 
+                          className="log-insert-btn theme-transition"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            insertCommandIntoTerminal(log.targetCommand);
+                          }}
+                        >
+                          Insert into Terminal
+                        </button>
+                      </div>
+                      <p className="log-sol-explanation">{log.explanation}</p>
+                    </div>
                   </div>
                 ) : (
                   <pre className="log-output-pre">{log.text}</pre>
