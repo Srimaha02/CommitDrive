@@ -51,6 +51,7 @@ public class ProgressDtos {
         private Integer percentage;
         private Boolean passed;
         private Integer timeSpentSeconds;
+        private Integer timeTakenSeconds;
         private String categoryBreakdownJson;
         private String answersJson;
     }

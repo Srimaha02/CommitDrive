@@ -38,10 +38,13 @@ export default function PracticalPathView({ onNavigate }) {
   // Completed Missions Set: { [missionId]: true }
   const [completedMissions, setCompletedMissions] = useState(() => {
     try {
+      const savedUser = JSON.parse(localStorage.getItem('commitdrive_user') || '{}');
+      const isDemo = savedUser.email === 'cs.placement@prep.edu';
       const saved = localStorage.getItem('commitdrive_completed_missions');
-      return saved ? JSON.parse(saved) : ['git-1', 'linux-1', 'sql-1'];
+      if (saved) return JSON.parse(saved);
+      return isDemo ? ['git-1', 'linux-1', 'sql-1'] : [];
     } catch {
-      return ['git-1', 'linux-1', 'sql-1'];
+      return [];
     }
   });
 
@@ -59,8 +62,11 @@ export default function PracticalPathView({ onNavigate }) {
   useEffect(() => {
     let isMounted = true;
     practicalApi.getMissions().then(res => {
-      if (isMounted && res && res.data && Array.isArray(res.data) && res.data.length > 0) {
-        setCompletedMissions(res.data);
+      if (isMounted && res && res.data && Array.isArray(res.data)) {
+        const ids = res.data
+          .filter(item => typeof item === 'string' || item.completed)
+          .map(item => typeof item === 'string' ? item : item.missionId);
+        setCompletedMissions(ids);
       }
     }).catch(() => {});
     return () => { isMounted = false; };

@@ -58,6 +58,10 @@ export default function App() {
     setCurrentUser(userData);
     try {
       localStorage.setItem('commitdrive_user', JSON.stringify(userData));
+      localStorage.removeItem('commitdrive_completed_topics');
+      localStorage.removeItem('commitdrive_completed_missions');
+      localStorage.removeItem('commitdrive_mock_attempts');
+      localStorage.removeItem('commitdrive_flashcard_reviews');
     } catch {
       // storage unavailable
     }
@@ -69,6 +73,10 @@ export default function App() {
     setCurrentUser(null);
     try {
       localStorage.removeItem('commitdrive_user');
+      localStorage.removeItem('commitdrive_completed_topics');
+      localStorage.removeItem('commitdrive_completed_missions');
+      localStorage.removeItem('commitdrive_mock_attempts');
+      localStorage.removeItem('commitdrive_flashcard_reviews');
     } catch {
       // storage unavailable
     }

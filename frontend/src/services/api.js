@@ -202,9 +202,9 @@ export const practicalApi = {
       () => {
         try {
           const saved = localStorage.getItem('commitdrive_completed_missions');
-          return saved ? JSON.parse(saved) : ['git-1', 'linux-1'];
+          return saved ? JSON.parse(saved) : [];
         } catch {
-          return ['git-1', 'linux-1'];
+          return [];
         }
       }
     );
@@ -289,20 +289,61 @@ export const dashboardApi = {
     return requestWithFallback(
       '/dashboard/stats',
       { method: 'GET' },
-      () => ({
-        overallReadinessPct: 68,
-        streak: 3,
-        osMasteredCount: 4,
-        dbmsMasteredCount: 6,
-        cnMasteredCount: 2,
-        gitMissionsPassedCount: 2,
-        linuxMissionsPassedCount: 1,
-        sqlMissionsPassedCount: 4,
-        diagnosticAlerts: [
-          'Prioritize Computer Networks (TCP 3-Way Handshake & Congestion Control)',
-          'Review Linux Pipeline Commands (grep | wc) before your screening test'
-        ]
-      })
+      () => {
+        try {
+          const savedUser = JSON.parse(localStorage.getItem('commitdrive_user') || '{}');
+          const isDemo = savedUser.email === 'cs.placement@prep.edu';
+          const topics = JSON.parse(localStorage.getItem('commitdrive_completed_topics') || '[]');
+          const missions = JSON.parse(localStorage.getItem('commitdrive_completed_missions') || '[]');
+          if (isDemo && topics.length === 0 && missions.length === 0) {
+            return {
+              overallReadinessPct: 68,
+              streak: 3,
+              osMasteredCount: 4,
+              dbmsMasteredCount: 6,
+              cnMasteredCount: 2,
+              gitMissionsPassedCount: 2,
+              linuxMissionsPassedCount: 1,
+              sqlMissionsPassedCount: 4,
+              diagnosticAlerts: [
+                'Prioritize Computer Networks (TCP 3-Way Handshake & Congestion Control)',
+                'Review Linux Pipeline Commands (grep | wc) before your screening test'
+              ]
+            };
+          }
+          const osCount = topics.filter(t => typeof t === 'string' && t.startsWith('os-')).length;
+          const dbmsCount = topics.filter(t => typeof t === 'string' && t.startsWith('dbms-')).length;
+          const cnCount = topics.filter(t => typeof t === 'string' && t.startsWith('cn-')).length;
+          const gitCount = missions.filter(m => typeof m === 'string' && m.startsWith('git-')).length;
+          const linuxCount = missions.filter(m => typeof m === 'string' && m.startsWith('linux-')).length;
+          const sqlCount = missions.filter(m => typeof m === 'string' && m.startsWith('sql-')).length;
+          const total = osCount + dbmsCount + cnCount + gitCount + linuxCount + sqlCount;
+          const pct = Math.round((total / 54) * 100);
+          return {
+            overallReadinessPct: pct,
+            streak: savedUser.streak || (total > 0 ? 1 : 0),
+            osMasteredCount: osCount,
+            dbmsMasteredCount: dbmsCount,
+            cnMasteredCount: cnCount,
+            gitMissionsPassedCount: gitCount,
+            linuxMissionsPassedCount: linuxCount,
+            sqlMissionsPassedCount: sqlCount,
+            diagnosticAlerts: total === 0 ? ['Begin with Operating Systems theory or Git practical missions to establish your readiness baseline.'] : []
+          };
+        } catch {
+          return {
+            overallReadinessPct: 0,
+            streak: 0,
+            osMasteredCount: 0,
+            dbmsMasteredCount: 0,
+            cnMasteredCount: 0,
+            gitMissionsPassedCount: 0,
+            linuxMissionsPassedCount: 0,
+            sqlMissionsPassedCount: 0,
+            diagnosticAlerts: []
+          };
+        }
+      }
     );
   }
 };

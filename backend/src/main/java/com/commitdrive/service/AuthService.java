@@ -30,7 +30,7 @@ public class AuthService {
                 .fullName(request.getFullName())
                 .role(request.getRole() != null ? request.getRole() : "SDE Aspirant 2026")
                 .targetYear(request.getTargetYear() != null ? request.getTargetYear() : "2026")
-                .streak(1)
+                .streak(0)
                 .lastActiveDate(LocalDate.now())
                 .build();
 

@@ -6,10 +6,12 @@ import com.commitdrive.entity.User;
 import com.commitdrive.entity.UserMissionProgress;
 import com.commitdrive.repository.MockTestAttemptRepository;
 import com.commitdrive.repository.UserMissionProgressRepository;
+import com.commitdrive.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -21,6 +23,7 @@ public class PracticalProgressService {
 
     private final UserMissionProgressRepository missionRepository;
     private final MockTestAttemptRepository mockTestRepository;
+    private final UserRepository userRepository;
     private final AuthService authService;
 
     public List<MissionProgressResponse> getUserMissions(UUID userId, String moduleId) {
@@ -62,6 +65,12 @@ public class PracticalProgressService {
 
         UserMissionProgress saved = missionRepository.save(progress);
 
+        if (user.getStreak() == null || user.getStreak() == 0) {
+            user.setStreak(1);
+            user.setLastActiveDate(LocalDate.now());
+            userRepository.save(user);
+        }
+
         return MissionProgressResponse.builder()
                 .moduleId(saved.getModuleId())
                 .missionId(saved.getMissionId())
@@ -74,19 +83,39 @@ public class PracticalProgressService {
     public MockTestAttemptResponse submitMockTest(UUID userId, MockTestSubmissionRequest request) {
         User user = authService.getUserByIdOrDemo(userId);
 
+        boolean passed = request.getPassed() != null
+                ? request.getPassed()
+                : (request.getPercentage() != null ? request.getPercentage() >= 70 : (request.getScore() != null && request.getScore() >= 7));
+
+        int timeSpent = request.getTimeSpentSeconds() != null
+                ? request.getTimeSpentSeconds()
+                : (request.getTimeTakenSeconds() != null ? request.getTimeTakenSeconds() : 0);
+
+        int totalQuestions = request.getTotalQuestions() != null ? request.getTotalQuestions() : 10;
+        int score = request.getScore() != null ? request.getScore() : 0;
+        int percentage = request.getPercentage() != null
+                ? request.getPercentage()
+                : (totalQuestions > 0 ? (int) Math.round(((double) score / totalQuestions) * 100.0) : 0);
+
         MockTestAttempt attempt = MockTestAttempt.builder()
                 .user(user)
-                .moduleId(request.getModuleId().toLowerCase())
-                .score(request.getScore())
-                .totalQuestions(request.getTotalQuestions() != null ? request.getTotalQuestions() : 10)
-                .percentage(request.getPercentage())
-                .passed(request.getPassed())
-                .timeSpentSeconds(request.getTimeSpentSeconds())
-                .categoryBreakdownJson(request.getCategoryBreakdownJson())
-                .answersJson(request.getAnswersJson())
+                .moduleId(request.getModuleId() != null ? request.getModuleId().toLowerCase() : "linux")
+                .score(score)
+                .totalQuestions(totalQuestions)
+                .percentage(percentage)
+                .passed(passed)
+                .timeSpentSeconds(timeSpent)
+                .categoryBreakdownJson(request.getCategoryBreakdownJson() != null ? request.getCategoryBreakdownJson() : "{}")
+                .answersJson(request.getAnswersJson() != null ? request.getAnswersJson() : "{}")
                 .build();
 
         MockTestAttempt saved = mockTestRepository.save(attempt);
+
+        if (user.getStreak() == null || user.getStreak() == 0) {
+            user.setStreak(1);
+            user.setLastActiveDate(LocalDate.now());
+            userRepository.save(user);
+        }
 
         return MockTestAttemptResponse.builder()
                 .id(saved.getId())

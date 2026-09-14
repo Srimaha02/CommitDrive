@@ -35,19 +35,27 @@ public class DashboardService {
         int overallPct = (int) Math.round(((double) totalCompleted / 54.0) * 100.0);
 
         List<String> diagnosticAlerts = new ArrayList<>();
-        if (cnCount < 3) {
-            diagnosticAlerts.add("Computer Networks: Protocol packet structure & handshakes require practice.");
-        }
-        if (linuxCount < 3) {
-            diagnosticAlerts.add("Linux CLI: Command pipelines (grep | wc) & file permission bitmasks need attention.");
-        }
-        if (gitCount < 3) {
-            diagnosticAlerts.add("Git: Merge conflict resolution and stash workflows recommended before placement rounds.");
+        if (totalCompleted == 0) {
+            diagnosticAlerts.add("Begin with Operating Systems theory in Study Corner or Git missions in Terminal Zone to start your readiness progress.");
+        } else {
+            if (cnCount < 3) {
+                diagnosticAlerts.add("Computer Networks: Protocol packet structure & handshakes require practice.");
+            }
+            if (linuxCount < 3) {
+                diagnosticAlerts.add("Linux CLI: Command pipelines (grep | wc) & file permission bitmasks need attention.");
+            }
+            if (gitCount < 3) {
+                diagnosticAlerts.add("Git: Merge conflict resolution and stash workflows recommended before placement rounds.");
+            }
         }
 
+        int streak = (totalCompleted == 0 && (user.getStreak() == null || user.getStreak() <= 1))
+                ? 0
+                : (user.getStreak() != null ? user.getStreak() : 0);
+
         return DashboardStatsResponse.builder()
-                .overallReadinessPct(Math.max(overallPct, 15)) // friendly baseline floor
-                .streak(user.getStreak() != null ? user.getStreak() : 3)
+                .overallReadinessPct(overallPct)
+                .streak(streak)
                 .osMasteredCount((int) osCount)
                 .dbmsMasteredCount((int) dbmsCount)
                 .cnMasteredCount((int) cnCount)

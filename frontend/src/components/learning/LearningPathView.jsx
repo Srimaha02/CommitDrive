@@ -58,10 +58,13 @@ export default function LearningPathView({ onNavigate }) {
   // State: Completed Topics Set
   const [completedTopicIds, setCompletedTopicIds] = useState(() => {
     try {
+      const savedUser = JSON.parse(localStorage.getItem('commitdrive_user') || '{}');
+      const isDemo = savedUser.email === 'cs.placement@prep.edu';
       const saved = localStorage.getItem('commitdrive_completed_topics');
-      return saved ? JSON.parse(saved) : ['os-1', 'os-2', 'os-3', 'dbms-1', 'dbms-2', 'dbms-3', 'dbms-4', 'dbms-5', 'dbms-6', 'cn-1', 'cn-2'];
+      if (saved) return JSON.parse(saved);
+      return isDemo ? ['os-1', 'os-2', 'os-3', 'dbms-1', 'dbms-2', 'dbms-3', 'dbms-4', 'dbms-5', 'dbms-6', 'cn-1', 'cn-2'] : [];
     } catch {
-      return ['os-1', 'os-2', 'os-3'];
+      return [];
     }
   });
 
@@ -96,8 +99,11 @@ export default function LearningPathView({ onNavigate }) {
   useEffect(() => {
     let isMounted = true;
     learningApi.getTopics().then(res => {
-      if (isMounted && res && res.data && Array.isArray(res.data) && res.data.length > 0) {
-        setCompletedTopicIds(res.data);
+      if (isMounted && res && res.data && Array.isArray(res.data)) {
+        const ids = res.data
+          .filter(item => typeof item === 'string' || item.completed)
+          .map(item => typeof item === 'string' ? item : item.topicId);
+        setCompletedTopicIds(ids);
       }
     }).catch(() => {});
     return () => { isMounted = false; };

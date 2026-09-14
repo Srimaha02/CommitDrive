@@ -263,9 +263,11 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
                     value={targetYear}
                     onChange={(e) => setTargetYear(e.target.value)}
                   >
-                    <option value="2025">2025 (Immediate Placements)</option>
-                    <option value="2026">2026 (Upcoming Season)</option>
-                    <option value="2027">2027 (Pre-final Year)</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                    <option value="2027">2027</option>
+                    <option value="2028">2028</option>
+                    <option value="2029">2029</option>
                   </select>
                 </div>
               </div>

@@ -41,7 +41,7 @@ public class User {
 
     @Column
     @Builder.Default
-    private Integer streak = 1;
+    private Integer streak = 0;
 
     @Column
     @Builder.Default

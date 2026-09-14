@@ -106,15 +106,20 @@ export default function MockTestView({ moduleId, onSwitchToPractice }) {
     setTestState('submitted');
 
     // Persist mock test attempt to backend / local history
-    practicalApi.submitMockTest({
+    const autoPayload = {
       moduleId,
       score: result.score,
       totalQuestions: result.totalQuestions,
       percentage: result.percentage,
+      passed: result.passed ?? (result.percentage >= 70),
+      timeSpentSeconds: (15 * 60) - Math.max(0, timeLeftSeconds),
       timeTakenSeconds: (15 * 60) - Math.max(0, timeLeftSeconds),
-      breakdown: result.breakdown || {},
-      weakAreas: result.weakAreas || []
-    }).catch(() => {});
+      categoryBreakdownJson: JSON.stringify(result.categoryStats || result.breakdown || {}),
+      answersJson: JSON.stringify(userAnswers || {})
+    };
+    practicalApi.submitMockTest(autoPayload).catch((err) => {
+      console.error('Failed to submit mock test:', err);
+    });
   };
 
   // Manual Submit Test
@@ -137,15 +142,20 @@ export default function MockTestView({ moduleId, onSwitchToPractice }) {
     setTestState('submitted');
 
     // Persist mock test attempt to backend / local history
-    practicalApi.submitMockTest({
+    const manualPayload = {
       moduleId,
       score: result.score,
       totalQuestions: result.totalQuestions,
       percentage: result.percentage,
+      passed: result.passed ?? (result.percentage >= 70),
+      timeSpentSeconds: (15 * 60) - Math.max(0, timeLeftSeconds),
       timeTakenSeconds: (15 * 60) - Math.max(0, timeLeftSeconds),
-      breakdown: result.breakdown || {},
-      weakAreas: result.weakAreas || []
-    }).catch(() => {});
+      categoryBreakdownJson: JSON.stringify(result.categoryStats || result.breakdown || {}),
+      answersJson: JSON.stringify(userAnswers || {})
+    };
+    practicalApi.submitMockTest(manualPayload).catch((err) => {
+      console.error('Failed to submit mock test:', err);
+    });
   };
 
   // Retake Mock Test

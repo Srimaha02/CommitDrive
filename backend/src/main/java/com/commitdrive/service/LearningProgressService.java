@@ -5,11 +5,13 @@ import com.commitdrive.entity.User;
 import com.commitdrive.entity.UserFlashcardReview;
 import com.commitdrive.entity.UserTopicProgress;
 import com.commitdrive.repository.UserFlashcardReviewRepository;
+import com.commitdrive.repository.UserRepository;
 import com.commitdrive.repository.UserTopicProgressRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -21,6 +23,7 @@ public class LearningProgressService {
 
     private final UserTopicProgressRepository topicRepository;
     private final UserFlashcardReviewRepository flashcardRepository;
+    private final UserRepository userRepository;
     private final AuthService authService;
 
     public List<TopicProgressResponse> getUserTopics(UUID userId, String subject) {
@@ -63,6 +66,12 @@ public class LearningProgressService {
         progress.setCompletedAt(newCompletedState ? ZonedDateTime.now() : null);
 
         UserTopicProgress saved = topicRepository.save(progress);
+
+        if (newCompletedState && (user.getStreak() == null || user.getStreak() == 0)) {
+            user.setStreak(1);
+            user.setLastActiveDate(LocalDate.now());
+            userRepository.save(user);
+        }
 
         return TopicProgressResponse.builder()
                 .subject(saved.getSubject())
