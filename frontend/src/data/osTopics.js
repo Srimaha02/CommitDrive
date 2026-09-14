@@ -105,7 +105,24 @@ int main() {
         back: '`printf()` is a C library wrapper function running in user space that formats text into a buffer; it only invokes the `write()` system call when flushing the buffer to the OS.',
         keyTakeaway: 'Standard libraries wrap raw system calls for convenience and buffering performance.'
       }
-    ]
+    ],
+    furtherReading: {
+      article: {
+        title: 'GeeksforGeeks / GATE Overflow: OS Dual Mode & System Calls',
+        source: 'GeeksforGeeks / GATE Overflow',
+        url: '' // Placeholder: Links coming soon
+      },
+      video: {
+        title: 'YouTube: Dual Mode Execution and System Calls Walkthrough',
+        source: 'YouTube Lecture',
+        url: '' // Placeholder: Links coming soon
+      },
+      docs: {
+        title: 'Linux Manual: syscalls(2) Architecture Reference',
+        source: 'Linux Programmer\'s Manual',
+        url: '' // Placeholder: Links coming soon
+      }
+    }
   },
   {
     id: 'os-2',

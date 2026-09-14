@@ -28,7 +28,11 @@ import {
   AlertCircle,
   X,
   Zap,
-  Trophy
+  Trophy,
+  BookMarked,
+  ExternalLink,
+  Video,
+  FileText
 } from 'lucide-react';
 import { 
   subjects, 
@@ -214,6 +218,163 @@ export default function LearningPathView({ onNavigate }) {
       [cardId]: status
     }));
     learningApi.saveFlashcardReview(activeSubjectId, activeTopicId, cardId, status).catch(() => {});
+  };
+
+  // Render Further Reading & Reference Links Section
+  const renderFurtherReadingSection = () => {
+    const furtherReading = activeTopic.furtherReading || {};
+    const article = furtherReading.article || null;
+    const video = furtherReading.video || null;
+    const docs = furtherReading.docs || null;
+
+    return (
+      <section className="further-reading-section theme-transition" aria-labelledby="further-reading-heading">
+        <div className="further-reading-header">
+          <div className="further-reading-title-group">
+            <div className="further-reading-icon-box">
+              <BookMarked size={18} />
+            </div>
+            <div>
+              <h3 id="further-reading-heading" className="further-reading-heading">
+                Further Reading & Verification Resources
+              </h3>
+              <p className="further-reading-sub">
+                Curated articles and video lectures relevant to <em>{activeTopic.title}</em> to reinforce concepts for campus screening rounds.
+              </p>
+            </div>
+          </div>
+          <span className="further-reading-status-badge">
+            <AlertCircle size={13} />
+            <span>Fact-Check In Progress</span>
+          </span>
+        </div>
+
+        <div className="further-reading-grid">
+          {/* Link 1: GeeksforGeeks / GATE Overflow Article */}
+          <div className="further-reading-card theme-transition">
+            <div className="resource-card-top">
+              <div className="resource-type-tag article-tag">
+                <FileText size={13} />
+                <span>GeeksforGeeks / GATE Overflow</span>
+              </div>
+              {article?.url ? (
+                <a 
+                  href={article.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="resource-external-link"
+                  title="Open reference article in new tab"
+                >
+                  <span>Read Article</span>
+                  <ExternalLink size={13} />
+                </a>
+              ) : (
+                <span className="resource-placeholder-pill" title="URL being vetted during editorial fact-checking">
+                  <Clock size={12} />
+                  <span>Links coming soon</span>
+                </span>
+              )}
+            </div>
+
+            <h4 className="resource-title">
+              {article?.title || `${activeTopic.title}: GeeksforGeeks & GATE Overflow Reference`}
+            </h4>
+            <p className="resource-desc">
+              {article?.desc || 'Comprehensive written explanation covering standard textbook proofs, memory diagrams, edge cases, and previous GATE/campus screening questions.'}
+            </p>
+
+            <div className="resource-meta-footer">
+              <span className="resource-source-label">Source: {article?.source || 'GeeksforGeeks / GATE Overflow'}</span>
+              {!article?.url && (
+                <span className="resource-pending-note">Editorial review candidate</span>
+              )}
+            </div>
+          </div>
+
+          {/* Link 2: YouTube Video Walkthrough */}
+          <div className="further-reading-card theme-transition">
+            <div className="resource-card-top">
+              <div className="resource-type-tag video-tag">
+                <Video size={13} />
+                <span>YouTube Video Walkthrough</span>
+              </div>
+              {video?.url ? (
+                <a 
+                  href={video.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="resource-external-link"
+                  title="Watch video on YouTube"
+                >
+                  <span>Watch Video</span>
+                  <ExternalLink size={13} />
+                </a>
+              ) : (
+                <span className="resource-placeholder-pill" title="URL being vetted during editorial fact-checking">
+                  <Clock size={12} />
+                  <span>Links coming soon</span>
+                </span>
+              )}
+            </div>
+
+            <h4 className="resource-title">
+              {video?.title || `${activeTopic.title}: Visual Animated Walkthrough`}
+            </h4>
+            <p className="resource-desc">
+              {video?.desc || 'Step-by-step visual animation, memory layout traces, and architectural breakdown to solidify mental models.'}
+            </p>
+
+            <div className="resource-meta-footer">
+              <span className="resource-source-label">Source: {video?.source || 'YouTube Lecture'}</span>
+              {!video?.url && (
+                <span className="resource-pending-note">Editorial review candidate</span>
+              )}
+            </div>
+          </div>
+
+          {/* Link 3: Standard Specifications & Reference Docs */}
+          <div className="further-reading-card theme-transition">
+            <div className="resource-card-top">
+              <div className="resource-type-tag docs-tag">
+                <BookOpen size={13} />
+                <span>Documentation & Standard Specs</span>
+              </div>
+              {docs?.url ? (
+                <a 
+                  href={docs.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="resource-external-link"
+                  title="View standard reference documentation"
+                >
+                  <span>View Specs</span>
+                  <ExternalLink size={13} />
+                </a>
+              ) : (
+                <span className="resource-placeholder-pill" title="URL being vetted during editorial fact-checking">
+                  <Clock size={12} />
+                  <span>Links coming soon</span>
+                </span>
+              )}
+            </div>
+
+            <h4 className="resource-title">
+              {docs?.title || `${activeTopic.title}: Specifications & Manual`}
+            </h4>
+            <p className="resource-desc">
+              {docs?.desc || 'Authoritative system specifications, POSIX/Linux manual pages, or database engine internal architectural documentation.'}
+            </p>
+
+            <div className="resource-meta-footer">
+              <span className="resource-source-label">Source: {docs?.source || 'Official Manual / RFC'}</span>
+              {!docs?.url && (
+                <span className="resource-pending-note">Editorial review candidate</span>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
   };
 
   // Navigate to Next / Previous Topic
@@ -440,6 +601,14 @@ export default function LearningPathView({ onNavigate }) {
                 >
                   <RotateCw size={15} />
                   <span>Flashcard deck ({activeTopic.flashcards?.length || 0})</span>
+                </button>
+
+                <button 
+                  className={`reader-tab-btn ${activeReaderTab === 'reading' ? 'active' : ''} theme-transition`}
+                  onClick={() => setActiveReaderTab('reading')}
+                >
+                  <BookMarked size={15} />
+                  <span>Further reading</span>
                 </button>
               </div>
             </div>
@@ -750,6 +919,20 @@ export default function LearningPathView({ onNavigate }) {
                 </div>
               </div>
             )}
+
+            {/* =============================================================
+                Tab 4: Further Reading Vault (Standalone View)
+                ============================================================= */}
+            {activeReaderTab === 'reading' && (
+              <div className="reader-content-body reading-body animate-fadeIn">
+                {renderFurtherReadingSection()}
+              </div>
+            )}
+
+            {/* =============================================================
+                Bottom of Topic Page: Further Reading Section
+                ============================================================= */}
+            {activeReaderTab !== 'reading' && renderFurtherReadingSection()}
 
             {/* =============================================================
                 Topic Reader Footer (Previous / Next Topic Controls)
