@@ -25,7 +25,10 @@ import {
   ArrowRight,
   ArrowLeft,
   FileCheck2,
-  AlertCircle
+  AlertCircle,
+  X,
+  Zap,
+  Trophy
 } from 'lucide-react';
 import { 
   subjects, 
@@ -58,11 +61,9 @@ export default function LearningPathView({ onNavigate }) {
   // State: Completed Topics Set
   const [completedTopicIds, setCompletedTopicIds] = useState(() => {
     try {
-      const savedUser = JSON.parse(localStorage.getItem('commitdrive_user') || '{}');
-      const isDemo = savedUser.email === 'cs.placement@prep.edu';
       const saved = localStorage.getItem('commitdrive_completed_topics');
       if (saved) return JSON.parse(saved);
-      return isDemo ? ['os-1', 'os-2', 'os-3', 'dbms-1', 'dbms-2', 'dbms-3', 'dbms-4', 'dbms-5', 'dbms-6', 'cn-1', 'cn-2'] : [];
+      return [];
     } catch {
       return [];
     }
@@ -84,6 +85,21 @@ export default function LearningPathView({ onNavigate }) {
 
   // State: Code snippet copied toast
   const [isCopied, setIsCopied] = useState(false);
+
+  // State: Celebration Modal for completed topic
+  const [celebrationTopic, setCelebrationTopic] = useState(null);
+  const [celebrationExpandedQAs, setCelebrationExpandedQAs] = useState({});
+
+  // Close celebration modal on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && celebrationTopic) {
+        setCelebrationTopic(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [celebrationTopic]);
 
   // Sync active subject & topic to localStorage
   useEffect(() => {
@@ -155,6 +171,25 @@ export default function LearningPathView({ onNavigate }) {
       }
     });
     learningApi.toggleTopic(activeSubjectId, topicId, isCompleted).catch(() => {});
+
+    // When student completes a topic, immediately pop up celebration showing its 5 interview Q&As
+    if (isCompleted) {
+      const topicObj = currentTopics.find(t => t.id === topicId) || activeTopic;
+      if (topicObj) {
+        setCelebrationTopic(topicObj);
+        // Expand the first interview question by default for immediate preview
+        const firstQAId = topicObj.interviewQuestions?.[0]?.id;
+        setCelebrationExpandedQAs(firstQAId ? { [firstQAId]: true } : {});
+      }
+    }
+  };
+
+  // Toggle Celebration Q&A Accordion
+  const handleToggleCelebrationQA = (qaId) => {
+    setCelebrationExpandedQAs(prev => ({
+      ...prev,
+      [qaId]: !prev[qaId]
+    }));
   };
 
   // Toggle Interview Q&A Accordion
@@ -761,6 +796,126 @@ export default function LearningPathView({ onNavigate }) {
         </div>
 
       </div>
+
+      {/* =================================================================
+          Celebratory Topic-Mastered Popup with 5 Curated Interview Q&As
+          ================================================================= */}
+      {celebrationTopic && (
+        <div 
+          className="celebration-modal-overlay animate-fadeIn" 
+          onClick={() => setCelebrationTopic(null)}
+          role="presentation"
+        >
+          <div 
+            className="celebration-modal-card animate-scaleUp theme-transition" 
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="celebration-title"
+          >
+            {/* Modal Header */}
+            <div className="celebration-modal-header">
+              <div className="celebration-badge-row">
+                <span className="celebration-confetti-pill">
+                  <Sparkles size={14} className="sparkle-spin" />
+                  <span>Topic Mastered! 🎉</span>
+                </span>
+                <span className="celebration-xp-pill">
+                  <Zap size={13} />
+                  <span>+100 XP Earned</span>
+                </span>
+              </div>
+              <button 
+                className="celebration-close-btn"
+                onClick={() => setCelebrationTopic(null)}
+                aria-label="Close celebration popup"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Hero Banner */}
+            <div className="celebration-hero-banner">
+              <h2 id="celebration-title" className="celebration-topic-title">
+                {celebrationTopic.title}
+              </h2>
+              <p className="celebration-topic-desc">
+                Great job mastering the concepts! In technical campus placements, interviewers frequently probe this topic using these <strong>5 high-yield screening questions</strong>. Review the model answers below while the concepts are fresh.
+              </p>
+            </div>
+
+            {/* Curated 5 Interview Q&As Vault */}
+            <div className="celebration-qa-vault">
+              <div className="celebration-qa-vault-header">
+                <FileQuestion size={16} className="qa-vault-icon" />
+                <h4>Unlocked Technical Screening Q&As ({celebrationTopic.interviewQuestions?.length || 5} Questions)</h4>
+              </div>
+
+              <div className="celebration-qa-list">
+                {celebrationTopic.interviewQuestions?.map((qa, index) => {
+                  const isExpanded = !!celebrationExpandedQAs[qa.id];
+                  return (
+                    <div key={qa.id} className={`celebration-qa-item ${isExpanded ? 'expanded' : ''} theme-transition`}>
+                      <button 
+                        className="celebration-qa-btn theme-transition"
+                        onClick={() => handleToggleCelebrationQA(qa.id)}
+                        aria-expanded={isExpanded}
+                      >
+                        <div className="celebration-qa-num">Q{index + 1}</div>
+                        <div className="celebration-qa-info">
+                          <span className="celebration-qa-question">{qa.question}</span>
+                          <div className="celebration-qa-tags">
+                            {qa.companyTags?.map(tag => (
+                              <span key={tag} className="celebration-company-tag">{tag}</span>
+                            ))}
+                            <span className="celebration-freq-tag">{qa.frequency} frequency</span>
+                          </div>
+                        </div>
+                        <ChevronDown size={18} className={`celebration-qa-chevron ${isExpanded ? 'rotated' : ''}`} />
+                      </button>
+
+                      {isExpanded && (
+                        <div className="celebration-qa-answer theme-transition animate-fadeIn">
+                          <div className="celebration-answer-label">Recommended Model Answer:</div>
+                          <div className="celebration-answer-body">
+                            {qa.answer.split('\n').map((line, lIdx) => (
+                              <p key={lIdx}>{line}</p>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="celebration-modal-footer">
+              <button 
+                className="celebration-action-btn secondary-action theme-transition"
+                onClick={() => {
+                  setCelebrationTopic(null);
+                  setActiveReaderTab('flashcards');
+                }}
+              >
+                <RotateCw size={15} />
+                <span>Practice Topic Flashcards</span>
+              </button>
+
+              <button 
+                className="celebration-action-btn primary-action theme-transition"
+                onClick={() => setCelebrationTopic(null)}
+              >
+                <CheckCircle2 size={16} />
+                <span>Got It • Keep Learning</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

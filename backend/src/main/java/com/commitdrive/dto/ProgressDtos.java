@@ -120,4 +120,21 @@ public class ProgressDtos {
         private Integer sqlMissionsPassedCount;
         private List<String> diagnosticAlerts;
     }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class LeaderboardEntryDto {
+        private UUID userId;
+        private String fullName;
+        private String email;
+        private String role;
+        private String targetYear;
+        private Integer streak;
+        private Integer overallReadinessPct;
+        private Integer totalTopicsMastered;
+        private Integer totalMissionsPassed;
+        private Integer totalXp;
+    }
 }

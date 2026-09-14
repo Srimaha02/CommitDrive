@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from './components/layout/Navbar';
 import ShellPreview from './components/layout/ShellPreview';
 import Dashboard from './components/dashboard/Dashboard';
+import LeaderboardView from './components/leaderboard/LeaderboardView';
 import LearningPathView from './components/learning/LearningPathView';
 import PracticalPathView from './components/practical/PracticalPathView';
 import AuthModal from './components/auth/AuthModal';
@@ -96,6 +97,11 @@ export default function App() {
       {/* Main View Router */}
       {currentView === 'dashboard' ? (
         <Dashboard 
+          currentUser={currentUser}
+          onNavigate={setCurrentView}
+        />
+      ) : currentView === 'leaderboard' ? (
+        <LeaderboardView 
           currentUser={currentUser}
           onNavigate={setCurrentView}
         />

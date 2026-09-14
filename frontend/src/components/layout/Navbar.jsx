@@ -12,8 +12,10 @@ import {
   LogIn,
   ExternalLink,
   ShieldCheck,
-  LayoutDashboard
+  LayoutDashboard,
+  Trophy
 } from 'lucide-react';
+import { dashboardApi } from '../../services/api';
 import './Navbar.css';
 
 export default function Navbar({ 
@@ -24,7 +26,33 @@ export default function Navbar({
   onLogout 
 }) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [readinessPct, setReadinessPct] = useState(0);
   const menuRef = useRef(null);
+
+  // Fetch real-time readiness for Navbar
+  const fetchReadiness = () => {
+    dashboardApi.getStats().then(res => {
+      if (res && res.data) {
+        setReadinessPct(res.data.overallReadinessPct ?? 0);
+      }
+    }).catch(() => {});
+  };
+
+  useEffect(() => {
+    fetchReadiness();
+
+    const handleProgressUpdate = () => {
+      fetchReadiness();
+    };
+
+    window.addEventListener('commitdrive_progress_updated', handleProgressUpdate);
+    window.addEventListener('focus', handleProgressUpdate);
+
+    return () => {
+      window.removeEventListener('commitdrive_progress_updated', handleProgressUpdate);
+      window.removeEventListener('focus', handleProgressUpdate);
+    };
+  }, [currentUser]);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -71,9 +99,11 @@ export default function Navbar({
             <span className="brand-tagline">
               {currentView === 'dashboard' 
                 ? 'Student Dashboard • Class of 2026' 
-                : currentView === 'learning' 
-                  ? 'Study Corner • Core CS Theory' 
-                  : 'Terminal Zone • Hands-on Lab'}
+                : currentView === 'leaderboard'
+                  ? 'Leaderboard • Campus Standings'
+                  : currentView === 'learning' 
+                    ? 'Study Corner • Core CS Theory' 
+                    : 'Terminal Zone • Hands-on Lab'}
             </span>
           </div>
         </div>
@@ -92,6 +122,18 @@ export default function Navbar({
             >
               <LayoutDashboard size={15} className="switcher-icon" />
               <span className="switcher-text">Dashboard</span>
+            </button>
+
+            {/* Leaderboard Tab */}
+            <button
+              id="nav-tab-leaderboard"
+              role="tab"
+              aria-selected={currentView === 'leaderboard'}
+              className={`switcher-btn ${currentView === 'leaderboard' ? 'active' : ''} theme-transition`}
+              onClick={() => onNavigate('leaderboard')}
+            >
+              <Trophy size={15} className="switcher-icon" />
+              <span className="switcher-text">Leaderboard</span>
             </button>
 
             {/* Learning Path Tab */}
@@ -136,9 +178,9 @@ export default function Navbar({
           )}
 
           {/* Quick Progress Metric */}
-          <div className="metric-pill theme-transition" title="Overall Module Progress">
+          <div className="metric-pill theme-transition" title="Placement Readiness">
             <CheckCircle2 size={16} className="metric-icon" />
-            <span className="metric-count">68% Ready</span>
+            <span className="metric-count">{readinessPct}% Ready</span>
           </div>
 
           {/* User Profile Avatar / Sign In */}
@@ -199,6 +241,14 @@ export default function Navbar({
                   >
                     <LayoutDashboard size={15} />
                     <span>Dashboard Home</span>
+                  </button>
+                  <button 
+                    className="dropdown-item theme-transition" 
+                    role="menuitem"
+                    onClick={() => { setShowProfileMenu(false); onNavigate('leaderboard'); }}
+                  >
+                    <Trophy size={15} />
+                    <span>Placement Leaderboard</span>
                   </button>
                   <button 
                     className="dropdown-item theme-transition" 

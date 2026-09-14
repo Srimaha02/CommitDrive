@@ -38,11 +38,9 @@ export default function PracticalPathView({ onNavigate }) {
   // Completed Missions Set: { [missionId]: true }
   const [completedMissions, setCompletedMissions] = useState(() => {
     try {
-      const savedUser = JSON.parse(localStorage.getItem('commitdrive_user') || '{}');
-      const isDemo = savedUser.email === 'cs.placement@prep.edu';
       const saved = localStorage.getItem('commitdrive_completed_missions');
       if (saved) return JSON.parse(saved);
-      return isDemo ? ['git-1', 'linux-1', 'sql-1'] : [];
+      return [];
     } catch {
       return [];
     }

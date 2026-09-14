@@ -25,7 +25,7 @@ const getAuthHeaders = () => {
 async function requestWithFallback(endpoint, options = {}, fallbackFn = () => null) {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2500); // 2.5s quick timeout
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout for cloud Supabase network latency
 
     const res = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
@@ -140,7 +140,7 @@ export const learningApi = {
 
   // Toggle topic completion state
   async toggleTopic(subject, topicId, completed, notes = '') {
-    return requestWithFallback(
+    const res = await requestWithFallback(
       '/learning/topic/toggle',
       {
         method: 'POST',
@@ -164,6 +164,12 @@ export const learningApi = {
         }
       }
     );
+    try {
+      window.dispatchEvent(new CustomEvent('commitdrive_progress_updated', { detail: { type: 'topic', subject, topicId, completed } }));
+    } catch {
+      // ignore
+    }
+    return res;
   },
 
   // Save flashcard review state (Mastered / Review Needed)
@@ -212,7 +218,7 @@ export const practicalApi = {
 
   // Record completed mission with attempt count
   async completeMission(moduleId, missionId, attemptsCount = 1, unlockedSolutionUsed = false) {
-    return requestWithFallback(
+    const res = await requestWithFallback(
       '/practical/mission/complete',
       {
         method: 'POST',
@@ -232,11 +238,17 @@ export const practicalApi = {
         }
       }
     );
+    try {
+      window.dispatchEvent(new CustomEvent('commitdrive_progress_updated', { detail: { type: 'mission', moduleId, missionId } }));
+    } catch {
+      // ignore
+    }
+    return res;
   },
 
   // Submit Mock Test attempt & diagnostic breakdown
   async submitMockTest(testData) {
-    return requestWithFallback(
+    const res = await requestWithFallback(
       '/practical/mock-test/submit',
       {
         method: 'POST',
@@ -259,6 +271,12 @@ export const practicalApi = {
         }
       }
     );
+    try {
+      window.dispatchEvent(new CustomEvent('commitdrive_progress_updated', { detail: { type: 'mock-test', testData } }));
+    } catch {
+      // ignore
+    }
+    return res;
   },
 
   // Get historical mock test attempts
@@ -292,35 +310,24 @@ export const dashboardApi = {
       () => {
         try {
           const savedUser = JSON.parse(localStorage.getItem('commitdrive_user') || '{}');
-          const isDemo = savedUser.email === 'cs.placement@prep.edu';
           const topics = JSON.parse(localStorage.getItem('commitdrive_completed_topics') || '[]');
           const missions = JSON.parse(localStorage.getItem('commitdrive_completed_missions') || '[]');
-          if (isDemo && topics.length === 0 && missions.length === 0) {
-            return {
-              overallReadinessPct: 68,
-              streak: 3,
-              osMasteredCount: 4,
-              dbmsMasteredCount: 6,
-              cnMasteredCount: 2,
-              gitMissionsPassedCount: 2,
-              linuxMissionsPassedCount: 1,
-              sqlMissionsPassedCount: 4,
-              diagnosticAlerts: [
-                'Prioritize Computer Networks (TCP 3-Way Handshake & Congestion Control)',
-                'Review Linux Pipeline Commands (grep | wc) before your screening test'
-              ]
-            };
-          }
           const osCount = topics.filter(t => typeof t === 'string' && t.startsWith('os-')).length;
           const dbmsCount = topics.filter(t => typeof t === 'string' && t.startsWith('dbms-')).length;
           const cnCount = topics.filter(t => typeof t === 'string' && t.startsWith('cn-')).length;
           const gitCount = missions.filter(m => typeof m === 'string' && m.startsWith('git-')).length;
           const linuxCount = missions.filter(m => typeof m === 'string' && m.startsWith('linux-')).length;
           const sqlCount = missions.filter(m => typeof m === 'string' && m.startsWith('sql-')).length;
+          const osPct = (osCount / 10) * 100;
+          const dbmsPct = (dbmsCount / 10) * 100;
+          const cnPct = (cnCount / 10) * 100;
+          const gitPct = (gitCount / 8) * 100;
+          const linuxPct = (linuxCount / 8) * 100;
+          const sqlPct = (sqlCount / 8) * 100;
+          const overallPct = Math.round((osPct + dbmsPct + cnPct + gitPct + linuxPct + sqlPct) / 6);
           const total = osCount + dbmsCount + cnCount + gitCount + linuxCount + sqlCount;
-          const pct = Math.round((total / 54) * 100);
           return {
-            overallReadinessPct: pct,
+            overallReadinessPct: overallPct,
             streak: savedUser.streak || (total > 0 ? 1 : 0),
             osMasteredCount: osCount,
             dbmsMasteredCount: dbmsCount,
@@ -342,6 +349,56 @@ export const dashboardApi = {
             sqlMissionsPassedCount: 0,
             diagnosticAlerts: []
           };
+        }
+      }
+    );
+  },
+
+  // Get live leaderboard ranking real registered users from DB
+  async getLeaderboard() {
+    return requestWithFallback(
+      '/dashboard/leaderboard',
+      { method: 'GET' },
+      () => {
+        try {
+          const savedUser = JSON.parse(localStorage.getItem('commitdrive_user') || '{}');
+          const topics = JSON.parse(localStorage.getItem('commitdrive_completed_topics') || '[]');
+          const missions = JSON.parse(localStorage.getItem('commitdrive_completed_missions') || '[]');
+          const osCount = topics.filter(t => typeof t === 'string' && t.startsWith('os-')).length;
+          const dbmsCount = topics.filter(t => typeof t === 'string' && t.startsWith('dbms-')).length;
+          const cnCount = topics.filter(t => typeof t === 'string' && t.startsWith('cn-')).length;
+          const gitCount = missions.filter(m => typeof m === 'string' && m.startsWith('git-')).length;
+          const linuxCount = missions.filter(m => typeof m === 'string' && m.startsWith('linux-')).length;
+          const sqlCount = missions.filter(m => typeof m === 'string' && m.startsWith('sql-')).length;
+          const osPct = (osCount / 10) * 100;
+          const dbmsPct = (dbmsCount / 10) * 100;
+          const cnPct = (cnCount / 10) * 100;
+          const gitPct = (gitCount / 8) * 100;
+          const linuxPct = (linuxCount / 8) * 100;
+          const sqlPct = (sqlCount / 8) * 100;
+          const overallPct = Math.round((osPct + dbmsPct + cnPct + gitPct + linuxPct + sqlPct) / 6);
+          const totalTopics = osCount + dbmsCount + cnCount;
+          const totalMissions = gitCount + linuxCount + sqlCount;
+          const total = totalTopics + totalMissions;
+          const streak = savedUser.streak || (total > 0 ? 1 : 0);
+          const totalXp = Math.round(totalTopics * 100 + totalMissions * 125 + streak * 50);
+
+          return [
+            {
+              userId: savedUser.id || 'usr-local-current',
+              fullName: savedUser.name || savedUser.fullName || 'Student',
+              email: savedUser.email || 'student@commitdrive.dev',
+              role: savedUser.role || 'SDE Aspirant 2026',
+              targetYear: savedUser.targetYear || '2026',
+              streak,
+              overallReadinessPct: overallPct,
+              totalTopicsMastered: totalTopics,
+              totalMissionsPassed: totalMissions,
+              totalXp
+            }
+          ];
+        } catch {
+          return [];
         }
       }
     );
