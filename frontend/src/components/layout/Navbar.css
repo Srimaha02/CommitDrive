@@ -223,6 +223,41 @@
   50% { opacity: 1; transform: scale(1.15); }
 }
 
+/* Mock Viva button — indigo/purple to differentiate from Cram Sheet red */
+.nav-viva-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: #a5b4fc;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-viva-btn:hover {
+  background: #6366f1;
+  color: #ffffff;
+  border-color: #6366f1;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+  transform: translateY(-1px);
+}
+
+.nav-viva-icon {
+  flex-shrink: 0;
+  animation: vivaTargetPulse 3s infinite ease-in-out;
+}
+
+@keyframes vivaTargetPulse {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.12) rotate(8deg); }
+}
+
 .streak-pill {
   display: flex;
   align-items: center;

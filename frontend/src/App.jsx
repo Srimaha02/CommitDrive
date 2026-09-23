@@ -7,6 +7,7 @@ import LearningPathView from './components/learning/LearningPathView';
 import PracticalPathView from './components/practical/PracticalPathView';
 import AuthModal from './components/auth/AuthModal';
 import CramSheetModal from './components/common/CramSheetModal';
+import VivaModal from './components/viva/VivaModal';
 import CursorGlow from './components/common/CursorGlow';
 import { BookOpen, Terminal, LayoutDashboard, Shield, LogIn, Zap } from 'lucide-react';
 import './App.css';
@@ -42,6 +43,11 @@ export default function App() {
   const [cramSheetConfig, setCramSheetConfig] = useState({ isOpen: false, subject: null, track: 'all' });
   const handleOpenCramSheet = (subject = null, track = 'all') => setCramSheetConfig({ isOpen: true, subject, track: track || 'all' });
   const handleCloseCramSheet = () => setCramSheetConfig(prev => ({ ...prev, isOpen: false }));
+
+  // Diagnostic Mock Viva Modal State
+  const [vivaIsOpen, setVivaIsOpen] = useState(false);
+  const handleOpenViva  = () => setVivaIsOpen(true);
+  const handleCloseViva = () => setVivaIsOpen(false);
 
   // Global listener for opening Cram Sheet from any child component or event
   useEffect(() => {
@@ -120,6 +126,7 @@ export default function App() {
         onOpenAuth={() => handleOpenAuth('signin')}
         onLogout={handleLogout}
         onOpenCramSheet={handleOpenCramSheet}
+        onOpenViva={handleOpenViva}
       />
 
       {/* Main View Router */}
@@ -170,6 +177,13 @@ export default function App() {
         initialSubject={cramSheetConfig.subject}
         initialTrack={cramSheetConfig.track || 'all'}
         onClose={handleCloseCramSheet}
+      />
+
+      {/* Diagnostic Interview Viva Modal */}
+      <VivaModal
+        isOpen={vivaIsOpen}
+        onClose={handleCloseViva}
+        onOpenCramSheet={handleOpenCramSheet}
       />
 
       {/* Footer / Shell Status Info */}

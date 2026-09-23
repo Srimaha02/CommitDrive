@@ -33,7 +33,9 @@ import {
   ExternalLink,
   Video,
   FileText,
-  Lock
+  Lock,
+  Mic,
+  Target as TargetIcon
 } from 'lucide-react';
 import { 
   subjects, 
@@ -43,6 +45,7 @@ import {
   CURRICULUM_TIERS
 } from '../../data/learningCurriculum';
 import { learningApi } from '../../services/api';
+import { getTopicInterviewData } from '../../data/interviewEnrichment';
 import GatedContentPreview from '../layout/GatedContentPreview';
 import './LearningPathView.css';
 
@@ -753,6 +756,21 @@ export default function LearningPathView({
                   <BookMarked size={15} />
                   <span>Further reading</span>
                 </button>
+
+                <button 
+                  className={`reader-tab-btn interview-mode-tab ${activeReaderTab === 'interview' ? 'active' : ''} theme-transition`}
+                  onClick={() => {
+                    if (!currentUser) {
+                      if (onOpenAuth) onOpenAuth('signup');
+                      return;
+                    }
+                    setActiveReaderTab('interview');
+                  }}
+                >
+                  <Mic size={15} />
+                  <span>Interview Mode</span>
+                  <span className="tab-interview-badge">New</span>
+                </button>
               </div>
             </div>
 
@@ -1292,9 +1310,190 @@ export default function LearningPathView({
             )}
 
             {/* =============================================================
+                Tab 5: Interview Mode — 60s Pitch + Keywords + Trap Qs
+                ============================================================= */}
+            {activeReaderTab === 'interview' && (() => {
+              const iData = getTopicInterviewData(activeTopicId);
+              return (
+                <div className="reader-content-body interview-mode-body animate-fadeIn">
+                  {iData ? (
+                    <>
+                      {/* -- Readiness header -- */}
+                      <div className="im-readiness-header theme-transition">
+                        <div className="im-readiness-badge-row">
+                          <span className="im-tier-badge">{iData.tierName}</span>
+                          <span className="im-frequency-badge">
+                            <Zap size={11} />
+                            {iData.frequency}
+                          </span>
+                        </div>
+                        <div className="im-target-prompt">
+                          <TargetIcon size={14} className="im-target-icon" />
+                          {iData.targetPrompt}
+                        </div>
+                      </div>
+
+                      {/* -- 60-Second Pitch Drill -- */}
+                      <section className="im-pitch-section theme-transition">
+                        <div className="im-section-header">
+                          <div className="im-section-icon-box pitch-icon">
+                            <Mic size={15} />
+                          </div>
+                          <div>
+                            <h4 className="im-section-title">60-Second Elevator Pitch</h4>
+                            <p className="im-section-sub">Practice speaking this aloud. Hide the script and use the timer to simulate a real answer.</p>
+                          </div>
+                          <div className="im-pitch-actions">
+                            <button
+                              className="im-action-btn theme-transition"
+                              onClick={() => setIsPitchHidden(prev => !prev)}
+                              title={isPitchHidden ? 'Show script' : 'Hide script (practice mode)'}
+                            >
+                              {isPitchHidden ? <>
+                                <Check size={13} /><span>Reveal</span>
+                              </> : <>
+                                <X size={13} /><span>Hide</span>
+                              </>}
+                            </button>
+                            <button
+                              className="im-action-btn timer-btn theme-transition"
+                              onClick={() => {
+                                if (isPitchTimerRunning) {
+                                  setIsPitchTimerRunning(false);
+                                  setPitchTimerSeconds(60);
+                                } else {
+                                  setPitchTimerSeconds(60);
+                                  setIsPitchTimerRunning(true);
+                                }
+                              }}
+                            >
+                              <Clock size={13} />
+                              <span className={`im-timer-display ${isPitchTimerRunning && pitchTimerSeconds <= 10 ? 'warning' : ''}`}>
+                                {isPitchTimerRunning ? `${pitchTimerSeconds}s` : '60s'}
+                              </span>
+                            </button>
+                            <button
+                              className="im-action-btn theme-transition"
+                              onClick={() => {
+                                navigator.clipboard.writeText(iData.script);
+                                setIsPitchCopied(true);
+                                setTimeout(() => setIsPitchCopied(false), 2000);
+                              }}
+                            >
+                              {isPitchCopied ? <Check size={13} /> : <Copy size={13} />}
+                            </button>
+                          </div>
+                        </div>
+                        <div className={`im-pitch-script theme-transition ${isPitchHidden ? 'blurred' : ''}`}>
+                          {iData.script}
+                        </div>
+                      </section>
+
+                      {/* -- Must-mention keywords -- */}
+                      <section className="im-keywords-section theme-transition">
+                        <div className="im-section-header">
+                          <div className="im-section-icon-box keywords-icon">
+                            <Zap size={15} />
+                          </div>
+                          <div>
+                            <h4 className="im-section-title">Must-Mention Keywords</h4>
+                            <p className="im-section-sub">These terms signal technical depth. An interviewer will mentally tick these off as you speak.</p>
+                          </div>
+                        </div>
+                        <div className="im-keywords-grid">
+                          {iData.keywords.map((kw, i) => (
+                            <span key={i} className="im-keyword-chip theme-transition">
+                              <Check size={11} />
+                              {kw}
+                            </span>
+                          ))}
+                        </div>
+                      </section>
+
+                      {/* -- Trap questions -- */}
+                      {iData.trapQuestions && iData.trapQuestions.length > 0 && (
+                        <section className="im-traps-section theme-transition">
+                          <div className="im-section-header">
+                            <div className="im-section-icon-box traps-icon">
+                              <AlertCircle size={15} />
+                            </div>
+                            <div>
+                              <h4 className="im-section-title">Interviewer Trap Questions</h4>
+                              <p className="im-section-sub">Deceptive follow-ups designed to catch candidates who memorised without understanding.</p>
+                            </div>
+                          </div>
+
+                          <div className="im-traps-list">
+                            {iData.trapQuestions.map((trap) => (
+                              <div key={trap.id} className="im-trap-item theme-transition">
+                                <button
+                                  className="im-trap-toggle"
+                                  onClick={() => setExpandedTraps(prev => ({ ...prev, [trap.id]: !prev[trap.id] }))}
+                                >
+                                  <div className="im-trap-q">
+                                    <AlertCircle size={13} className="im-trap-icon" />
+                                    <span>{trap.question}</span>
+                                  </div>
+                                  <div className="im-trap-meta">
+                                    {trap.companyTags?.map((c, ci) => (
+                                      <span key={ci} className="im-trap-company-tag">{c}</span>
+                                    ))}
+                                    <ChevronDown
+                                      size={14}
+                                      className={`im-trap-chevron ${expandedTraps[trap.id] ? 'open' : ''}`}
+                                    />
+                                  </div>
+                                </button>
+
+                                {expandedTraps[trap.id] && (
+                                  <div className="im-trap-body animate-fadeIn">
+                                    <div className="im-trap-mistake">
+                                      <div className="im-trap-mistake-label">
+                                        <X size={11} /> Common Mistake
+                                      </div>
+                                      <div className="im-trap-mistake-text">{trap.commonMistake}</div>
+                                    </div>
+                                    <div className="im-trap-winning">
+                                      <div className="im-trap-winning-label">
+                                        <Check size={11} /> Winning Answer
+                                      </div>
+                                      <div className="im-trap-winning-text">{trap.winningAnswer}</div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </section>
+                      )}
+
+                      {/* -- Cram Sheet shortcut -- */}
+                      <div className="im-cram-shortcut theme-transition">
+                        <Zap size={14} className="im-cram-icon" />
+                        <span>Want more questions for this topic?</span>
+                        <button
+                          className="im-cram-btn theme-transition"
+                          onClick={() => onOpenCramSheet && onOpenCramSheet(activeTopic.subjectId || activeSubjectId)}
+                        >
+                          Open Cram Sheet →
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="im-no-data theme-transition">
+                      <Mic size={28} className="im-no-data-icon" />
+                      <h4>Interview Mode Coming Soon</h4>
+                      <p>Interview pitch scripts and trap questions for this topic are being prepared. Check back soon!</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* =============================================================
                 Bottom of Topic Page: Further Reading Section
                 ============================================================= */}
-            {activeReaderTab !== 'reading' && renderFurtherReadingSection()}
+            {activeReaderTab !== 'reading' && activeReaderTab !== 'interview' && renderFurtherReadingSection()}
 
             {/* =============================================================
                 Topic Reader Footer (Previous / Next Topic Controls)

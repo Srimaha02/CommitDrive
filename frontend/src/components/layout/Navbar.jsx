@@ -14,7 +14,8 @@ import {
   ShieldCheck,
   LayoutDashboard,
   Trophy,
-  Zap
+  Zap,
+  Target
 } from 'lucide-react';
 import { dashboardApi } from '../../services/api';
 import './Navbar.css';
@@ -25,7 +26,8 @@ export default function Navbar({
   currentUser, 
   onOpenAuth, 
   onLogout,
-  onOpenCramSheet
+  onOpenCramSheet,
+  onOpenViva
 }) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [readinessPct, setReadinessPct] = useState(0);
@@ -194,6 +196,17 @@ export default function Navbar({
           >
             <Zap size={13} className="nav-cram-icon" />
             <span className="nav-cram-text">Cram Sheet</span>
+          </button>
+
+          {/* Mock Viva Quick Action */}
+          <button
+            type="button"
+            className="nav-viva-btn theme-transition"
+            onClick={() => onOpenViva && onOpenViva()}
+            title="Open Diagnostic Interview Viva — Company-track aware self-assessment"
+          >
+            <Target size={13} className="nav-viva-icon" />
+            <span className="nav-viva-text">Mock Viva</span>
           </button>
 
           {/* Quick Progress Metric */}
