@@ -158,51 +158,6 @@ html[data-theme="practical"] {
 }
 
 /* ==========================================================================
-   THEME 2 (Light Mode): Practical Path — "Clean Paper Terminal"
-   Crisp light engineer paper with emerald accents and deep readable ink
-   ========================================================================== */
-html[data-theme="practical"][data-mode="light"] {
-  --bg-base: #f4f7f5;
-  --bg-surface: #ffffff;
-  --bg-surface-elevated: #e8eee9;
-  --bg-surface-subtle: #edf2ee;
-  --border-subtle: #d0ded4;
-  --border-strong: #b5c7ba;
-  
-  --accent-primary: #1f6b57;
-  --accent-secondary: #2f856c;
-  --accent-hover: #195847;
-  --accent-glow: rgba(31, 107, 87, 0.2);
-  --accent-surface: rgba(31, 107, 87, 0.08);
-  --accent-flash: #d97706;
-
-  --secondary-surface: rgba(31, 107, 87, 0.1);
-  --secondary-text: #1f6b57;
-  --secondary-border: rgba(31, 107, 87, 0.25);
-
-  --text-primary: #15221b;
-  --text-secondary: #3f5549;
-  --text-muted: #6b8074;
-
-  --font-heading: var(--font-code);
-  --font-body: var(--font-code);
-
-  --badge-bg: rgba(31, 107, 87, 0.1);
-  --badge-text: #1f6b57;
-  --badge-border: rgba(31, 107, 87, 0.25);
-
-  --shadow-sm: 0 2px 8px rgba(20, 40, 30, 0.05);
-  --shadow-md: 0 8px 24px rgba(20, 40, 30, 0.08);
-  --shadow-lg: 0 16px 36px rgba(20, 40, 30, 0.12);
-  --shadow-accent: 0 8px 25px rgba(31, 107, 87, 0.15);
-
-  --nav-backdrop: rgba(244, 247, 245, 0.92);
-  --toggle-track-bg: #dbe5de;
-  --toggle-thumb-bg: #ffffff;
-  --toggle-thumb-border: #c3d3c7;
-}
-
-/* ==========================================================================
    Global Reset & Base Styling
    ========================================================================== */
 *, *::before, *::after {
