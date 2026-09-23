@@ -1,4 +1,5 @@
 import initSqlJs from 'sql.js';
+import sqlWasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
 
 let dbInstance = null;
 let SQL = null;
@@ -70,6 +71,15 @@ INSERT INTO orders (order_id, customer_name, amount, status, order_date) VALUES
 (5006, 'Zomato Media', 78900.00, 'COMPLETED', '2026-08-22');
 `;
 
+let wasmBinaryBuffer = null;
+
+async function getWasmBinary() {
+  if (wasmBinaryBuffer) return wasmBinaryBuffer;
+  const res = await fetch(sqlWasmUrl);
+  wasmBinaryBuffer = await res.arrayBuffer();
+  return wasmBinaryBuffer;
+}
+
 /**
  * Initializes the SQLite WebAssembly database in browser memory
  */
@@ -78,9 +88,15 @@ export async function getSqlDatabase() {
 
   try {
     if (!SQL) {
-      SQL = await initSqlJs({
-        locateFile: (file) => `/${file}`
-      });
+      try {
+        const wasmBinary = await getWasmBinary();
+        SQL = await initSqlJs({ wasmBinary });
+      } catch (fetchErr) {
+        console.warn('Fallback to locateFile:', fetchErr);
+        SQL = await initSqlJs({
+          locateFile: () => sqlWasmUrl
+        });
+      }
     }
 
     dbInstance = new SQL.Database();
@@ -182,7 +198,12 @@ export async function validateCandidateChallenge(candidateQuery, referenceQuery,
 
   try {
     if (!SQL) {
-      SQL = await initSqlJs({ locateFile: (file) => `/${file}` });
+      try {
+        const wasmBinary = await getWasmBinary();
+        SQL = await initSqlJs({ wasmBinary });
+      } catch {
+        SQL = await initSqlJs({ locateFile: () => sqlWasmUrl });
+      }
     }
 
     // Run reference query on fresh DB
