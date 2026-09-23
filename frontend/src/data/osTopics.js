@@ -108,19 +108,19 @@ int main() {
     ],
     furtherReading: {
       article: {
-        title: 'GeeksforGeeks / GATE Overflow: OS Dual Mode & System Calls',
-        source: 'GeeksforGeeks / GATE Overflow',
-        url: '' // Placeholder: Links coming soon
+        title: 'GeeksforGeeks: Dual Mode Operations in Operating Systems',
+        source: 'GeeksforGeeks',
+        url: 'https://www.geeksforgeeks.org/dual-mode-operations-in-os/'
       },
       video: {
-        title: 'YouTube: Dual Mode Execution and System Calls Walkthrough',
-        source: 'YouTube Lecture',
-        url: '' // Placeholder: Links coming soon
+        title: 'Gate Smashers: Dual Mode in Operating System & System Calls',
+        source: 'Gate Smashers (YouTube)',
+        url: 'https://www.youtube.com/watch?v=5akmJgZ2xEE'
       },
       docs: {
         title: 'Linux Manual: syscalls(2) Architecture Reference',
         source: 'Linux Programmer\'s Manual',
-        url: '' // Placeholder: Links coming soon
+        url: 'https://man7.org/linux/man-pages/man2/syscalls.2.html'
       }
     }
   },

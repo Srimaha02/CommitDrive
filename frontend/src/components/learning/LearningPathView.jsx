@@ -46,6 +46,7 @@ import {
 } from '../../data/learningCurriculum';
 import { learningApi } from '../../services/api';
 import { getTopicInterviewData } from '../../data/interviewEnrichment';
+import { getFurtherReadingForTopic } from '../../data/furtherReadingData';
 import GatedContentPreview from '../layout/GatedContentPreview';
 import './LearningPathView.css';
 
@@ -298,10 +299,12 @@ export default function LearningPathView({
 
   // Render Further Reading & Reference Links Section
   const renderFurtherReadingSection = () => {
-    const furtherReading = activeTopic.furtherReading || {};
+    const curatedData = getFurtherReadingForTopic(activeTopic.id);
+    const furtherReading = (activeTopic.furtherReading?.article?.url ? activeTopic.furtherReading : curatedData) || activeTopic.furtherReading || {};
     const article = furtherReading.article || null;
     const video = furtherReading.video || null;
     const docs = furtherReading.docs || null;
+    const isCurated = Boolean(article?.url || video?.url || docs?.url);
 
     return (
       <section className="further-reading-section theme-transition" aria-labelledby="further-reading-heading">
@@ -319,9 +322,9 @@ export default function LearningPathView({
               </p>
             </div>
           </div>
-          <span className="further-reading-status-badge">
-            <AlertCircle size={13} />
-            <span>Fact-Check In Progress</span>
+          <span className={`further-reading-status-badge ${isCurated ? 'verified' : ''}`}>
+            {isCurated ? <CheckCircle2 size={13} /> : <AlertCircle size={13} />}
+            <span>{isCurated ? 'Curated References' : 'Fact-Check In Progress'}</span>
           </span>
         </div>
 
