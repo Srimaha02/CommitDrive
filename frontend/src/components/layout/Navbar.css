@@ -594,3 +594,48 @@
   animation: floatGentle 2s infinite ease-in-out;
 }
 
+/* Theme Mode Toggle Button */
+.theme-mode-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+.theme-mode-toggle-btn:hover {
+  background: var(--bg-surface-elevated);
+  border-color: var(--border-strong);
+  color: var(--accent-primary);
+  transform: scale(1.06);
+}
+
+.theme-toggle-icon {
+  transition: transform 0.35s ease;
+}
+
+.theme-mode-toggle-btn:hover .theme-toggle-icon {
+  transform: rotate(20deg);
+}
+
+.theme-toggle-icon.sun-icon {
+  color: #f59e0b;
+}
+
+.theme-toggle-icon.moon-icon {
+  color: var(--text-secondary);
+}
+
+[data-theme="practical"] .theme-mode-toggle-btn:hover {
+  border-color: #588b8b;
+  color: #74a8a8;
+}
+
+

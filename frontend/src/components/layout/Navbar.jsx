@@ -15,7 +15,9 @@ import {
   LayoutDashboard,
   Trophy,
   Zap,
-  Target
+  Target,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { dashboardApi } from '../../services/api';
 import './Navbar.css';
@@ -27,7 +29,9 @@ export default function Navbar({
   onOpenAuth, 
   onLogout,
   onOpenCramSheet,
-  onOpenViva
+  onOpenViva,
+  themeMode = 'light',
+  onToggleTheme
 }) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [readinessPct, setReadinessPct] = useState(0);
@@ -214,6 +218,21 @@ export default function Navbar({
             <CheckCircle2 size={16} className="metric-icon" />
             <span className="metric-count">{readinessPct}% Ready</span>
           </div>
+
+          {/* Theme Mode Toggle (Light / Dark) */}
+          <button
+            type="button"
+            className="theme-mode-toggle-btn theme-transition"
+            onClick={onToggleTheme}
+            title={themeMode === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            aria-label="Toggle dark/light theme"
+          >
+            {themeMode === 'dark' ? (
+              <Sun size={15} className="theme-toggle-icon sun-icon" />
+            ) : (
+              <Moon size={15} className="theme-toggle-icon moon-icon" />
+            )}
+          </button>
 
           {/* User Profile Avatar / Sign In */}
           {currentUser ? (

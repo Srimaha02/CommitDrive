@@ -1,0 +1,199 @@
+/* Practice Reminder Banner — Compact, High-Impact Motivation Widget */
+
+.practice-reminder-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 0.9rem 1.4rem;
+  margin-bottom: 1.75rem;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(232, 96, 74, 0.08) 0%, rgba(245, 158, 11, 0.06) 100%);
+  border: 1px solid rgba(232, 96, 74, 0.22);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="practical"] .practice-reminder-banner {
+  background: linear-gradient(135deg, rgba(88, 139, 139, 0.12) 0%, rgba(47, 82, 51, 0.1) 100%);
+  border-color: rgba(88, 139, 139, 0.3);
+}
+
+html[data-theme="learning"][data-mode="dark"] .practice-reminder-banner {
+  background: linear-gradient(135deg, rgba(240, 106, 85, 0.12) 0%, rgba(31, 35, 43, 0.8) 100%);
+  border-color: rgba(240, 106, 85, 0.3);
+}
+
+.reminder-accent-line {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(to bottom, var(--accent-primary), #f59e0b);
+}
+
+.reminder-content-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.reminder-icon-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  color: #e8604a;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(232, 96, 74, 0.15);
+}
+
+[data-theme="practical"] .reminder-icon-badge {
+  color: #74a8a8;
+  box-shadow: 0 2px 8px rgba(88, 139, 139, 0.2);
+}
+
+.reminder-text-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.reminder-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.reminder-headline {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.reminder-countdown-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(245, 158, 11, 0.14);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+[data-theme="practical"] .reminder-countdown-chip {
+  color: #fbbf24;
+}
+
+.reminder-subtext {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.reminder-subtext strong {
+  color: var(--text-primary);
+}
+
+.reminder-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.reminder-btn-practice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent-primary);
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: 0 3px 10px rgba(232, 96, 74, 0.25);
+}
+
+.reminder-btn-practice:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.reminder-btn-notify {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.reminder-btn-notify:hover {
+  background: var(--bg-surface);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.reminder-btn-notify.active {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+[data-theme="practical"] .reminder-btn-notify.active {
+  color: #34d399;
+}
+
+.reminder-btn-dismiss {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+.reminder-btn-dismiss:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--text-primary);
+}
+
+@media (max-width: 860px) {
+  .practice-reminder-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.9rem;
+    padding: 1rem;
+  }
+  .reminder-actions-right {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}

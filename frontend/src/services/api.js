@@ -114,6 +114,45 @@ export const authApi = {
         streak: 3
       })
     );
+  },
+
+  // Server-side daily streak check-in
+  async checkIn() {
+    return requestWithFallback(
+      '/auth/checkin',
+      { method: 'POST' },
+      () => {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const lastActive = localStorage.getItem('commitdrive_last_active_date');
+        let currentStreak = parseInt(localStorage.getItem('commitdrive_streak') || '1', 10);
+        let maintained = true;
+        let increased = false;
+        if (!lastActive) {
+          currentStreak = 1;
+          increased = true;
+        } else if (lastActive === todayStr) {
+          maintained = true;
+        } else {
+          const diffDays = Math.round((new Date(todayStr) - new Date(lastActive)) / (1000 * 60 * 60 * 24));
+          if (diffDays === 1) {
+            currentStreak += 1;
+            increased = true;
+          } else {
+            currentStreak = 1;
+            increased = false;
+          }
+        }
+        localStorage.setItem('commitdrive_last_active_date', todayStr);
+        localStorage.setItem('commitdrive_streak', currentStreak.toString());
+        return {
+          streak: currentStreak,
+          streakMaintained: maintained,
+          streakIncreased: increased,
+          lastActiveDate: todayStr,
+          message: increased ? `Streak increased to ${currentStreak} days!` : `Streak active: ${currentStreak} days`
+        };
+      }
+    );
   }
 };
 

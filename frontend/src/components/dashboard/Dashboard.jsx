@@ -29,6 +29,7 @@ import { dbmsTopics } from '../../data/dbmsTopics';
 import { cnTopics } from '../../data/cnTopics';
 import { practicalMissions } from '../../data/practicalCurriculum';
 import GatedContentPreview from '../layout/GatedContentPreview';
+import PracticeReminderBanner from './PracticeReminderBanner';
 import './Dashboard.css';
 
 // Researched public interview patterns for companies with well-documented recruitment data
@@ -658,10 +659,18 @@ export default function Dashboard({
           onSignIn={() => onOpenAuth && onOpenAuth('signin')}
           onDemoLogin={onDemoLogin}
           previewContent={
-            /* =================================================================
-                1. Welcome Header & Daily Tip (Fully Visible Preview)
-                ================================================================= */
-            <section className="dash-hero-section">
+            <>
+              {/* Daily Practice & Streak Reminder Banner */}
+              <PracticeReminderBanner 
+                streak={activeStreak}
+                onStartPractice={() => onNavigate && onNavigate('learning')}
+                recommendedTitle={activeTheoryTitle}
+              />
+
+              {/* =================================================================
+                  1. Welcome Header & Daily Tip (Fully Visible Preview)
+                  ================================================================= */}
+              <section className="dash-hero-section">
               <div className="dash-hero-left">
                 <div className="dash-cohort-tag theme-transition">
                   <Target size={14} className="tag-icon" />
@@ -741,6 +750,7 @@ export default function Dashboard({
                 </div>
               )}
             </section>
+            </>
           }
         >
 
@@ -1181,7 +1191,6 @@ export default function Dashboard({
             <span>Ranges are approximate 2026 estimates and vary significantly by college, location, and individual performance — always verify current figures on official company career pages before making decisions.</span>
           </div>
         </section>
-
       </GatedContentPreview>
 
     </div>

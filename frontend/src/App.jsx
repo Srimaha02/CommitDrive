@@ -9,7 +9,7 @@ import AuthModal from './components/auth/AuthModal';
 import CramSheetModal from './components/common/CramSheetModal';
 import VivaModal from './components/viva/VivaModal';
 import CursorGlow from './components/common/CursorGlow';
-import { BookOpen, Terminal, LayoutDashboard, Shield, LogIn, Zap } from 'lucide-react';
+import { authApi } from './services/api';
 import './App.css';
 
 export default function App() {
@@ -74,18 +74,53 @@ export default function App() {
     });
   };
 
-  // Sync data-theme attribute with current view
-  // Practical view uses 'practical' (dark Terminal Zone)
-  // Dashboard & Learning view use 'learning' (light energetic Study Corner)
+  // Theme Mode: 'light' | 'dark' (Harmonized with Learning & Practical paths)
+  const [themeMode, setThemeMode] = useState(() => {
+    try {
+      return localStorage.getItem('commitdrive_theme_mode') || 'light';
+    } catch {
+      return 'light';
+    }
+  });
+
+  const handleToggleTheme = () => {
+    setThemeMode(prev => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
+  // Sync data-theme & data-mode attributes with current view and theme preference
+  // Practical view uses 'practical' (Terminal Zone)
+  // Dashboard & Learning view use 'learning' (Study Corner)
+  // data-mode sets 'light' or 'dark' variant
   useEffect(() => {
     const theme = currentView === 'practical' ? 'practical' : 'learning';
     document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute('data-mode', themeMode);
     try {
       localStorage.setItem('commitdrive_view', currentView);
+      localStorage.setItem('commitdrive_theme_mode', themeMode);
     } catch {
       // storage unavailable
     }
-  }, [currentView]);
+  }, [currentView, themeMode]);
+
+  // Automated Server-Side Daily Streak Check-In on Mount
+  useEffect(() => {
+    authApi.checkIn().then(res => {
+      if (res && res.data && res.data.streak) {
+        setCurrentUser(prev => {
+          if (!prev) return prev;
+          if (prev.streak !== res.data.streak) {
+            const updated = { ...prev, streak: res.data.streak };
+            try {
+              localStorage.setItem('commitdrive_user', JSON.stringify(updated));
+            } catch {}
+            return updated;
+          }
+          return prev;
+        });
+      }
+    }).catch(() => {});
+  }, []);
 
   // Handle Login Success
   const handleLoginSuccess = (userData) => {
@@ -127,6 +162,8 @@ export default function App() {
         onLogout={handleLogout}
         onOpenCramSheet={handleOpenCramSheet}
         onOpenViva={handleOpenViva}
+        themeMode={themeMode}
+        onToggleTheme={handleToggleTheme}
       />
 
       {/* Main View Router */}

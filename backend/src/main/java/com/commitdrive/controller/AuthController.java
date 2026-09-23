@@ -26,6 +26,13 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(request));
     }
 
+    @PostMapping("/checkin")
+    public ResponseEntity<StreakCheckInResponse> checkIn(
+            @RequestHeader(value = "X-User-Id", required = false) UUID userId
+    ) {
+        return ResponseEntity.ok(authService.checkInUser(userId));
+    }
+
     @GetMapping("/demo")
     public ResponseEntity<AuthResponse> getDemoStudent() {
         User demo = authService.getOrCreateDemoUser();

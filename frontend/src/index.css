@@ -66,6 +66,51 @@ html[data-theme="learning"] {
 }
 
 /* ==========================================================================
+   THEME 1 (Dark Mode): Learning Path & Dashboard — "Dark Study"
+   Sleek deep obsidian with vibrant warm coral and emerald highlights
+   ========================================================================== */
+html[data-theme="learning"][data-mode="dark"] {
+  --bg-base: #0f1115;
+  --bg-surface: #161920;
+  --bg-surface-elevated: #1f232b;
+  --bg-surface-subtle: #13161c;
+  --border-subtle: #252b36;
+  --border-strong: #373f4e;
+  
+  --accent-primary: #f06a55; /* Vibrant coral */
+  --accent-secondary: #4ade80; /* Bright mint green */
+  --accent-hover: #fa816e;
+  --accent-glow: rgba(240, 106, 85, 0.25);
+  --accent-surface: rgba(240, 106, 85, 0.12);
+  --accent-flash: #f06a55;
+
+  --secondary-surface: rgba(74, 222, 128, 0.12);
+  --secondary-text: #4ade80;
+  --secondary-border: rgba(74, 222, 128, 0.25);
+
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --font-heading: var(--font-serif);
+  --font-body: var(--font-sans);
+
+  --badge-bg: rgba(240, 106, 85, 0.15);
+  --badge-text: #f06a55;
+  --badge-border: rgba(240, 106, 85, 0.3);
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.7);
+  --shadow-accent: 0 8px 25px rgba(240, 106, 85, 0.2);
+
+  --nav-backdrop: rgba(15, 17, 21, 0.92);
+  --toggle-track-bg: #1c212a;
+  --toggle-thumb-bg: #29303d;
+  --toggle-thumb-border: #3b4556;
+}
+
+/* ==========================================================================
    THEME 2: Practical Path — "Terminal Zone"
    Deep terminal green-black, muted teal, amber flashes, JetBrains Mono
    ========================================================================== */
@@ -110,6 +155,51 @@ html[data-theme="practical"] {
   --toggle-thumb-border: #2e3e36;
 
   --theme-transition-duration: 0.22s;
+}
+
+/* ==========================================================================
+   THEME 2 (Light Mode): Practical Path — "Clean Paper Terminal"
+   Crisp light engineer paper with emerald accents and deep readable ink
+   ========================================================================== */
+html[data-theme="practical"][data-mode="light"] {
+  --bg-base: #f4f7f5;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #e8eee9;
+  --bg-surface-subtle: #edf2ee;
+  --border-subtle: #d0ded4;
+  --border-strong: #b5c7ba;
+  
+  --accent-primary: #1f6b57;
+  --accent-secondary: #2f856c;
+  --accent-hover: #195847;
+  --accent-glow: rgba(31, 107, 87, 0.2);
+  --accent-surface: rgba(31, 107, 87, 0.08);
+  --accent-flash: #d97706;
+
+  --secondary-surface: rgba(31, 107, 87, 0.1);
+  --secondary-text: #1f6b57;
+  --secondary-border: rgba(31, 107, 87, 0.25);
+
+  --text-primary: #15221b;
+  --text-secondary: #3f5549;
+  --text-muted: #6b8074;
+
+  --font-heading: var(--font-code);
+  --font-body: var(--font-code);
+
+  --badge-bg: rgba(31, 107, 87, 0.1);
+  --badge-text: #1f6b57;
+  --badge-border: rgba(31, 107, 87, 0.25);
+
+  --shadow-sm: 0 2px 8px rgba(20, 40, 30, 0.05);
+  --shadow-md: 0 8px 24px rgba(20, 40, 30, 0.08);
+  --shadow-lg: 0 16px 36px rgba(20, 40, 30, 0.12);
+  --shadow-accent: 0 8px 25px rgba(31, 107, 87, 0.15);
+
+  --nav-backdrop: rgba(244, 247, 245, 0.92);
+  --toggle-track-bg: #dbe5de;
+  --toggle-thumb-bg: #ffffff;
+  --toggle-thumb-border: #c3d3c7;
 }
 
 /* ==========================================================================

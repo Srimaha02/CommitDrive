@@ -30,7 +30,7 @@ public class AuthService {
                 .fullName(request.getFullName())
                 .role(request.getRole() != null ? request.getRole() : "SDE Aspirant 2026")
                 .targetYear(request.getTargetYear() != null ? request.getTargetYear() : "2026")
-                .streak(0)
+                .streak(1)
                 .lastActiveDate(LocalDate.now())
                 .build();
 
@@ -52,12 +52,14 @@ public class AuthService {
             throw new IllegalArgumentException("Invalid email or password");
         }
 
-        // Update streak if needed
+        // Automated daily streak update
         LocalDate today = LocalDate.now();
-        if (user.getLastActiveDate() != null && user.getLastActiveDate().isBefore(today.minusDays(1))) {
+        if (user.getStreak() == null || user.getStreak() < 1) {
+            user.setStreak(1);
+        } else if (user.getLastActiveDate() != null && user.getLastActiveDate().isBefore(today.minusDays(1))) {
             user.setStreak(1); // Reset streak if missed more than 1 day
         } else if (user.getLastActiveDate() != null && user.getLastActiveDate().equals(today.minusDays(1))) {
-            user.setStreak(user.getStreak() + 1); // Increment streak
+            user.setStreak(user.getStreak() + 1); // Increment streak on consecutive day
         }
         user.setLastActiveDate(today);
         userRepository.save(user);
@@ -66,6 +68,51 @@ public class AuthService {
                 .token(user.getId().toString())
                 .user(mapToProfile(user))
                 .message("Logged in successfully")
+                .build();
+    }
+
+    @Transactional
+    public StreakCheckInResponse checkInUser(UUID userId) {
+        User user = getUserByIdOrDemo(userId);
+        LocalDate today = LocalDate.now();
+        LocalDate lastActive = user.getLastActiveDate();
+
+        boolean streakMaintained = true;
+        boolean streakIncreased = false;
+        String message;
+
+        if (lastActive == null) {
+            user.setStreak(1);
+            user.setLastActiveDate(today);
+            streakIncreased = true;
+            message = "Welcome! Day 1 streak started.";
+        } else if (lastActive.equals(today)) {
+            if (user.getStreak() == null || user.getStreak() < 1) {
+                user.setStreak(1);
+            }
+            streakMaintained = true;
+            message = "Streak active for today (" + user.getStreak() + " days).";
+        } else if (lastActive.equals(today.minusDays(1))) {
+            int newStreak = (user.getStreak() != null ? user.getStreak() : 0) + 1;
+            user.setStreak(newStreak);
+            user.setLastActiveDate(today);
+            streakIncreased = true;
+            message = "Awesome! Streak increased to " + newStreak + " days!";
+        } else {
+            user.setStreak(1);
+            user.setLastActiveDate(today);
+            streakIncreased = false;
+            message = "Streak reset after inactivity. Day 1 starts today!";
+        }
+
+        userRepository.save(user);
+
+        return StreakCheckInResponse.builder()
+                .streak(user.getStreak())
+                .streakMaintained(streakMaintained)
+                .streakIncreased(streakIncreased)
+                .lastActiveDate(today.toString())
+                .message(message)
                 .build();
     }
 

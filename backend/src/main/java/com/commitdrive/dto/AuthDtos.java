@@ -50,4 +50,16 @@ public class AuthDtos {
         private UserProfileDto user;
         private String message;
     }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class StreakCheckInResponse {
+        private Integer streak;
+        private boolean streakMaintained;
+        private boolean streakIncreased;
+        private String lastActiveDate;
+        private String message;
+    }
 }
