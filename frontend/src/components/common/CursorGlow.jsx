@@ -2,12 +2,14 @@ import React, { useEffect, useRef } from 'react';
 import './CursorGlow.css';
 
 /**
- * TechFlyingCursor (CursorGlow)
- * Unique developer-themed floating animation:
- * - As the mouse moves, floating code symbols, git glyphs, and binary sparks fly and drift in the air
- * - Interactive click "Code Burst" shockwave with spinning tech tokens
- * - Dynamic theme adaptation: Cyberpunk Matrix emerald/cyan in Terminal Zone, Syntax Highlight neon in Study Corner
- * - Hardware accelerated Canvas at 60/120fps with zero click interference (pointer-events: none)
+ * Serene Neural Constellation & Ambient Fluid Glow (CursorGlow)
+ * 
+ * Redesigned for a calming, soothing, and unique developer experience:
+ * - Completely removes irritating floating text tokens (no "sudo", "git", "const", etc.)
+ * - Ethereal Neural Graph: Soft glowing micro-nodes connect with delicate synaptic filaments
+ * - Fluid Ambient Light Aura: A serene, silky glow halo tracks the cursor smoothly
+ * - Gentle Ripple Pulse: Subtle water-like ring ripples on click instead of loud bursts
+ * - 100% non-intrusive (pointer-events: none, low opacity, 60/120fps hardware acceleration)
  */
 export default function CursorGlow() {
   const canvasRef = useRef(null);
@@ -26,59 +28,43 @@ export default function CursorGlow() {
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
-    // Mouse tracking state
+    // Mouse tracking & smooth trailing position (lerp)
     const mouse = {
-      x: -200,
-      y: -200,
-      prevX: -200,
-      prevY: -200,
-      vx: 0,
-      vy: 0,
+      x: -300,
+      y: -300,
+      prevX: -300,
+      prevY: -300,
+      trailX: -300,
+      trailY: -300,
       active: false,
       isHovering: false,
       distanceTraveled: 0
     };
 
-    let idleTimer = null;
     let animFrameId = null;
 
-    // Tech symbols pool
-    const terminalSymbols = ['$', 'sudo', 'git', '01', '0x', 'sh', '&&', 'λ', '::', '!=', '200', '>>', 'grep', 'rm -rf'];
-    const studySymbols = ['</>', '{ }', 'const', '=>', '01', '&&', '[]', '++', '==', 'λ', 'git', '200', 'async', 'npm'];
-    const circuitGlyphs = ['✦', '◆', '•', '■'];
-
-    // Theme palette helper
+    // Theme palette configuration helper
     const getThemeConfig = () => {
       const theme = document.documentElement.getAttribute('data-theme') || 'learning';
       if (theme === 'practical') {
         return {
-          symbols: terminalSymbols,
-          font: 'bold 12px "JetBrains Mono", "Fira Code", monospace',
-          colors: [
-            '#10f5a0', // Neon Mint
-            '#00ff88', // Matrix Green
-            '#00e5ff', // Laser Cyan
-            '#39ff14', // Electric Green
-            '#93faa5', // Pale Emerald Spark
-            '#6ee7b7'  // Soft Teal
-          ],
-          glowColor: '#10f5a0',
-          coreColor: '#10b981'
+          // Terminal Zone: Ethereal emerald, cyan & mint bioluminescence
+          haloColor: 'rgba(16, 245, 160, 0.08)',
+          haloBorder: 'rgba(16, 245, 160, 0.25)',
+          nodeColors: ['#10f5a0', '#2dd4bf', '#06b6d4', '#34d399', '#6ee7b7'],
+          synapseColor: 'rgba(16, 245, 160, ',
+          coreDotColor: '#10b981',
+          rippleColor: 'rgba(16, 245, 160, '
         };
       }
       return {
-        symbols: studySymbols,
-        font: 'bold 12px "Inter", "Fira Code", monospace',
-        colors: [
-          '#e05a3a', // Coral
-          '#f59e0b', // Amber Gold
-          '#8b5cf6', // Electric Violet
-          '#ec4899', // Hot Pink
-          '#06b6d4', // Bright Cyan
-          '#3b82f6'  // Royal Blue
-        ],
-        glowColor: '#e05a3a',
-        coreColor: '#e05a3a'
+        // Study Corner: Soothing sunset coral, amber & lavender aura
+        haloColor: 'rgba(240, 106, 85, 0.07)',
+        haloBorder: 'rgba(240, 106, 85, 0.2)',
+        nodeColors: ['#f06a55', '#fb923c', '#f59e0b', '#a78bfa', '#f472b6'],
+        synapseColor: 'rgba(240, 106, 85, ',
+        coreDotColor: '#f06a55',
+        rippleColor: 'rgba(240, 106, 85, '
       };
     };
 
@@ -89,142 +75,150 @@ export default function CursorGlow() {
     };
     window.addEventListener('resize', handleResize);
 
-    // Particle classes
-    const particles = [];
-    const MAX_PARTICLES = 48;
+    // Neural Stardust Particles
+    const nodes = [];
+    const MAX_NODES = 32;
 
-    class TechParticle {
-      constructor(x, y, vx, vy, isBurst = false) {
+    class NeuralNode {
+      constructor(x, y, vx, vy) {
         this.x = x;
         this.y = y;
-        
-        // Flight dynamics: directional float with subtle buoyancy
-        const speed = Math.hypot(vx, vy);
-        const config = getThemeConfig();
-        
-        this.isGlyph = Math.random() > 0.35 || isBurst;
-        this.symbol = this.isGlyph 
-          ? config.symbols[Math.floor(Math.random() * config.symbols.length)]
-          : circuitGlyphs[Math.floor(Math.random() * circuitGlyphs.length)];
-
-        // Velocity & drift
-        if (isBurst) {
-          const angle = Math.random() * Math.PI * 2;
-          const burstSpeed = Math.random() * 4.5 + 2;
-          this.vx = Math.cos(angle) * burstSpeed;
-          this.vy = Math.sin(angle) * burstSpeed - 0.8;
-        } else {
-          this.vx = vx * 0.18 + (Math.random() - 0.5) * 1.8;
-          this.vy = vy * 0.18 - Math.random() * 1.5 - 0.6; // gentle upward float
-        }
-
-        this.rotation = (Math.random() - 0.5) * 0.4;
-        this.rotSpeed = (Math.random() - 0.5) * 0.05;
-        this.scale = isBurst ? Math.random() * 0.5 + 0.9 : Math.random() * 0.4 + 0.8;
+        this.vx = vx * 0.1 + (Math.random() - 0.5) * 0.4;
+        this.vy = vy * 0.1 + (Math.random() - 0.5) * 0.4;
+        this.radius = Math.random() * 1.5 + 1.2; // delicate micro-dot (1.2px - 2.7px)
         this.life = 1.0;
-        this.decay = isBurst ? Math.random() * 0.025 + 0.02 : Math.random() * 0.02 + 0.015;
-        this.color = config.colors[Math.floor(Math.random() * config.colors.length)];
-        this.glow = config.glowColor;
+        this.decay = Math.random() * 0.012 + 0.008; // slow peaceful fade
+        
+        const config = getThemeConfig();
+        this.color = config.nodeColors[Math.floor(Math.random() * config.nodeColors.length)];
       }
 
       update() {
         this.life -= this.decay;
         this.x += this.vx;
         this.y += this.vy;
-        this.rotation += this.rotSpeed;
-        this.vx *= 0.96; // air resistance
-        this.vy *= 0.96;
-        this.vy -= 0.04; // subtle floating buoyancy
-
+        this.vx *= 0.97; // smooth fluid damping
+        this.vy *= 0.97;
         return this.life > 0;
       }
 
       draw(context) {
         if (this.life <= 0) return;
         context.save();
-        context.translate(this.x, this.y);
-        context.rotate(this.rotation);
-        context.scale(this.scale, this.scale);
-
-        context.globalAlpha = Math.max(0, this.life);
+        context.globalAlpha = Math.max(0, this.life * 0.7);
         context.shadowColor = this.color;
-        context.shadowBlur = 8;
+        context.shadowBlur = 6;
         context.fillStyle = this.color;
 
-        if (this.isGlyph) {
-          context.font = getThemeConfig().font;
-          context.textAlign = 'center';
-          context.textBaseline = 'middle';
-          context.fillText(this.symbol, 0, 0);
-        } else {
-          // Micro circuit spark
-          context.beginPath();
-          context.arc(0, 0, 2.5, 0, Math.PI * 2);
-          context.fill();
-        }
-
+        context.beginPath();
+        context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        context.fill();
         context.restore();
       }
     }
 
-    // Connect close floating tech particles with subtle circuit lines
-    const drawCircuitConnections = (context) => {
-      const config = getThemeConfig();
-      context.lineWidth = 0.8;
-      
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const p1 = particles[i];
-          const p2 = particles[j];
-          const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+    // Peaceful Click Wave Ripples
+    const ripples = [];
+    class WaveRipple {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 4;
+        this.maxRadius = 36;
+        this.life = 1.0;
+        this.decay = 0.025;
+      }
 
-          if (dist < 48) {
-            const alpha = (1 - dist / 48) * Math.min(p1.life, p2.life) * 0.35;
-            context.strokeStyle = p1.color;
-            context.globalAlpha = alpha;
+      update() {
+        this.life -= this.decay;
+        this.radius += (this.maxRadius - this.radius) * 0.1;
+        return this.life > 0;
+      }
+
+      draw(context) {
+        if (this.life <= 0) return;
+        const config = getThemeConfig();
+        context.save();
+        context.strokeStyle = `${config.rippleColor}${Math.max(0, this.life * 0.4)})`;
+        context.lineWidth = 1.2;
+        context.beginPath();
+        context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        context.stroke();
+        context.restore();
+      }
+    }
+
+    // Connect close floating micro-nodes with whisper-thin synaptic filaments
+    const drawSynapticConnections = (context) => {
+      const config = getThemeConfig();
+      context.lineWidth = 0.6;
+
+      // Connect nodes to each other
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const n1 = nodes[i];
+          const n2 = nodes[j];
+          const dist = Math.hypot(n1.x - n2.x, n1.y - n2.y);
+
+          if (dist < 55) {
+            const alpha = (1 - dist / 55) * Math.min(n1.life, n2.life) * 0.25;
+            context.strokeStyle = `${config.synapseColor}${alpha})`;
             context.beginPath();
-            context.moveTo(p1.x, p1.y);
-            context.lineTo(p2.x, p2.y);
+            context.moveTo(n1.x, n1.y);
+            context.lineTo(n2.x, n2.y);
+            context.stroke();
+          }
+        }
+
+        // Also draw soft connection line from nearest nodes to smooth cursor position
+        if (mouse.active) {
+          const n = nodes[i];
+          const distToMouse = Math.hypot(n.x - mouse.trailX, n.y - mouse.trailY);
+          if (distToMouse < 45) {
+            const alpha = (1 - distToMouse / 45) * n.life * 0.2;
+            context.strokeStyle = `${config.synapseColor}${alpha})`;
+            context.beginPath();
+            context.moveTo(n.x, n.y);
+            context.lineTo(mouse.trailX, mouse.trailY);
             context.stroke();
           }
         }
       }
-      context.globalAlpha = 1;
     };
 
-    // Draw futuristic cyber crosshair & core dot at mouse position
-    let reticleAngle = 0;
-    const drawPrecisionPointer = (context) => {
-      if (!mouse.active || mouse.x < 0) return;
+    // Draw peaceful ambient fluid halo & smooth trailing core dot
+    const drawAmbientHalo = (context) => {
+      if (!mouse.active || mouse.trailX < 0) return;
       const config = getThemeConfig();
-      reticleAngle += mouse.isHovering ? 0.08 : 0.03;
 
       context.save();
-      context.translate(mouse.x, mouse.y);
 
-      // 1. Center Core Dot
+      // 1. Soft Ambient Radial Glow Halo (Silky, diffuse light aura)
+      const haloRadius = mouse.isHovering ? 28 : 20;
+      const gradient = context.createRadialGradient(
+        mouse.trailX,
+        mouse.trailY,
+        0,
+        mouse.trailX,
+        mouse.trailY,
+        haloRadius
+      );
+      gradient.addColorStop(0, config.haloColor);
+      gradient.addColorStop(0.7, config.haloColor);
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+      context.fillStyle = gradient;
       context.beginPath();
-      context.arc(0, 0, mouse.isHovering ? 4 : 3, 0, Math.PI * 2);
-      context.fillStyle = config.coreColor;
-      context.shadowColor = config.coreColor;
-      context.shadowBlur = 6;
+      context.arc(mouse.trailX, mouse.trailY, haloRadius, 0, Math.PI * 2);
       context.fill();
 
-      // 2. Rotating Cyber Reticle
-      context.rotate(reticleAngle);
-      const ringRadius = mouse.isHovering ? 14 : 10;
-      context.strokeStyle = config.coreColor;
-      context.lineWidth = 1.2;
+      // 2. Delicate Micro Core Dot at exact pointer position
+      context.beginPath();
+      context.arc(mouse.x, mouse.y, mouse.isHovering ? 3 : 2, 0, Math.PI * 2);
+      context.fillStyle = config.coreDotColor;
+      context.shadowColor = config.coreDotColor;
       context.shadowBlur = 4;
-
-      // 4 Precision Corner Crosshairs
-      const cornerLen = 4;
-      for (let i = 0; i < 4; i++) {
-        context.rotate(Math.PI / 2);
-        context.beginPath();
-        context.arc(0, 0, ringRadius, 0, Math.PI / 5);
-        context.stroke();
-      }
+      context.fill();
 
       context.restore();
     };
@@ -232,21 +226,25 @@ export default function CursorGlow() {
     // Mouse movement handler
     const handleMouseMove = (e) => {
       mouse.active = true;
-      
+
       const dx = e.clientX - mouse.prevX;
       const dy = e.clientY - mouse.prevY;
-      mouse.vx = dx;
-      mouse.vy = dy;
       mouse.x = e.clientX;
       mouse.y = e.clientY;
+
+      // Initialize trail position immediately if offscreen
+      if (mouse.trailX < 0) {
+        mouse.trailX = mouse.x;
+        mouse.trailY = mouse.y;
+      }
 
       const stepDist = Math.hypot(dx, dy);
       mouse.distanceTraveled += stepDist;
 
-      // Spawn floating tech glyph every ~18px of mouse movement
-      if (mouse.distanceTraveled > 18) {
-        if (particles.length < MAX_PARTICLES) {
-          particles.push(new TechParticle(mouse.x, mouse.y, mouse.vx, mouse.vy));
+      // Spawn a subtle luminous node every ~28px of movement (gentle spacing, no clutter)
+      if (mouse.distanceTraveled > 28) {
+        if (nodes.length < MAX_NODES) {
+          nodes.push(new NeuralNode(mouse.x, mouse.y, dx, dy));
         }
         mouse.distanceTraveled = 0;
       }
@@ -254,33 +252,24 @@ export default function CursorGlow() {
       mouse.prevX = e.clientX;
       mouse.prevY = e.clientY;
 
-      // Check hovering over interactive buttons / cards
+      // Check hovering over interactive buttons / links
       const target = e.target;
       if (
         target &&
         target.closest &&
         target.closest(
-          'button, a, input, select, textarea, [role="button"], .clickable, .interactive, .subject-tab-btn, .module-tab-btn, .topic-list-item, .mission-item-btn, .gate-card, .podium-card, .table-row, .active-mood-badge'
+          'button, a, input, select, textarea, [role="button"], .clickable, .interactive, .subject-tab-btn, .module-tab-btn, .topic-list-item, .mission-item-btn'
         )
       ) {
         mouse.isHovering = true;
       } else {
         mouse.isHovering = false;
       }
-
-      clearTimeout(idleTimer);
-      idleTimer = setTimeout(() => {
-        mouse.vx = 0;
-        mouse.vy = 0;
-      }, 80);
     };
 
-    // Click "Code Burst" shockwave
+    // Click: spawn peaceful wave ripple
     const handleMouseDown = (e) => {
-      const burstTokens = 9;
-      for (let i = 0; i < burstTokens; i++) {
-        particles.push(new TechParticle(e.clientX, e.clientY, 0, 0, true));
-      }
+      ripples.push(new WaveRipple(e.clientX, e.clientY));
     };
 
     const handleMouseLeave = () => {
@@ -297,26 +286,39 @@ export default function CursorGlow() {
     document.addEventListener('mouseleave', handleMouseLeave);
     document.addEventListener('mouseenter', handleMouseEnter);
 
-    // Animation Render Loop
+    // Animation Render Loop (60/120fps smooth lerp)
     const render = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // Draw circuit lines between close flying tokens
-      drawCircuitConnections(ctx);
+      // Smooth spring trailing physics for the ambient halo
+      mouse.trailX += (mouse.x - mouse.trailX) * 0.16;
+      mouse.trailY += (mouse.y - mouse.trailY) * 0.16;
 
-      // Update & render flying tech particles
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        const isAlive = p.update();
-        if (isAlive) {
-          p.draw(ctx);
+      // 1. Draw delicate synaptic connections between nodes
+      drawSynapticConnections(ctx);
+
+      // 2. Update & render neural micro-nodes
+      for (let i = nodes.length - 1; i >= 0; i--) {
+        const n = nodes[i];
+        if (n.update()) {
+          n.draw(ctx);
         } else {
-          particles.splice(i, 1);
+          nodes.splice(i, 1);
         }
       }
 
-      // Draw precision cyber pointer & reticle
-      drawPrecisionPointer(ctx);
+      // 3. Update & render click wave ripples
+      for (let i = ripples.length - 1; i >= 0; i--) {
+        const r = ripples[i];
+        if (r.update()) {
+          r.draw(ctx);
+        } else {
+          ripples.splice(i, 1);
+        }
+      }
+
+      // 4. Draw soothing ambient fluid halo & core dot
+      drawAmbientHalo(ctx);
 
       animFrameId = requestAnimationFrame(render);
     };
@@ -330,7 +332,6 @@ export default function CursorGlow() {
       document.removeEventListener('mouseleave', handleMouseLeave);
       document.removeEventListener('mouseenter', handleMouseEnter);
       if (animFrameId) cancelAnimationFrame(animFrameId);
-      clearTimeout(idleTimer);
     };
   }, []);
 
