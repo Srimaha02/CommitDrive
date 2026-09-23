@@ -2,20 +2,24 @@ import React, { useEffect, useRef } from 'react';
 import './CursorGlow.css';
 
 /**
- * Serene Neural Constellation & Ambient Fluid Glow (CursorGlow)
+ * Interactive Cyber-Spider Web (Plexus Neural Network)
  * 
- * Redesigned for a calming, soothing, and unique developer experience:
- * - Completely removes irritating floating text tokens (no "sudo", "git", "const", etc.)
- * - Ethereal Neural Graph: Soft glowing micro-nodes connect with delicate synaptic filaments
- * - Fluid Ambient Light Aura: A serene, silky glow halo tracks the cursor smoothly
- * - Gentle Ripple Pulse: Subtle water-like ring ripples on click instead of loud bursts
- * - 100% non-intrusive (pointer-events: none, low opacity, 60/120fps hardware acceleration)
+ * Trending geometric constellation / spider-web effect:
+ * - Ambient tech nodes drift gracefully across the screen
+ * - When mouse moves, the cursor acts as a gravitational nexus:
+ *   crisp glowing spider-web filaments dynamically shoot & connect from the cursor to all nearby nodes
+ * - Nodes interconnect with each other to form geometric polygons and web triangles
+ * - Elastic spider-web physics: particles near the mouse are magnetically pulled and bounce back
+ * - Click triggers a cyber-web ripple pulse that propels the network outward
+ * - Dual-theme support:
+ *   - Practical Path: Cyber Matrix Emerald & Neon Cyan (#00ff88, #00e5ff)
+ *   - Learning Path / Dashboard: Sunset Coral & Electric Indigo (#f06a55, #8b5cf6, #38bdf8)
+ * - 100% click-through (pointer-events: none, high-performance 60/120fps hardware canvas)
  */
 export default function CursorGlow() {
   const canvasRef = useRef(null);
 
   useEffect(() => {
-    // Only run on devices with a mouse/pointer and without reduced motion
     const finePointer = window.matchMedia('(pointer: fine)').matches;
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!finePointer || prefersReducedMotion) return;
@@ -28,119 +32,148 @@ export default function CursorGlow() {
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
-    // Mouse tracking & smooth trailing position (lerp)
+    // Mouse tracking & nexus state
     const mouse = {
-      x: -300,
-      y: -300,
-      prevX: -300,
-      prevY: -300,
-      trailX: -300,
-      trailY: -300,
+      x: -500,
+      y: -500,
+      radius: 175, // connection radius of the spider-web
       active: false,
-      isHovering: false,
-      distanceTraveled: 0
+      isHovering: false
     };
 
     let animFrameId = null;
 
-    // Theme palette configuration helper
+    // Theme configuration
     const getThemeConfig = () => {
       const theme = document.documentElement.getAttribute('data-theme') || 'learning';
       if (theme === 'practical') {
         return {
-          // Terminal Zone: Ethereal emerald, cyan & mint bioluminescence
-          haloColor: 'rgba(16, 245, 160, 0.08)',
-          haloBorder: 'rgba(16, 245, 160, 0.25)',
-          nodeColors: ['#10f5a0', '#2dd4bf', '#06b6d4', '#34d399', '#6ee7b7'],
-          synapseColor: 'rgba(16, 245, 160, ',
-          coreDotColor: '#10b981',
-          rippleColor: 'rgba(16, 245, 160, '
+          // Terminal Zone: Matrix Laser Emerald & Cyber Cyan
+          nodeColor: '#00ff88',
+          nodeColors: ['#00ff88', '#00e5ff', '#10f5a0', '#34d399', '#6ee7b7'],
+          webLineColor: '0, 255, 136',      // RGB for dynamic alpha
+          cursorLineColor: '0, 229, 255',   // Cyan lines to cursor
+          cursorGlow: '#00e5ff',
+          cursorCore: '#10f5a0',
+          haloBg: 'rgba(0, 229, 255, 0.08)'
         };
       }
       return {
-        // Study Corner: Soothing sunset coral, amber & lavender aura
-        haloColor: 'rgba(240, 106, 85, 0.07)',
-        haloBorder: 'rgba(240, 106, 85, 0.2)',
-        nodeColors: ['#f06a55', '#fb923c', '#f59e0b', '#a78bfa', '#f472b6'],
-        synapseColor: 'rgba(240, 106, 85, ',
-        coreDotColor: '#f06a55',
-        rippleColor: 'rgba(240, 106, 85, '
+        // Study Corner: Coral, Indigo & Golden Amber
+        nodeColor: '#f06a55',
+        nodeColors: ['#f06a55', '#fb923c', '#8b5cf6', '#38bdf8', '#f59e0b'],
+        webLineColor: '240, 106, 85',
+        cursorLineColor: '139, 92, 246',   // Indigo lines to cursor
+        cursorGlow: '#f06a55',
+        cursorCore: '#f06a55',
+        haloBg: 'rgba(240, 106, 85, 0.08)'
       };
     };
 
-    // Resize listener
-    const handleResize = () => {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+    // Responsive particle count based on screen area (smooth 60-120fps)
+    const getParticleCount = () => {
+      const area = width * height;
+      if (area < 700000) return 45;       // small laptops
+      if (area < 1500000) return 65;      // standard 1080p desktop
+      return 85;                          // 2K / 4K ultrawide
     };
-    window.addEventListener('resize', handleResize);
 
-    // Neural Stardust Particles
-    const nodes = [];
-    const MAX_NODES = 32;
-
-    class NeuralNode {
-      constructor(x, y, vx, vy) {
-        this.x = x;
-        this.y = y;
-        this.vx = vx * 0.1 + (Math.random() - 0.5) * 0.4;
-        this.vy = vy * 0.1 + (Math.random() - 0.5) * 0.4;
-        this.radius = Math.random() * 1.5 + 1.2; // delicate micro-dot (1.2px - 2.7px)
-        this.life = 1.0;
-        this.decay = Math.random() * 0.012 + 0.008; // slow peaceful fade
+    // Node Class
+    class WebNode {
+      constructor(x, y) {
+        this.x = x !== undefined ? x : Math.random() * width;
+        this.y = y !== undefined ? y : Math.random() * height;
         
+        // Gentle ambient drift velocity
+        this.vx = (Math.random() - 0.5) * 1.1;
+        this.vy = (Math.random() - 0.5) * 1.1;
+        this.baseVx = this.vx;
+        this.baseVy = this.vy;
+        
+        this.radius = Math.random() * 1.8 + 1.8; // 1.8px - 3.6px crisp node
         const config = getThemeConfig();
         this.color = config.nodeColors[Math.floor(Math.random() * config.nodeColors.length)];
+        this.pulseAngle = Math.random() * Math.PI * 2;
+        this.pulseSpeed = 0.03 + Math.random() * 0.02;
       }
 
       update() {
-        this.life -= this.decay;
+        this.pulseAngle += this.pulseSpeed;
+
+        // Bounce gently off canvas edges
+        if (this.x < 0 || this.x > width) this.vx = -this.vx;
+        if (this.y < 0 || this.y > height) this.vy = -this.vy;
+
+        // Mouse magnetic elasticity & spider-web pull
+        if (mouse.active) {
+          const dx = mouse.x - this.x;
+          const dy = mouse.y - this.y;
+          const dist = Math.hypot(dx, dy);
+
+          if (dist < mouse.radius) {
+            // Elastic tension: particles are drawn toward the cursor, creating spider-web tension
+            const force = (1 - dist / mouse.radius) * 0.8;
+            const angle = Math.atan2(dy, dx);
+            this.x += Math.cos(angle) * force * 1.8;
+            this.y += Math.sin(angle) * force * 1.8;
+          }
+        }
+
+        // Apply normal drift
         this.x += this.vx;
         this.y += this.vy;
-        this.vx *= 0.97; // smooth fluid damping
-        this.vy *= 0.97;
-        return this.life > 0;
+
+        // Damping back to base drift
+        this.vx += (this.baseVx - this.vx) * 0.03;
+        this.vy += (this.baseVy - this.vy) * 0.03;
       }
 
       draw(context) {
-        if (this.life <= 0) return;
         context.save();
-        context.globalAlpha = Math.max(0, this.life * 0.7);
-        context.shadowColor = this.color;
-        context.shadowBlur = 6;
-        context.fillStyle = this.color;
-
+        const pulse = 1 + Math.sin(this.pulseAngle) * 0.2;
         context.beginPath();
-        context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        context.arc(this.x, this.y, this.radius * pulse, 0, Math.PI * 2);
+        context.fillStyle = this.color;
+        context.shadowColor = this.color;
+        context.shadowBlur = 8;
         context.fill();
         context.restore();
       }
     }
 
-    // Peaceful Click Wave Ripples
-    const ripples = [];
-    class WaveRipple {
+    // Initialize particles array
+    let particles = [];
+    const initParticles = () => {
+      particles = [];
+      const count = getParticleCount();
+      for (let i = 0; i < count; i++) {
+        particles.push(new WebNode());
+      }
+    };
+    initParticles();
+
+    // Click Web Ripple Pulse
+    const pulses = [];
+    class WebPulse {
       constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.radius = 4;
-        this.maxRadius = 36;
+        this.radius = 10;
+        this.maxRadius = 140;
         this.life = 1.0;
-        this.decay = 0.025;
       }
 
       update() {
-        this.life -= this.decay;
-        this.radius += (this.maxRadius - this.radius) * 0.1;
+        this.life -= 0.028;
+        this.radius += (this.maxRadius - this.radius) * 0.12;
         return this.life > 0;
       }
 
       draw(context) {
-        if (this.life <= 0) return;
         const config = getThemeConfig();
         context.save();
-        context.strokeStyle = `${config.rippleColor}${Math.max(0, this.life * 0.4)})`;
-        context.lineWidth = 1.2;
+        context.strokeStyle = `rgba(${config.cursorLineColor}, ${Math.max(0, this.life * 0.6)})`;
+        context.lineWidth = 1.5;
         context.beginPath();
         context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         context.stroke();
@@ -148,177 +181,174 @@ export default function CursorGlow() {
       }
     }
 
-    // Connect close floating micro-nodes with whisper-thin synaptic filaments
-    const drawSynapticConnections = (context) => {
-      const config = getThemeConfig();
-      context.lineWidth = 0.6;
-
-      // Connect nodes to each other
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const n1 = nodes[i];
-          const n2 = nodes[j];
-          const dist = Math.hypot(n1.x - n2.x, n1.y - n2.y);
-
-          if (dist < 55) {
-            const alpha = (1 - dist / 55) * Math.min(n1.life, n2.life) * 0.25;
-            context.strokeStyle = `${config.synapseColor}${alpha})`;
-            context.beginPath();
-            context.moveTo(n1.x, n1.y);
-            context.lineTo(n2.x, n2.y);
-            context.stroke();
-          }
-        }
-
-        // Also draw soft connection line from nearest nodes to smooth cursor position
-        if (mouse.active) {
-          const n = nodes[i];
-          const distToMouse = Math.hypot(n.x - mouse.trailX, n.y - mouse.trailY);
-          if (distToMouse < 45) {
-            const alpha = (1 - distToMouse / 45) * n.life * 0.2;
-            context.strokeStyle = `${config.synapseColor}${alpha})`;
-            context.beginPath();
-            context.moveTo(n.x, n.y);
-            context.lineTo(mouse.trailX, mouse.trailY);
-            context.stroke();
-          }
-        }
-      }
+    // Resize listener
+    const handleResize = () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      initParticles();
     };
+    window.addEventListener('resize', handleResize);
 
-    // Draw peaceful ambient fluid halo & smooth trailing core dot
-    const drawAmbientHalo = (context) => {
-      if (!mouse.active || mouse.trailX < 0) return;
-      const config = getThemeConfig();
-
-      context.save();
-
-      // 1. Soft Ambient Radial Glow Halo (Silky, diffuse light aura)
-      const haloRadius = mouse.isHovering ? 28 : 20;
-      const gradient = context.createRadialGradient(
-        mouse.trailX,
-        mouse.trailY,
-        0,
-        mouse.trailX,
-        mouse.trailY,
-        haloRadius
-      );
-      gradient.addColorStop(0, config.haloColor);
-      gradient.addColorStop(0.7, config.haloColor);
-      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-
-      context.fillStyle = gradient;
-      context.beginPath();
-      context.arc(mouse.trailX, mouse.trailY, haloRadius, 0, Math.PI * 2);
-      context.fill();
-
-      // 2. Delicate Micro Core Dot at exact pointer position
-      context.beginPath();
-      context.arc(mouse.x, mouse.y, mouse.isHovering ? 3 : 2, 0, Math.PI * 2);
-      context.fillStyle = config.coreDotColor;
-      context.shadowColor = config.coreDotColor;
-      context.shadowBlur = 4;
-      context.fill();
-
-      context.restore();
-    };
-
-    // Mouse movement handler
+    // Mouse movement
     const handleMouseMove = (e) => {
       mouse.active = true;
-
-      const dx = e.clientX - mouse.prevX;
-      const dy = e.clientY - mouse.prevY;
       mouse.x = e.clientX;
       mouse.y = e.clientY;
 
-      // Initialize trail position immediately if offscreen
-      if (mouse.trailX < 0) {
-        mouse.trailX = mouse.x;
-        mouse.trailY = mouse.y;
-      }
-
-      const stepDist = Math.hypot(dx, dy);
-      mouse.distanceTraveled += stepDist;
-
-      // Spawn a subtle luminous node every ~28px of movement (gentle spacing, no clutter)
-      if (mouse.distanceTraveled > 28) {
-        if (nodes.length < MAX_NODES) {
-          nodes.push(new NeuralNode(mouse.x, mouse.y, dx, dy));
-        }
-        mouse.distanceTraveled = 0;
-      }
-
-      mouse.prevX = e.clientX;
-      mouse.prevY = e.clientY;
-
-      // Check hovering over interactive buttons / links
       const target = e.target;
       if (
         target &&
         target.closest &&
         target.closest(
-          'button, a, input, select, textarea, [role="button"], .clickable, .interactive, .subject-tab-btn, .module-tab-btn, .topic-list-item, .mission-item-btn'
+          'button, a, input, select, textarea, [role="button"], .clickable, .interactive, .subject-tab-btn, .module-tab-btn, .topic-list-item, .mission-item-btn, .gate-card, .podium-card, .mode-toggle-btn'
         )
       ) {
         mouse.isHovering = true;
+        mouse.radius = 210; // expands web reach on interactive elements
       } else {
         mouse.isHovering = false;
+        mouse.radius = 175;
       }
     };
 
-    // Click: spawn peaceful wave ripple
+    // Mouse click: trigger web shockwave pulse
     const handleMouseDown = (e) => {
-      ripples.push(new WaveRipple(e.clientX, e.clientY));
+      pulses.push(new WebPulse(e.clientX, e.clientY));
+      
+      // Repel nearby particles outward in a web burst
+      particles.forEach((p) => {
+        const dx = p.x - e.clientX;
+        const dy = p.y - e.clientY;
+        const dist = Math.hypot(dx, dy);
+        if (dist < 150 && dist > 0) {
+          const force = (1 - dist / 150) * 8;
+          p.vx += (dx / dist) * force;
+          p.vy += (dy / dist) * force;
+        }
+      });
     };
 
     const handleMouseLeave = () => {
       mouse.active = false;
       mouse.isHovering = false;
-    };
-
-    const handleMouseEnter = () => {
-      mouse.active = true;
+      mouse.x = -500;
+      mouse.y = -500;
     };
 
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
     window.addEventListener('mousedown', handleMouseDown, { passive: true });
     document.addEventListener('mouseleave', handleMouseLeave);
-    document.addEventListener('mouseenter', handleMouseEnter);
 
-    // Animation Render Loop (60/120fps smooth lerp)
+    // Draw the Spider Web / Plexus Connections
+    const drawSpiderWeb = (context) => {
+      const config = getThemeConfig();
+      const nodeConnectDist = 115; // Distance between particles to form web
+      const cursorConnectDist = mouse.radius; // Distance from cursor to particles
+
+      // 1. Particle-to-Particle Web Interconnections
+      for (let i = 0; i < particles.length; i++) {
+        const p1 = particles[i];
+
+        for (let j = i + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+
+          if (dist < nodeConnectDist) {
+            // Brighter lines for closer particles
+            const alpha = (1 - dist / nodeConnectDist) * 0.45;
+            context.strokeStyle = `rgba(${config.webLineColor}, ${alpha})`;
+            context.lineWidth = 0.8;
+            context.beginPath();
+            context.moveTo(p1.x, p1.y);
+            context.lineTo(p2.x, p2.y);
+            context.stroke();
+          }
+        }
+
+        // 2. Dynamic Spider-Web Filaments shooting directly from Cursor to Particles!
+        if (mouse.active) {
+          const distToCursor = Math.hypot(p1.x - mouse.x, p1.y - mouse.y);
+
+          if (distToCursor < cursorConnectDist) {
+            // High visibility, crisp glowing web connection to the mouse
+            const alpha = (1 - distToCursor / cursorConnectDist) * 0.85;
+            context.strokeStyle = `rgba(${config.cursorLineColor}, ${alpha})`;
+            context.lineWidth = 1.2 * (1 - distToCursor / cursorConnectDist) + 0.5;
+            context.shadowColor = `rgb(${config.cursorLineColor})`;
+            context.shadowBlur = 6;
+            context.beginPath();
+            context.moveTo(mouse.x, mouse.y);
+            context.lineTo(p1.x, p1.y);
+            context.stroke();
+            context.shadowBlur = 0;
+          }
+        }
+      }
+    };
+
+    // Draw Cursor Tech Nexus (Center point & Glowing ring)
+    let reticlePulse = 0;
+    const drawCursorNexus = (context) => {
+      if (!mouse.active || mouse.x < 0) return;
+      const config = getThemeConfig();
+      reticlePulse += 0.05;
+
+      context.save();
+
+      // 1. Ambient Web Gravitational Field (Subtle glowing circle)
+      const fieldRadius = mouse.isHovering ? 32 : 24;
+      const grad = context.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, fieldRadius);
+      grad.addColorStop(0, config.haloBg);
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      context.fillStyle = grad;
+      context.beginPath();
+      context.arc(mouse.x, mouse.y, fieldRadius, 0, Math.PI * 2);
+      context.fill();
+
+      // 2. Spider Web Nexus Center Core
+      context.beginPath();
+      context.arc(mouse.x, mouse.y, mouse.isHovering ? 4.5 : 3.5, 0, Math.PI * 2);
+      context.fillStyle = config.cursorCore;
+      context.shadowColor = config.cursorGlow;
+      context.shadowBlur = 10;
+      context.fill();
+
+      // 3. Delicate Orbit Ring
+      const orbitRadius = (mouse.isHovering ? 14 : 9) + Math.sin(reticlePulse) * 1.5;
+      context.strokeStyle = `rgba(${config.cursorLineColor}, 0.5)`;
+      context.lineWidth = 1;
+      context.beginPath();
+      context.arc(mouse.x, mouse.y, orbitRadius, 0, Math.PI * 2);
+      context.stroke();
+
+      context.restore();
+    };
+
+    // Render Animation Loop
     const render = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // Smooth spring trailing physics for the ambient halo
-      mouse.trailX += (mouse.x - mouse.trailX) * 0.16;
-      mouse.trailY += (mouse.y - mouse.trailY) * 0.16;
+      // 1. Draw Spider Web connections
+      drawSpiderWeb(ctx);
 
-      // 1. Draw delicate synaptic connections between nodes
-      drawSynapticConnections(ctx);
+      // 2. Update and draw nodes
+      particles.forEach((p) => {
+        p.update();
+        p.draw(ctx);
+      });
 
-      // 2. Update & render neural micro-nodes
-      for (let i = nodes.length - 1; i >= 0; i--) {
-        const n = nodes[i];
-        if (n.update()) {
-          n.draw(ctx);
+      // 3. Update and draw click pulses
+      for (let i = pulses.length - 1; i >= 0; i--) {
+        const pulse = pulses[i];
+        if (pulse.update()) {
+          pulse.draw(ctx);
         } else {
-          nodes.splice(i, 1);
+          pulses.splice(i, 1);
         }
       }
 
-      // 3. Update & render click wave ripples
-      for (let i = ripples.length - 1; i >= 0; i--) {
-        const r = ripples[i];
-        if (r.update()) {
-          r.draw(ctx);
-        } else {
-          ripples.splice(i, 1);
-        }
-      }
-
-      // 4. Draw soothing ambient fluid halo & core dot
-      drawAmbientHalo(ctx);
+      // 4. Draw Cursor Nexus
+      drawCursorNexus(ctx);
 
       animFrameId = requestAnimationFrame(render);
     };
@@ -330,7 +360,6 @@ export default function CursorGlow() {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('mouseleave', handleMouseLeave);
-      document.removeEventListener('mouseenter', handleMouseEnter);
       if (animFrameId) cancelAnimationFrame(animFrameId);
     };
   }, []);

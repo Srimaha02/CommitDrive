@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Tech Flying Cursor Animation (Code Glyphs, Circuit Sparks & Cyber Reticle)
+   Cyber Spider Web & Plexus Constellation Canvas
    ========================================================================== */
 
 .tech-cursor-canvas {
@@ -14,9 +14,16 @@
   will-change: transform;
 }
 
-/* Deep Terminal Zone (Dark Mode): Screen blending for neon matrix bloom */
-[data-theme="practical"] .tech-cursor-canvas {
+/* Screen blending for luminous bloom on dark backgrounds */
+[data-theme="practical"] .tech-cursor-canvas,
+html[data-mode="dark"] .tech-cursor-canvas {
   mix-blend-mode: screen;
+}
+
+/* Light Mode: Normal blending with crisp saturated lines */
+html[data-mode="light"]:not([data-theme="practical"]) .tech-cursor-canvas {
+  mix-blend-mode: normal;
+  opacity: 0.9;
 }
 
 /* Automatically disable on touch screens and for users with motion sensitivity */
