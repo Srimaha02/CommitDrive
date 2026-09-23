@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   X, 
   Copy, 
@@ -27,6 +27,9 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { topicWiseCramData } from '../../data/cramSheetsData';
+import { osTopics } from '../../data/osTopics';
+import { dbmsTopics } from '../../data/dbmsTopics';
+import { cnTopics } from '../../data/cnTopics';
 import { 
   COMPANY_TRACKS, 
   getCompanyTrack, 
@@ -35,7 +38,7 @@ import {
 } from '../../data/companyTracksData';
 import './CramSheetModal.css';
 
-export default function CramSheetModal({ isOpen, onClose, initialSubject = null, initialTrack = 'all' }) {
+export default function CramSheetModal({ isOpen, onClose, initialSubject = null, initialTrack = 'all', initialTopic = 'all' }) {
   // If initialSubject is provided, start directly on that subject; otherwise start on Subject Picker
   const [selectedSubject, setSelectedSubject] = useState(initialSubject);
   const [selectedTrack, setSelectedTrack] = useState(initialTrack || 'all');
@@ -48,18 +51,31 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
   // Track collapsed questions (all questions are OPEN/EXPANDED by default so answers are immediately visible)
   const [collapsedMap, setCollapsedMap] = useState({});
 
-  // Sync initialSubject & initialTrack when modal opens
+  // Sync initialSubject, initialTrack & initialTopic when modal opens
   useEffect(() => {
     if (isOpen) {
       setSelectedSubject(initialSubject);
       setSelectedTrack(initialTrack || 'all');
       setLevelFilter('all');
-      setActiveTopicFilter('all');
+
+      // Auto-focus on specific topic if provided
+      if (initialTopic && initialTopic !== 'all' && initialSubject && topicWiseCramData[initialSubject]) {
+        const topicsList = topicWiseCramData[initialSubject].topics || [];
+        const cleanInitial = String(initialTopic).toLowerCase().trim();
+        const matched = topicsList.find(t => {
+          const ct = t.toLowerCase().trim();
+          return ct === cleanInitial || cleanInitial.includes(ct) || ct.includes(cleanInitial);
+        });
+        setActiveTopicFilter(matched || 'all');
+      } else {
+        setActiveTopicFilter('all');
+      }
+
       setSearchQuery('');
       setCollapsedMap({});
       setIsDownloading(false);
     }
-  }, [isOpen, initialSubject, initialTrack]);
+  }, [isOpen, initialSubject, initialTrack, initialTopic]);
 
   if (!isOpen) return null;
 
@@ -439,8 +455,50 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
     return <Terminal size={size} />;
   };
 
-  // Filter questions for active subject
-  const allSubjectQuestions = currentSubjectData?.questions || [];
+  // Filter questions for active subject: combine flagship cram questions with placement interview questions
+  const allSubjectQuestions = useMemo(() => {
+    if (!selectedSubject || !topicWiseCramData[selectedSubject]) return [];
+    const flagshipQuestions = topicWiseCramData[selectedSubject].questions || [];
+    const topicList = selectedSubject === 'os' ? osTopics : selectedSubject === 'dbms' ? dbmsTopics : cnTopics;
+    const existingTitles = new Set(flagshipQuestions.map(q => q.question.toLowerCase().trim()));
+    
+    const extraQuestions = [];
+    topicList.forEach((topicObj, tIdx) => {
+      const cramTopicName = topicWiseCramData[selectedSubject].topics[tIdx] || topicObj.title;
+      (topicObj.interviewQuestions || []).forEach((iq, iqIdx) => {
+        const titleKey = iq.question.toLowerCase().trim();
+        if (existingTitles.has(titleKey)) return;
+        
+        extraQuestions.push({
+          id: `${selectedSubject}-extra-${topicObj.id}-${iqIdx}`,
+          topic: cramTopicName,
+          level: iqIdx === 0 ? 'basic' : iqIdx === 1 ? 'intermediate' : 'advanced',
+          levelLabel: iqIdx === 0 ? 'Basic (Freshers / L100)' : iqIdx === 1 ? 'Intermediate (Core / L200)' : 'Advanced (FAANG / L300)',
+          question: iq.question,
+          frequency: iq.frequency ? `${iq.frequency} Frequency in Technical Rounds` : 'Frequently tested in SDE-1 interviews',
+          companyTags: iq.companyTags || ['Product Companies', 'Tier-1'],
+          reference: {
+            source: `CommitDrive ${currentSubjectData?.shortName || ''} Verified Bank`,
+            citation: 'Standard Placement Technical Evaluation Rubric',
+            linkText: 'Curated Solution'
+          },
+          tackleStrategy: {
+            interviewerIntent: 'Testing foundational conceptual clarity, step-by-step logic, and edge cases under interview pressure.',
+            verbalBlueprint: [
+              '1. State a concise, direct definition in 15 seconds.',
+              '2. Walk through the architectural mechanism or hardware/system execution flow.',
+              '3. Discuss a real-world software trade-off or failure scenario.'
+            ]
+          },
+          modelAnswer: {
+            summary: iq.answer
+          }
+        });
+      });
+    });
+
+    return [...flagshipQuestions, ...extraQuestions];
+  }, [selectedSubject, currentSubjectData]);
   
   // 1. Filter by Company Track first
   const trackFilteredQuestions = filterQuestionsByTrack(allSubjectQuestions, selectedTrack);
@@ -666,13 +724,13 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
               </div>
             </header>
 
-            {/* Filter & Controls Bar */}
+            {/* Filter & Controls Bar (Sleek & Compact to Maximize Content Reading Area) */}
             <div className="cram-filter-bar">
               
-              {/* Target Company Track Selector Bar inside View 2 */}
-              <div className="cram-track-selector-bar" style={{ marginBottom: '10px' }}>
+              {/* Target Company Track Selector Bar inside View 2 (Compact) */}
+              <div className="cram-track-selector-bar">
                 <div className="track-bar-label">
-                  <Briefcase size={14} />
+                  <Briefcase size={13} />
                   <span>Target Company Gate:</span>
                 </div>
                 <div className="track-pills-container">
@@ -688,7 +746,6 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
                       onClick={() => {
                         setSelectedTrack(track.id);
                         setLevelFilter('all');
-                        setActiveTopicFilter('all');
                       }}
                     >
                       <span className="track-pill-name">{track.shortLabel}</span>
@@ -698,94 +755,117 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
                 </div>
               </div>
 
-              {/* Company Track Focus Banner if active */}
+              {/* Company Track Focus Banner if active (Compact) */}
               {selectedTrack !== 'all' && (
-                <div className="cram-track-focus-banner" style={{ borderLeftColor: activeTrackObj.color, background: activeTrackObj.bg, marginBottom: '10px' }}>
-                  <div className="track-focus-top">
-                    <span className="track-focus-badge" style={{ background: activeTrackObj.color }}>{activeTrackObj.badge}</span>
-                    <span className="track-focus-companies">Targeting: {activeTrackObj.companies.join(', ')}</span>
-                  </div>
-                  <div className="track-focus-desc">{activeTrackObj.tagline}</div>
-                  <div className="track-focus-expectation">
-                    <strong>Winning Strategy:</strong> {activeTrackObj.keyExpectation}
-                  </div>
+                <div className="cram-track-focus-banner" style={{ borderLeftColor: activeTrackObj.color, background: activeTrackObj.bg }}>
+                  <span className="track-focus-badge" style={{ background: activeTrackObj.color }}>{activeTrackObj.badge}</span>
+                  <span className="track-focus-companies">Targeting: {activeTrackObj.companies.join(', ')}</span>
+                  <span className="track-focus-divider">•</span>
+                  <span className="track-focus-expectation">
+                    <strong>Strategy:</strong> {activeTrackObj.keyExpectation}
+                  </span>
                 </div>
               )}
 
-              {/* Level Filter Tabs (Basic -> Intermediate -> Advanced) */}
-              <div className="cram-level-tabs-row">
-                <button
-                  type="button"
-                  className={`level-tab-btn ${levelFilter === 'all' ? 'active' : ''}`}
-                  onClick={() => setLevelFilter('all')}
-                >
-                  <span>All ({trackFilteredQuestions.length})</span>
-                </button>
-                <button
-                  type="button"
-                  className={`level-tab-btn tab-basic ${levelFilter === 'basic' ? 'active' : ''}`}
-                  onClick={() => setLevelFilter('basic')}
-                >
-                  <span>🟢 Basic / Freshers ({basicCount})</span>
-                </button>
-                <button
-                  type="button"
-                  className={`level-tab-btn tab-intermediate ${levelFilter === 'intermediate' ? 'active' : ''}`}
-                  onClick={() => setLevelFilter('intermediate')}
-                >
-                  <span>🟡 Intermediate / Core ({intermediateCount})</span>
-                </button>
-                <button
-                  type="button"
-                  className={`level-tab-btn tab-advanced ${levelFilter === 'advanced' ? 'active' : ''}`}
-                  onClick={() => setLevelFilter('advanced')}
-                >
-                  <span>🔴 Advanced / FAANG ({advancedCount})</span>
-                </button>
-              </div>
+              {/* Search Box & Level Filter Tabs (Combined in single row to save vertical space!) */}
+              <div className="cram-search-and-levels-row">
+                <div className="cram-search-wrapper">
+                  <Search size={14} className="cram-search-icon" />
+                  <input 
+                    type="text" 
+                    placeholder={`Search ${currentSubjectData.name} questions, answers, companies (Amazon, TCS), references...`}
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="cram-topic-search-input"
+                  />
+                  {searchQuery && (
+                    <button type="button" className="cram-search-clear-btn" onClick={() => setSearchQuery('')}>
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
 
-              {/* Search Box */}
-              <div className="cram-search-wrapper">
-                <Search size={14} className="cram-search-icon" />
-                <input 
-                  type="text" 
-                  placeholder={`Search ${currentSubjectData.name} questions, answers, companies (Amazon, TCS), references, traps...`}
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  className="cram-topic-search-input"
-                />
-                {searchQuery && (
-                  <button type="button" className="cram-search-clear-btn" onClick={() => setSearchQuery('')}>
-                    <X size={13} />
+                <div className="cram-level-tabs-row">
+                  <button
+                    type="button"
+                    className={`level-tab-btn ${levelFilter === 'all' ? 'active' : ''}`}
+                    onClick={() => setLevelFilter('all')}
+                  >
+                    <span>All ({trackFilteredQuestions.length})</span>
                   </button>
-                )}
+                  <button
+                    type="button"
+                    className={`level-tab-btn tab-basic ${levelFilter === 'basic' ? 'active' : ''}`}
+                    onClick={() => setLevelFilter('basic')}
+                  >
+                    <span>🟢 Basic ({basicCount})</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`level-tab-btn tab-intermediate ${levelFilter === 'intermediate' ? 'active' : ''}`}
+                    onClick={() => setLevelFilter('intermediate')}
+                  >
+                    <span>🟡 Core ({intermediateCount})</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`level-tab-btn tab-advanced ${levelFilter === 'advanced' ? 'active' : ''}`}
+                    onClick={() => setLevelFilter('advanced')}
+                  >
+                    <span>🔴 FAANG ({advancedCount})</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Topic Sub-filter Pills (No ugly native scrollbar) */}
+              {/* Topic Sub-filter Pills (Horizontal scrolling row) */}
               <div className="cram-topic-pills-row no-scrollbar">
                 <button
                   type="button"
                   className={`cram-topic-pill-btn ${activeTopicFilter === 'all' ? 'active' : ''}`}
                   onClick={() => setActiveTopicFilter('all')}
                 >
-                  <span>All Topics</span>
+                  <span>All Topics ({allSubjectQuestions.length})</span>
                 </button>
-                {currentSubjectData.topics.map((t, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    className={`cram-topic-pill-btn ${activeTopicFilter === t ? 'active' : ''}`}
-                    onClick={() => setActiveTopicFilter(t)}
-                    title={t}
-                  >
-                    <span>{t}</span>
-                  </button>
-                ))}
+                {currentSubjectData.topics.map((t, idx) => {
+                  const topicQuestionsCount = trackFilteredQuestions.filter(q => q.topic === t).length;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      className={`cram-topic-pill-btn ${activeTopicFilter === t ? 'active' : ''}`}
+                      onClick={() => setActiveTopicFilter(t)}
+                      title={t}
+                    >
+                      <span>{t}</span>
+                      {topicQuestionsCount > 0 && (
+                        <span className="topic-pill-count">({topicQuestionsCount})</span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Questions List Body */}
+            {/* Questions List Body (Takes majority of modal height!) */}
             <div className="cram-cards-body print-area">
+              {/* Active Topic Banner when a specific topic is selected */}
+              {activeTopicFilter !== 'all' && (
+                <div className="cram-active-topic-banner animate-fadeIn">
+                  <div className="active-topic-banner-left">
+                    <Zap size={15} className="active-topic-bolt" />
+                    <span>Topic Cram Sheet: <strong>{activeTopicFilter}</strong></span>
+                    <span className="active-topic-badge">{displayedQuestions.length} Placement Questions</span>
+                  </div>
+                  <button 
+                    type="button" 
+                    className="topic-banner-reset-btn"
+                    onClick={() => setActiveTopicFilter('all')}
+                  >
+                    ← View All Topics in {currentSubjectData.name}
+                  </button>
+                </div>
+              )}
+
               <div className="cram-printable-top">
                 <h1>{currentSubjectData.name} — Verified Interview Questions, Answers & Tackling Guide</h1>
                 <p>{currentSubjectData.tagline} • Sourced from GFG Top 50, Glassdoor & Striver SDE Sheet • CommitDrive</p>

@@ -41,8 +41,8 @@ export default function App() {
   const handleCloseAuth = () => setAuthModalConfig(prev => ({ ...prev, isOpen: false }));
 
   // Emergency Cram Sheet Modal State
-  const [cramSheetConfig, setCramSheetConfig] = useState({ isOpen: false, subject: null, track: 'all' });
-  const handleOpenCramSheet = (subject = null, track = 'all') => setCramSheetConfig({ isOpen: true, subject, track: track || 'all' });
+  const [cramSheetConfig, setCramSheetConfig] = useState({ isOpen: false, subject: null, track: 'all', topic: 'all' });
+  const handleOpenCramSheet = (subject = null, track = 'all', topic = 'all') => setCramSheetConfig({ isOpen: true, subject, track: track || 'all', topic: topic || 'all' });
   const handleCloseCramSheet = () => setCramSheetConfig(prev => ({ ...prev, isOpen: false }));
 
   // Diagnostic Mock Viva Modal State
@@ -55,7 +55,8 @@ export default function App() {
     const handleCramEvent = (e) => {
       const subject = e.detail?.subject !== undefined ? e.detail.subject : null;
       const track = e.detail?.track || 'all';
-      handleOpenCramSheet(subject, track);
+      const topic = e.detail?.topic || 'all';
+      handleOpenCramSheet(subject, track, topic);
     };
     window.addEventListener('commitdrive_open_cram_sheet', handleCramEvent);
     return () => window.removeEventListener('commitdrive_open_cram_sheet', handleCramEvent);
@@ -214,6 +215,7 @@ export default function App() {
         isOpen={cramSheetConfig.isOpen}
         initialSubject={cramSheetConfig.subject}
         initialTrack={cramSheetConfig.track || 'all'}
+        initialTopic={cramSheetConfig.topic || 'all'}
         onClose={handleCloseCramSheet}
       />
 

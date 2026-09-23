@@ -300,7 +300,7 @@ export default function LearningPathView({
   // Render Further Reading & Reference Links Section
   const renderFurtherReadingSection = () => {
     const curatedData = getFurtherReadingForTopic(activeTopic.id);
-    const furtherReading = (activeTopic.furtherReading?.article?.url ? activeTopic.furtherReading : curatedData) || activeTopic.furtherReading || {};
+    const furtherReading = curatedData || activeTopic.furtherReading || {};
     const article = furtherReading.article || null;
     const video = furtherReading.video || null;
     const docs = furtherReading.docs || null;
@@ -654,8 +654,8 @@ export default function LearningPathView({
                     type="button"
                     className="reader-cram-quick-btn theme-transition"
                     onClick={() => {
-                      if (onOpenCramSheet) onOpenCramSheet(activeSubjectId);
-                      else window.dispatchEvent(new CustomEvent('commitdrive_open_cram_sheet', { detail: { subject: activeSubjectId } }));
+                      if (onOpenCramSheet) onOpenCramSheet(activeSubjectId, 'all', activeTopic.title);
+                      else window.dispatchEvent(new CustomEvent('commitdrive_open_cram_sheet', { detail: { subject: activeSubjectId, topic: activeTopic.title } }));
                     }}
                     title="Open Night-Before Cram Sheet for this subject"
                   >
@@ -1413,6 +1413,69 @@ export default function LearningPathView({
                         </div>
                       </section>
 
+                      {/* -- Topic Core Placement Interview Questions Bank (Comprehensive Coverage) -- */}
+                      {activeTopic.interviewQuestions && activeTopic.interviewQuestions.length > 0 && (
+                        <section className="im-core-questions-section theme-transition">
+                          <div className="im-section-header">
+                            <div className="im-section-icon-box core-icon">
+                              <HelpCircle size={15} />
+                            </div>
+                            <div className="im-section-title-wrap">
+                              <div className="im-title-row-flex">
+                                <h4 className="im-section-title">Topic Interview Q&A Bank ({activeTopic.interviewQuestions.length} Placement Questions)</h4>
+                                <span className="im-comprehensive-pill">High Yield</span>
+                              </div>
+                              <p className="im-section-sub">Top frequently asked technical round questions for this topic with winning answers and company tags.</p>
+                            </div>
+                          </div>
+
+                          <div className="im-core-questions-list">
+                            {activeTopic.interviewQuestions.map((qa, qIdx) => {
+                              const qId = qa.id || `qa-${qIdx}`;
+                              const isExp = expandedTraps[qId] !== false;
+                              return (
+                                <div key={qId} className="im-core-q-card theme-transition">
+                                  <div 
+                                    className="im-core-q-header"
+                                    onClick={() => setExpandedTraps(prev => ({ ...prev, [qId]: !isExp }))}
+                                  >
+                                    <div className="im-core-q-left">
+                                      <span className="im-q-num-badge">Q{qIdx + 1}</span>
+                                      <span className="im-core-q-text">{qa.question}</span>
+                                    </div>
+                                    <div className="im-core-q-meta">
+                                      {qa.companyTags?.map((ct, ci) => (
+                                        <span key={ci} className="im-trap-company-tag">{ct}</span>
+                                      ))}
+                                      {qa.frequency && (
+                                        <span className="im-freq-chip">{qa.frequency}</span>
+                                      )}
+                                      <ChevronDown size={14} className={`im-trap-chevron ${isExp ? 'open' : ''}`} />
+                                    </div>
+                                  </div>
+
+                                  {isExp && (
+                                    <div className="im-core-q-body animate-fadeIn">
+                                      <div className="im-core-answer-box">
+                                        <div className="im-core-answer-header">
+                                          <Check size={13} className="text-success" />
+                                          <span>Winning Model Answer:</span>
+                                        </div>
+                                        <div className="im-core-answer-content">
+                                          {qa.answer.split('\n').map((line, lIdx) => (
+                                            <p key={lIdx}>{line}</p>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </section>
+                      )}
+
                       {/* -- Trap questions -- */}
                       {iData.trapQuestions && iData.trapQuestions.length > 0 && (
                         <section className="im-traps-section theme-transition">
@@ -1421,7 +1484,7 @@ export default function LearningPathView({
                               <AlertCircle size={15} />
                             </div>
                             <div>
-                              <h4 className="im-section-title">Interviewer Trap Questions</h4>
+                              <h4 className="im-section-title">Interviewer Trap Questions ({iData.trapQuestions.length} Traps)</h4>
                               <p className="im-section-sub">Deceptive follow-ups designed to catch candidates who memorised without understanding.</p>
                             </div>
                           </div>
@@ -1470,15 +1533,18 @@ export default function LearningPathView({
                         </section>
                       )}
 
-                      {/* -- Cram Sheet shortcut -- */}
+                      {/* -- Cram Sheet shortcut (Linked directly to this Topic) -- */}
                       <div className="im-cram-shortcut theme-transition">
                         <Zap size={14} className="im-cram-icon" />
-                        <span>Want more questions for this topic?</span>
+                        <span>Want the complete revision guide for <strong>{activeTopic.title}</strong>?</span>
                         <button
                           className="im-cram-btn theme-transition"
-                          onClick={() => onOpenCramSheet && onOpenCramSheet(activeTopic.subjectId || activeSubjectId)}
+                          onClick={() => {
+                            if (onOpenCramSheet) onOpenCramSheet(activeTopic.subjectId || activeSubjectId, 'all', activeTopic.title);
+                            else window.dispatchEvent(new CustomEvent('commitdrive_open_cram_sheet', { detail: { subject: activeTopic.subjectId || activeSubjectId, topic: activeTopic.title } }));
+                          }}
                         >
-                          Open Cram Sheet →
+                          Open Topic Cram Sheet →
                         </button>
                       </div>
                     </>
