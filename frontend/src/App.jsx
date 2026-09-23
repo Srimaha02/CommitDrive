@@ -9,6 +9,7 @@ import AuthModal from './components/auth/AuthModal';
 import CramSheetModal from './components/common/CramSheetModal';
 import VivaModal from './components/viva/VivaModal';
 import CursorGlow from './components/common/CursorGlow';
+import { BookOpen, Terminal } from 'lucide-react';
 import { authApi } from './services/api';
 import './App.css';
 
