@@ -32,18 +32,27 @@ import {
   BookMarked,
   ExternalLink,
   Video,
-  FileText
+  FileText,
+  Lock
 } from 'lucide-react';
 import { 
   subjects, 
   curriculumData, 
   getSubjectTopics, 
-  calculateSubjectProgress 
+  calculateSubjectProgress,
+  CURRICULUM_TIERS
 } from '../../data/learningCurriculum';
 import { learningApi } from '../../services/api';
+import GatedContentPreview from '../layout/GatedContentPreview';
 import './LearningPathView.css';
 
-export default function LearningPathView({ onNavigate }) {
+export default function LearningPathView({ 
+  currentUser, 
+  onNavigate, 
+  onOpenAuth, 
+  onDemoLogin,
+  onOpenCramSheet
+}) {
   // State: Active Subject ('os' | 'dbms' | 'cn')
   const [activeSubjectId, setActiveSubjectId] = useState(() => {
     try {
@@ -78,6 +87,18 @@ export default function LearningPathView({ onNavigate }) {
 
   // State: Topic Search Query
   const [searchQuery, setSearchQuery] = useState('');
+
+  // State: Placement Tier Filter ('all' | 'L100' | 'L200' | 'L300')
+  const [selectedTierFilter, setSelectedTierFilter] = useState('all');
+
+  // State: 60-Second Interview Pitch Active Drill Mode
+  const [isPitchHidden, setIsPitchHidden] = useState(false);
+  const [pitchTimerSeconds, setPitchTimerSeconds] = useState(60);
+  const [isPitchTimerRunning, setIsPitchTimerRunning] = useState(false);
+  const [isPitchCopied, setIsPitchCopied] = useState(false);
+
+  // State: Expanded Traps in Q&A Vault
+  const [expandedTraps, setExpandedTraps] = useState({});
 
   // State: Expanded Interview Q&As
   const [expandedQAs, setExpandedQAs] = useState({});
@@ -138,24 +159,72 @@ export default function LearningPathView({ onNavigate }) {
     }
   }, [completedTopicIds]);
 
-  // Reset flashcard state when changing topic
+  // Reset flashcard & pitch drill state when changing topic
   useEffect(() => {
     setActiveCardIndex(0);
     setIsCardFlipped(false);
+    setIsPitchHidden(false);
+    setIsPitchTimerRunning(false);
+    setPitchTimerSeconds(60);
+    setIsPitchCopied(false);
   }, [activeTopicId]);
+
+  // 60-Second Interview Pitch Countdown Timer
+  useEffect(() => {
+    let interval = null;
+    if (isPitchTimerRunning && pitchTimerSeconds > 0) {
+      interval = setInterval(() => {
+        setPitchTimerSeconds(prev => prev - 1);
+      }, 1000);
+    } else if (pitchTimerSeconds === 0 && isPitchTimerRunning) {
+      setIsPitchTimerRunning(false);
+      setIsPitchHidden(false); // Auto-reveal script when time is up
+    }
+    return () => clearInterval(interval);
+  }, [isPitchTimerRunning, pitchTimerSeconds]);
 
   // Current Subject and Topics
   const activeSubject = subjects.find(s => s.id === activeSubjectId) || subjects[0];
   const currentTopics = getSubjectTopics(activeSubjectId);
 
-  // Filtered topics based on search
-  const filteredTopics = currentTopics.filter(topic => 
-    topic.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    topic.what.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filtered topics based on search query AND placement tier
+  const filteredTopics = currentTopics.filter(topic => {
+    const matchesSearch = !searchQuery.trim() || 
+      topic.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      topic.what?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesTier = selectedTierFilter === 'all' || topic.tier === selectedTierFilter;
+    return matchesSearch && matchesTier;
+  });
 
   // Active Topic
   const activeTopic = currentTopics.find(t => t.id === activeTopicId) || currentTopics[0] || {};
+
+  // Pitch Drill Actions
+  const handleCopyPitch = () => {
+    if (activeTopic.interviewScript60s?.script) {
+      navigator.clipboard.writeText(activeTopic.interviewScript60s.script);
+      setIsPitchCopied(true);
+      setTimeout(() => setIsPitchCopied(false), 2000);
+    }
+  };
+
+  const handleStartPitchDrill = () => {
+    setIsPitchHidden(true);
+    setPitchTimerSeconds(60);
+    setIsPitchTimerRunning(true);
+  };
+
+  const handleRevealPitch = () => {
+    setIsPitchHidden(false);
+    setIsPitchTimerRunning(false);
+  };
+
+  const handleToggleTrap = (trapId) => {
+    setExpandedTraps(prev => ({
+      ...prev,
+      [trapId]: !prev[trapId]
+    }));
+  };
 
   // Subject icon component helper
   const getSubjectIcon = (id, size = 18) => {
@@ -166,6 +235,10 @@ export default function LearningPathView({ onNavigate }) {
 
   // Toggle topic completion
   const handleToggleCompletion = (topicId) => {
+    if (!currentUser) {
+      if (onOpenAuth) onOpenAuth('signup');
+      return;
+    }
     const isCompleted = !completedTopicIds.includes(topicId);
     setCompletedTopicIds(prev => {
       if (prev.includes(topicId)) {
@@ -450,6 +523,24 @@ export default function LearningPathView({ onNavigate }) {
               </div>
               <span className="sidebar-topic-count">10 Topics Ordered Basic to Advanced</span>
 
+              {/* Placement Tier Selector Filter */}
+              <div className="sidebar-tier-selector">
+                <span className="sidebar-tier-label">Placement Tier:</span>
+                <div className="tier-pills-row">
+                  {CURRICULUM_TIERS.map(tier => (
+                    <button
+                      key={tier.id}
+                      type="button"
+                      className={`tier-pill-btn ${selectedTierFilter === tier.id ? 'active' : ''} theme-transition`}
+                      onClick={() => setSelectedTierFilter(tier.id)}
+                      title={tier.badge || tier.label}
+                    >
+                      <span>{tier.shortLabel}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Quick Search */}
               <div className="sidebar-search-box">
                 <Search size={14} className="search-icon" />
@@ -468,16 +559,19 @@ export default function LearningPathView({ onNavigate }) {
               {filteredTopics.map((topic, idx) => {
                 const isSelected = activeTopicId === topic.id;
                 const isCompleted = completedTopicIds.includes(topic.id);
+                const isDemoLocked = currentUser?.isDemo && topic.order > 1;
 
                 return (
                   <button
                     key={topic.id}
-                    className={`topic-list-item ${isSelected ? 'selected' : ''} ${isCompleted ? 'completed' : ''} theme-transition`}
+                    className={`topic-list-item ${isSelected ? 'selected' : ''} ${isCompleted ? 'completed' : ''} ${isDemoLocked ? 'demo-locked' : ''} theme-transition`}
                     onClick={() => setActiveTopicId(topic.id)}
                   >
                     <div className="topic-order-badge theme-transition">
                       {isCompleted ? (
                         <CheckCircle2 size={15} className="completed-check-icon" />
+                      ) : isDemoLocked ? (
+                        <Lock size={12} className="completed-check-icon" />
                       ) : (
                         <span>{topic.order < 10 ? `0${topic.order}` : topic.order}</span>
                       )}
@@ -489,10 +583,16 @@ export default function LearningPathView({ onNavigate }) {
                         <span className={`diff-pill ${topic.difficulty.toLowerCase()}`}>
                           {topic.difficulty}
                         </span>
+                        <span className={`tier-badge-micro tier-${topic.tier ? topic.tier.toLowerCase() : 'l200'}`}>
+                          {topic.tier || 'L200'}
+                        </span>
                         <span className="read-time-label">
                           <Clock size={11} />
                           <span>{topic.readTime}</span>
                         </span>
+                        {isDemoLocked && (
+                          <span className="demo-scope-lock-pill">Demo Lock</span>
+                        )}
                       </div>
                     </div>
 
@@ -503,9 +603,9 @@ export default function LearningPathView({ onNavigate }) {
 
               {filteredTopics.length === 0 && (
                 <div className="no-topics-found">
-                  <p>No topics match "{searchQuery}"</p>
-                  <button onClick={() => setSearchQuery('')} className="clear-search-btn">
-                    Clear search
+                  <p>No topics match criteria</p>
+                  <button onClick={() => { setSearchQuery(''); setSelectedTierFilter('all'); }} className="clear-search-btn">
+                    Reset filters
                   </button>
                 </div>
               )}
@@ -542,28 +642,47 @@ export default function LearningPathView({ onNavigate }) {
               <div className="reader-title-row">
                 <h2 className="reader-topic-title">{activeTopic.title}</h2>
 
-                {/* Mark as Mastered Toggle Button */}
-                <button 
-                  className={`mastered-toggle-btn ${completedTopicIds.includes(activeTopic.id) ? 'is-mastered' : ''} theme-transition`}
-                  onClick={() => handleToggleCompletion(activeTopic.id)}
-                  title="Toggle mastery status"
-                >
-                  {completedTopicIds.includes(activeTopic.id) ? (
-                    <>
-                      <CheckCircle2 size={16} />
-                      <span>Mastered</span>
-                    </>
-                  ) : (
-                    <>
-                      <Circle size={16} />
-                      <span>Mark as mastered</span>
-                    </>
-                  )}
-                </button>
+                <div className="reader-actions-group">
+                  {/* Quick Cram Sheet Button */}
+                  <button 
+                    type="button"
+                    className="reader-cram-quick-btn theme-transition"
+                    onClick={() => {
+                      if (onOpenCramSheet) onOpenCramSheet(activeSubjectId);
+                      else window.dispatchEvent(new CustomEvent('commitdrive_open_cram_sheet', { detail: { subject: activeSubjectId } }));
+                    }}
+                    title="Open Night-Before Cram Sheet for this subject"
+                  >
+                    <Zap size={14} className="reader-cram-icon" />
+                    <span>⚡ Quick Cram Sheet</span>
+                  </button>
+
+                  {/* Mark as Mastered Toggle Button */}
+                  <button 
+                    className={`mastered-toggle-btn ${completedTopicIds.includes(activeTopic.id) ? 'is-mastered' : ''} theme-transition`}
+                    onClick={() => handleToggleCompletion(activeTopic.id)}
+                    title="Toggle mastery status"
+                  >
+                    {completedTopicIds.includes(activeTopic.id) ? (
+                      <>
+                        <CheckCircle2 size={16} />
+                        <span>Mastered</span>
+                      </>
+                    ) : (
+                      <>
+                        <Circle size={16} />
+                        <span>Mark as mastered</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Topic Metadata Badges */}
               <div className="reader-meta-row">
+                <span className={`tier-badge-pill tier-${activeTopic.tier ? activeTopic.tier.toLowerCase() : 'l200'}`}>
+                  {activeTopic.tier || 'L200'} • {activeTopic.tierName || 'Placement Core'}
+                </span>
                 <span className={`diff-pill ${activeTopic.difficulty ? activeTopic.difficulty.toLowerCase() : 'intermediate'}`}>
                   {activeTopic.difficulty}
                 </span>
@@ -571,6 +690,12 @@ export default function LearningPathView({ onNavigate }) {
                   <Clock size={13} />
                   <span>{activeTopic.readTime}</span>
                 </span>
+                {activeTopic.frequency && (
+                  <span className="reader-freq-pill" title="Placement Interview Frequency">
+                    <Sparkles size={12} />
+                    <span>{activeTopic.frequency}</span>
+                  </span>
+                )}
                 <span className="draft-review-badge" title="Subject to personal review and fact-checking before production release">
                   <AlertCircle size={13} />
                   <span>{activeTopic.draftStatus || 'Draft v1.0 — Review candidate'}</span>
@@ -589,7 +714,13 @@ export default function LearningPathView({ onNavigate }) {
 
                 <button 
                   className={`reader-tab-btn ${activeReaderTab === 'qa' ? 'active' : ''} theme-transition`}
-                  onClick={() => setActiveReaderTab('qa')}
+                  onClick={() => {
+                    if (!currentUser) {
+                      if (onOpenAuth) onOpenAuth('signup');
+                      return;
+                    }
+                    setActiveReaderTab('qa');
+                  }}
                 >
                   <FileQuestion size={15} />
                   <span>Interview Q&A vault ({activeTopic.interviewQuestions?.length || 0})</span>
@@ -597,7 +728,13 @@ export default function LearningPathView({ onNavigate }) {
 
                 <button 
                   className={`reader-tab-btn ${activeReaderTab === 'flashcards' ? 'active' : ''} theme-transition`}
-                  onClick={() => setActiveReaderTab('flashcards')}
+                  onClick={() => {
+                    if (!currentUser) {
+                      if (onOpenAuth) onOpenAuth('signup');
+                      return;
+                    }
+                    setActiveReaderTab('flashcards');
+                  }}
                 >
                   <RotateCw size={15} />
                   <span>Flashcard deck ({activeTopic.flashcards?.length || 0})</span>
@@ -605,7 +742,13 @@ export default function LearningPathView({ onNavigate }) {
 
                 <button 
                   className={`reader-tab-btn ${activeReaderTab === 'reading' ? 'active' : ''} theme-transition`}
-                  onClick={() => setActiveReaderTab('reading')}
+                  onClick={() => {
+                    if (!currentUser) {
+                      if (onOpenAuth) onOpenAuth('signup');
+                      return;
+                    }
+                    setActiveReaderTab('reading');
+                  }}
                 >
                   <BookMarked size={15} />
                   <span>Further reading</span>
@@ -613,12 +756,151 @@ export default function LearningPathView({ onNavigate }) {
               </div>
             </div>
 
-            {/* =============================================================
-                Tab 1: Concept Deep-Dive (What, Why, Use Case, Example)
-                ============================================================= */}
-            {activeReaderTab === 'concept' && (
-              <div className="reader-content-body animate-fadeIn">
+            {currentUser?.isDemo && activeTopic.order > 1 ? (
+              <div className="demo-topic-lock-card theme-transition animate-fadeIn">
+                <div className="demo-topic-lock-badge">
+                  <Lock size={18} className="demo-lock-icon" />
+                  <span>Demo Mode Scope Limit</span>
+                </div>
+                <h2 className="demo-topic-lock-title">Topic {activeTopic.order < 10 ? `0${activeTopic.order}` : activeTopic.order}: "{activeTopic.title}" is Gated</h2>
+                <p className="demo-topic-lock-desc">
+                  In Demo Mode, you have full interactive access to <strong>Topic 01 ({currentTopics[0]?.title})</strong> with complete engineering rationales, Q&A vaults, and flashcards.
+                </p>
+                <p className="demo-topic-lock-sub">
+                  To unlock all 10 topics in {activeSubject.name} and the complete 30-topic core computer science curriculum, sign up for your free account.
+                </p>
+                <div className="demo-topic-lock-actions">
+                  <button 
+                    type="button"
+                    className="demo-topic-signup-btn theme-transition"
+                    onClick={() => onOpenAuth && onOpenAuth('signup')}
+                  >
+                    <span>Sign up to unlock all {activeSubject.name} topics</span>
+                    <ArrowRight size={15} />
+                  </button>
+                  <button 
+                    type="button"
+                    className="demo-topic-back-btn theme-transition"
+                    onClick={() => {
+                      const firstTopic = getSubjectTopics(activeSubjectId)[0];
+                      if (firstTopic) setActiveTopicId(firstTopic.id);
+                    }}
+                  >
+                    <span>← Back to Topic 01</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* =============================================================
+                    Tab 1: Concept Deep-Dive (What, Why, Use Case, Example)
+                    ============================================================= */}
+                {activeReaderTab === 'concept' && (
+                  <div className="reader-content-body animate-fadeIn">
                 
+                {/* 00. 60-Second Interview Elevator Pitch Card */}
+                {activeTopic.interviewScript60s && (
+                  <section className="interview-pitch-card theme-transition animate-fadeIn">
+                    <div className="pitch-card-header">
+                      <div className="pitch-header-left">
+                        <div className="pitch-badge-icon">
+                          <Zap size={16} />
+                        </div>
+                        <div>
+                          <div className="pitch-eyebrow-row">
+                            <span className="pitch-eyebrow">60-Second Interview Elevator Pitch</span>
+                            <span className="pitch-duration-pill">45–60 sec spoken script</span>
+                          </div>
+                          <h3 className="pitch-target-prompt">
+                            {activeTopic.interviewScript60s.targetPrompt || `When asked: "Explain ${activeTopic.title}"`}
+                          </h3>
+                        </div>
+                      </div>
+
+                      <div className="pitch-header-actions">
+                        <button
+                          type="button"
+                          className={`pitch-drill-btn ${isPitchTimerRunning ? 'active' : ''} theme-transition`}
+                          onClick={isPitchHidden ? handleRevealPitch : handleStartPitchDrill}
+                          title="Hide script and start 60s speaking practice"
+                        >
+                          {isPitchHidden ? (
+                            <>
+                              <Sparkles size={13} />
+                              <span>Reveal Script</span>
+                            </>
+                          ) : (
+                            <>
+                              <Clock size={13} />
+                              <span>{isPitchTimerRunning ? `Drill: ${pitchTimerSeconds}s` : 'Test My Pitch (60s Drill)'}</span>
+                            </>
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          className="pitch-copy-btn theme-transition"
+                          onClick={handleCopyPitch}
+                          title="Copy spoken script to clipboard"
+                        >
+                          {isPitchCopied ? (
+                            <>
+                              <Check size={13} className="text-success" />
+                              <span>Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={13} />
+                              <span>Copy Pitch</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Spoken Script Container */}
+                    <div className={`pitch-script-box ${isPitchHidden ? 'pitch-is-hidden' : ''} theme-transition`}>
+                      {isPitchHidden ? (
+                        <div className="pitch-hidden-cover">
+                          <div className="pitch-countdown-circle">
+                            <span className="countdown-number">{pitchTimerSeconds}s</span>
+                            <span className="countdown-label">Speak now out loud!</span>
+                          </div>
+                          <p className="pitch-hidden-hint">
+                            Deliver your 60-second answer without reading. Hit the mandatory keywords below!
+                          </p>
+                          <button 
+                            type="button" 
+                            className="pitch-reveal-btn" 
+                            onClick={handleRevealPitch}
+                          >
+                            Done Speaking • Check Model Script
+                          </button>
+                        </div>
+                      ) : (
+                        <blockquote className="pitch-spoken-quote">
+                          "{activeTopic.interviewScript60s.script}"
+                        </blockquote>
+                      )}
+                    </div>
+
+                    {/* Non-negotiable Keywords */}
+                    {activeTopic.interviewScript60s.keywords?.length > 0 && (
+                      <div className="pitch-keywords-row">
+                        <span className="keywords-label">Must-Mention Keywords:</span>
+                        <div className="keywords-pills-list">
+                          {activeTopic.interviewScript60s.keywords.map((kw, kwIdx) => (
+                            <span key={kwIdx} className="keyword-chip">
+                              <Check size={11} className="kw-check-icon" />
+                              <span>{kw}</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </section>
+                )}
+
                 {/* 1. What */}
                 <section className="concept-card theme-transition">
                   <div className="concept-card-header">
@@ -650,98 +932,115 @@ export default function LearningPathView({ onNavigate }) {
                   </div>
                 </section>
 
-                {/* 2. Why */}
-                <section className="concept-card theme-transition">
-                  <div className="concept-card-header">
-                    <div className="concept-icon-pill icon-why">
-                      <Lightbulb size={15} />
-                    </div>
-                    <div>
-                      <span className="concept-label">02 • Engineering rationale</span>
-                      <h3 className="concept-heading">Why was it created?</h3>
-                    </div>
-                  </div>
-                  <div className="concept-body-paragraphs">
-                    {activeTopic.why?.split('\n\n').map((paragraph, pIdx) => (
-                      <p key={pIdx} className="concept-body-text">{paragraph}</p>
-                    ))}
-                  </div>
-                </section>
-
-                {/* 3. Use Case */}
-                <section className="concept-card theme-transition">
-                  <div className="concept-card-header">
-                    <div className="concept-icon-pill icon-usecase">
-                      <Briefcase size={15} />
-                    </div>
-                    <div>
-                      <span className="concept-label">03 • Scale & industry implementation</span>
-                      <h3 className="concept-heading">Real-world use case</h3>
-                    </div>
-                  </div>
-                  <div className="concept-body-paragraphs">
-                    {activeTopic.useCase?.split('\n\n').map((paragraph, pIdx) => (
-                      <p key={pIdx} className="concept-body-text">{paragraph}</p>
-                    ))}
-                  </div>
-                </section>
-
-                {/* 4. Example Code / Architecture Diagram */}
-                <section className="concept-card code-concept-card theme-transition">
-                  <div className="concept-card-header">
-                    <div className="concept-icon-pill icon-example">
-                      {activeSubjectId === 'cn' ? <Network size={16} /> : <Code2 size={16} />}
-                    </div>
-                    <div className="code-header-info">
-                      <span className="concept-label">
-                        {activeSubjectId === 'cn' ? '04 • Protocol architecture & sequence flow' : '04 • Concrete implementation'}
-                      </span>
-                      <h3 className="concept-heading">
-                        {activeSubjectId === 'cn' ? 'Protocol packet structure & sequence flow' : 'Technical walkthrough & code example'}
-                      </h3>
-                    </div>
-                    <button 
-                      className="copy-code-btn theme-transition"
-                      onClick={() => handleCopyCode(activeTopic.example)}
-                    >
-                      {isCopied ? (
-                        <>
-                          <Check size={13} className="copy-check" />
-                          <span>Copied</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy size={13} />
-                          <span>{activeSubjectId === 'cn' ? 'Copy diagram' : 'Copy'}</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  <div className="code-block-wrapper">
-                    <pre className="code-pre">
-                      <code>{activeTopic.example}</code>
-                    </pre>
-                  </div>
-
-                  {/* Step-by-step ordered plain-language walkthrough */}
-                  {activeTopic.exampleExplanation && activeTopic.exampleExplanation.length > 0 && (
-                    <div className="example-walkthrough-container theme-transition">
-                      <div className="walkthrough-header">
-                        <FileCheck2 size={16} className="walkthrough-header-icon" />
-                        <h4 className="walkthrough-heading">Step-by-step walkthrough</h4>
+                <GatedContentPreview
+                  isGated={!currentUser}
+                  badgeText="Core CS Theory Path"
+                  title="Sign up to unlock full access"
+                  subtitle="Unlock complete engineering rationales, real-world scale architectures, code examples, technical interview Q&A vaults, and active recall flashcards."
+                  features={[
+                    'Engineering rationales & system scale architectures for all 30 CS topics',
+                    'Curated technical interview question vaults with model answers',
+                    'Interactive 3D active-recall flashcard decks with spaced repetition',
+                    'Full curriculum progress tracking and mastery certificates'
+                  ]}
+                  ctaText="Sign up to unlock full access"
+                  onSignUp={() => onOpenAuth && onOpenAuth('signup')}
+                  onSignIn={() => onOpenAuth && onOpenAuth('signin')}
+                  onDemoLogin={onDemoLogin}
+                >
+                  {/* 2. Why */}
+                  <section className="concept-card theme-transition">
+                    <div className="concept-card-header">
+                      <div className="concept-icon-pill icon-why">
+                        <Lightbulb size={15} />
                       </div>
-                      <ol className="walkthrough-steps-list">
-                        {activeTopic.exampleExplanation.map((step, sIdx) => (
-                          <li key={sIdx} className="walkthrough-step-item">
-                            <span className="walkthrough-step-badge">Step {sIdx + 1}</span>
-                            <span className="walkthrough-step-text">{step}</span>
-                          </li>
-                        ))}
-                      </ol>
+                      <div>
+                        <span className="concept-label">02 • Engineering rationale</span>
+                        <h3 className="concept-heading">Why was it created?</h3>
+                      </div>
                     </div>
-                  )}
-                </section>
+                    <div className="concept-body-paragraphs">
+                      {activeTopic.why?.split('\n\n').map((paragraph, pIdx) => (
+                        <p key={pIdx} className="concept-body-text">{paragraph}</p>
+                      ))}
+                    </div>
+                  </section>
+
+                  {/* 3. Use Case */}
+                  <section className="concept-card theme-transition">
+                    <div className="concept-card-header">
+                      <div className="concept-icon-pill icon-usecase">
+                        <Briefcase size={15} />
+                      </div>
+                      <div>
+                        <span className="concept-label">03 • Scale & industry implementation</span>
+                        <h3 className="concept-heading">Real-world use case</h3>
+                      </div>
+                    </div>
+                    <div className="concept-body-paragraphs">
+                      {activeTopic.useCase?.split('\n\n').map((paragraph, pIdx) => (
+                        <p key={pIdx} className="concept-body-text">{paragraph}</p>
+                      ))}
+                    </div>
+                  </section>
+
+                  {/* 4. Example Code / Architecture Diagram */}
+                  <section className="concept-card code-concept-card theme-transition">
+                    <div className="concept-card-header">
+                      <div className="concept-icon-pill icon-example">
+                        {activeSubjectId === 'cn' ? <Network size={16} /> : <Code2 size={16} />}
+                      </div>
+                      <div className="code-header-info">
+                        <span className="concept-label">
+                          {activeSubjectId === 'cn' ? '04 • Protocol architecture & sequence flow' : '04 • Concrete implementation'}
+                        </span>
+                        <h3 className="concept-heading">
+                          {activeSubjectId === 'cn' ? 'Protocol packet structure & sequence flow' : 'Technical walkthrough & code example'}
+                        </h3>
+                      </div>
+                      <button 
+                        className="copy-code-btn theme-transition"
+                        onClick={() => handleCopyCode(activeTopic.example)}
+                      >
+                        {isCopied ? (
+                          <>
+                            <Check size={13} className="copy-check" />
+                            <span>Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={13} />
+                            <span>{activeSubjectId === 'cn' ? 'Copy diagram' : 'Copy'}</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="code-block-wrapper">
+                      <pre className="code-pre">
+                        <code>{activeTopic.example}</code>
+                      </pre>
+                    </div>
+
+                    {/* Step-by-step ordered plain-language walkthrough */}
+                    {activeTopic.exampleExplanation && activeTopic.exampleExplanation.length > 0 && (
+                      <div className="example-walkthrough-container theme-transition">
+                        <div className="walkthrough-header">
+                          <FileCheck2 size={16} className="walkthrough-header-icon" />
+                          <h4 className="walkthrough-heading">Step-by-step walkthrough</h4>
+                        </div>
+                        <ol className="walkthrough-steps-list">
+                          {activeTopic.exampleExplanation.map((step, sIdx) => (
+                            <li key={sIdx} className="walkthrough-step-item">
+                              <span className="walkthrough-step-badge">Step {sIdx + 1}</span>
+                              <span className="walkthrough-step-text">{step}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+                  </section>
+                </GatedContentPreview>
 
               </div>
             )}
@@ -762,6 +1061,69 @@ export default function LearningPathView({ onNavigate }) {
                     </p>
                   </div>
                 </div>
+
+                {/* Interviewer Trap Questions & Dealbreakers */}
+                {activeTopic.trapQuestions && activeTopic.trapQuestions.length > 0 && (
+                  <div className="trap-questions-section theme-transition">
+                    <div className="trap-section-banner">
+                      <div className="trap-banner-badge">
+                        <AlertCircle size={15} />
+                        <span>Dealbreaker Traps</span>
+                      </div>
+                      <h4 className="trap-section-title">Interviewer Trap Questions & Red Flags</h4>
+                      <p className="trap-section-desc">
+                        Deceptive questions interviewers use to catch candidates who memorized answers without understanding the underlying architecture.
+                      </p>
+                    </div>
+
+                    <div className="trap-cards-grid">
+                      {activeTopic.trapQuestions.map((trap, tIdx) => {
+                        const isExpanded = expandedTraps[trap.id || tIdx] !== false; // default expanded
+                        return (
+                          <div key={trap.id || tIdx} className={`trap-card ${isExpanded ? 'expanded' : ''} theme-transition`}>
+                            <button
+                              type="button"
+                              className="trap-card-header theme-transition"
+                              onClick={() => handleToggleTrap(trap.id || tIdx)}
+                              aria-expanded={isExpanded}
+                            >
+                              <div className="trap-header-top">
+                                <span className="trap-num-pill">Trap #{tIdx + 1}</span>
+                                <div className="trap-company-tags">
+                                  {trap.companyTags?.map(ct => (
+                                    <span key={ct} className="trap-company-tag">{ct}</span>
+                                  ))}
+                                </div>
+                              </div>
+                              <h5 className="trap-question-text">"{trap.question}"</h5>
+                              <ChevronDown size={16} className={`trap-chevron ${isExpanded ? 'rotated' : ''}`} />
+                            </button>
+
+                            {isExpanded && (
+                              <div className="trap-card-body theme-transition animate-fadeIn">
+                                <div className="trap-comparison-col mistake-col">
+                                  <div className="comparison-header mistake-header">
+                                    <X size={14} />
+                                    <span>❌ Common Amateur Mistake (Red Flag)</span>
+                                  </div>
+                                  <p className="comparison-text">{trap.commonMistake}</p>
+                                </div>
+
+                                <div className="trap-comparison-col winning-col">
+                                  <div className="comparison-header winning-header">
+                                    <Check size={14} />
+                                    <span>✅ Winning Answer (Architectural Distinction)</span>
+                                  </div>
+                                  <p className="comparison-text">{trap.winningAnswer}</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 <div className="qa-accordion-list">
                   {activeTopic.interviewQuestions?.map((qa, index) => {
@@ -973,6 +1335,8 @@ export default function LearningPathView({ onNavigate }) {
                 )}
               </div>
             </footer>
+              </>
+            )}
 
           </main>
 

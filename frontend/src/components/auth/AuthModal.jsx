@@ -16,8 +16,8 @@ import './AuthModal.css';
 
 import { authApi } from '../../services/api';
 
-export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
-  const [activeTab, setActiveTab] = useState('signin'); // 'signin' | 'signup'
+export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialTab = 'signin' }) {
+  const [activeTab, setActiveTab] = useState(initialTab); // 'signin' | 'signup'
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   
@@ -32,17 +32,18 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
   const [targetYear, setTargetYear] = useState('2026');
   const [targetRole, setTargetRole] = useState('SDE 1 (Product)');
 
-  // Close on ESC key
+  // Close on ESC key & sync initialTab when opened
   useEffect(() => {
     function handleKeyDown(e) {
       if (e.key === 'Escape') onClose();
     }
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown);
+      setActiveTab(initialTab);
       setErrorMessage('');
     }
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, initialTab, onClose]);
 
   if (!isOpen) return null;
 
@@ -61,23 +62,25 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
       };
       onLoginSuccess({
         id: user.id,
-        name: user.fullName || user.name || 'Mikro Student',
-        email: user.email,
-        role: user.role || 'SDE Aspirant 2026',
+        name: user.fullName || user.name || 'Demo Student',
+        email: user.email || 'demo@commitdrive.dev',
+        role: user.role || 'SDE Aspirant (Demo)',
         targetYear: user.targetYear || '2026',
-        streak: user.streak || 3,
-        targetCompanyTier: 'Tier 1 Product Companies'
+        streak: user.streak || 1,
+        targetCompanyTier: 'Tier 1 Product Companies',
+        isDemo: true
       });
       onClose();
     } catch {
       onLoginSuccess({
         id: 'a0000000-0000-0000-0000-000000000001',
-        name: 'Mikro Student',
-        email: 'cs.placement@prep.edu',
-        role: 'SDE Aspirant 2026',
+        name: 'Demo Student',
+        email: 'demo@commitdrive.dev',
+        role: 'SDE Aspirant (Demo)',
         targetYear: '2026',
-        streak: 3,
-        targetCompanyTier: 'Tier 1 Product Companies'
+        streak: 1,
+        targetCompanyTier: 'Tier 1 Product Companies',
+        isDemo: true
       });
       onClose();
     } finally {
@@ -102,7 +105,8 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
             role: user.role || 'SDE Aspirant 2026',
             targetYear: user.targetYear || '2026',
             streak: user.streak || 3,
-            targetCompanyTier: 'Tier 1 Product Companies'
+            targetCompanyTier: 'Tier 1 Product Companies',
+            isDemo: false
           });
           onClose();
         } else {
@@ -125,7 +129,8 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
             role: user.role || targetRole,
             targetYear: user.targetYear || targetYear,
             streak: user.streak || 1,
-            targetCompanyTier: 'Tier 1 Product Companies'
+            targetCompanyTier: 'Tier 1 Product Companies',
+            isDemo: false
           });
           onClose();
         } else {

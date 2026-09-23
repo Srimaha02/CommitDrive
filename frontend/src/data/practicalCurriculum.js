@@ -1230,3 +1230,122 @@ export function evaluateMockTest(moduleId, userAnswers = {}) {
     questionReviews
   };
 }
+
+// =============================================================================
+// 3. INTERVIEW VIVA SCENARIOS (Attached to Practice Missions)
+// =============================================================================
+export const practicalVivaMap = {
+  // Git Vivas
+  'git-1': {
+    question: 'What is inside the .git directory created by git init, and what happens if you delete it?',
+    answer: 'The .git folder contains the entire object database (blobs, trees, commits, tags), branch references (refs/heads/), HEAD pointer, configuration, and the staging index. Deleting .git erases all commit history and branches, reverting the folder to an untracked directory while leaving working files intact.'
+  },
+  'git-2': {
+    question: 'What is the exact difference between the Working Directory, the Staging Area, and the Repository?',
+    answer: 'The Working Directory contains editable files on disk. The Staging Area (.git/index) is a binary preparation cache storing hashed blob references ready to be snapshot. The Repository (.git/objects) contains immutable commit snapshots in a directed acyclic graph.'
+  },
+  'git-3': {
+    question: 'What are the 4 core object types stored inside .git/objects?',
+    answer: '1. Blob (raw file data without filename), 2. Tree (directory structure, file modes, and names mapped to blobs), 3. Commit (author, committer, timestamp, parent pointer, root tree pointer), and 4. Annotated Tag (named permanent release pointer).'
+  },
+  'git-4': {
+    question: 'Why is creating a Git branch instantaneous (O(1)) compared to SVN or CVS?',
+    answer: 'A Git branch is not a directory copy; it is literally a 41-byte text file in .git/refs/heads/<name> containing a 40-character SHA hash pointer to a commit. Creating a branch simply writes 41 bytes to disk.'
+  },
+  'git-5': {
+    question: 'How does git reflog differ from git log?',
+    answer: 'git log only displays commits reachable in the current branch history. git reflog records every single movement of the HEAD pointer (including resets, deleted branches, and rebases). It acts as a safety net to recover lost work for 30 days.'
+  },
+  'git-6': {
+    question: 'What is the difference between a Fast-Forward merge and a Three-Way merge?',
+    answer: 'A Fast-Forward merge occurs when no commits diverge on the base branch; Git simply slides the pointer forward with zero merge commits. A Three-Way merge compares the common ancestor with both branch tips to generate a new merge commit with two parents.'
+  },
+  'git-7': {
+    question: 'Where does Git store stashed changes, and does git stash save untracked files by default?',
+    answer: 'Stashes are stored in .git/refs/stash as commit-like DAG objects. By default, untracked files are ignored unless you supply the -u or --include-untracked flag.'
+  },
+  'git-8': {
+    question: 'Why is git rebase dangerous on shared public branches (Golden Rule of Rebasing)?',
+    answer: 'Rebasing rewrites commit hashes by recalculating their parent pointers. If pushed to a shared public branch, other collaborators will have divergent commit histories and will suffer merge conflicts.'
+  },
+
+  // Linux Vivas
+  'linux-1': {
+    question: 'What do the permission bits -rwxr-xr-x mean in octal notation?',
+    answer: 'Octal 755. User: 7 (rwx = 4+2+1), Group: 5 (r-x = 4+1), Others: 5 (r-x = 4+1). A leading hyphen indicates a regular file; a leading "d" indicates a directory.'
+  },
+  'linux-2': {
+    question: 'Why is the -p flag in mkdir -p mandatory in CI/CD and production deployment scripts?',
+    answer: 'mkdir -p creates all necessary parent directories recursively and does NOT error out if the directory already exists, guaranteeing idempotent script execution.'
+  },
+  'linux-3': {
+    question: 'How do you search for an exact word in all log files under /var/log recursively with line numbers?',
+    answer: 'Use `grep -rnw "/var/log" -e "FATAL"`. -r traverses subdirectories recursively, -n outputs line numbers, and -w ensures exact whole-word matching.'
+  },
+  'linux-4': {
+    question: 'What is the difference between chmod and chown?',
+    answer: 'chmod modifies read/write/execute access permissions bitmasks. chown changes the user ownership and group ownership of the file or directory.'
+  },
+  'linux-5': {
+    question: 'What is the difference between kill -15 (SIGTERM) and kill -9 (SIGKILL)?',
+    answer: 'SIGTERM (15) politely requests a process to terminate, allowing it to execute cleanup handlers (closing open DB sockets, flushing disk buffers). SIGKILL (9) is handled directly by the kernel and terminates the process immediately; it cannot be caught or blocked.'
+  },
+  'linux-6': {
+    question: 'If df -h reports 100% disk usage, but du -sh shows only 40%, what is happening?',
+    answer: 'A running process is holding open file descriptors to large deleted files (removed with rm). The directory link was unlinked, but disk blocks cannot be freed by the filesystem until the process releases the FD or is killed (identified via `lsof +L1`).'
+  },
+  'linux-7': {
+    question: 'Why does Unix separate tar from gzip?',
+    answer: 'Tar archives multiple files into a single sequential file stream without compressing. Gzip compresses a single stream. Following Unix philosophy (do one thing well), `tar -czvf` combines archive packing and gzip compression.'
+  },
+  'linux-8': {
+    question: 'Why has ss replaced netstat on modern Linux servers?',
+    answer: 'netstat parses /proc/net which causes massive kernel lock contention on servers with tens of thousands of active connections. ss uses netlink kernel sockets to dump socket states in O(1) time.'
+  },
+
+  // SQL Vivas
+  'sql-1': {
+    question: 'What is the logical order of query execution in a SQL database engine?',
+    answer: 'FROM & JOIN -> WHERE -> GROUP BY -> HAVING -> SELECT -> DISTINCT -> ORDER BY -> LIMIT / OFFSET.'
+  },
+  'sql-2': {
+    question: 'Why is LIMIT 1000000, 10 slow for pagination, and how do you optimize it?',
+    answer: 'The database engine must scan 1,000,010 rows from the B+ tree and discard the first million. Optimize with Keyset Pagination (Seek Method): `WHERE id > last_seen_id ORDER BY id LIMIT 10`.'
+  },
+  'sql-3': {
+    question: 'Can you use aggregate functions like COUNT(*) inside a WHERE clause?',
+    answer: 'No. WHERE filters individual table rows BEFORE grouping takes place. Aggregates only exist after grouping, so aggregate filters must reside in the HAVING clause.'
+  },
+  'sql-4': {
+    question: 'What are the 3 core join algorithms database engines use under the hood?',
+    answer: '1. Nested Loop Join (efficient for small tables or index lookups), 2. Hash Join (efficient for large unsorted equi-joins), and 3. Merge Join (most efficient when both inputs are pre-sorted).'
+  },
+  'sql-5': {
+    question: 'How do you find records in Table A that have no corresponding match in Table B?',
+    answer: 'Use an Anti-Join: `SELECT a.* FROM a LEFT JOIN b ON a.id = b.a_id WHERE b.a_id IS NULL;` or `WHERE NOT EXISTS (...)`.'
+  },
+  'sql-6': {
+    question: 'What is the difference between a Common Table Expression (WITH CTE) and a Temporary Table?',
+    answer: 'A CTE exists solely within the scope of a single query and is often inlined by the optimizer. A Temporary Table is written to temp storage, supports indexing, and persists for the entire session.'
+  },
+  'sql-7': {
+    question: 'What is the difference between ROW_NUMBER(), RANK(), and DENSE_RANK()?',
+    answer: 'For duplicate values (100, 100, 90): ROW_NUMBER gives (1, 2, 3), RANK gives (1, 1, 3 - skips rank 2), and DENSE_RANK gives (1, 1, 2 - no rank gaps).'
+  },
+  'sql-8': {
+    question: 'What is the difference between a Clustered Index and a Non-Clustered (Secondary) Index?',
+    answer: 'A Clustered Index dictates the physical ordering of rows on disk (leaf nodes ARE the table rows; only 1 per table). A Non-Clustered Index leaf node contains the indexed columns and a pointer back to the clustered index key.'
+  }
+};
+
+// Enrich all practical missions with interviewViva data
+Object.keys(practicalMissions).forEach(modKey => {
+  practicalMissions[modKey] = practicalMissions[modKey].map(mission => ({
+    ...mission,
+    interviewViva: practicalVivaMap[mission.id] || {
+      question: `How does the ${mission.targetCommand.split(' ')[0]} command impact production environments?`,
+      answer: mission.explanationOnSuccess
+    }
+  }));
+});
+

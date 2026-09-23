@@ -6,7 +6,9 @@ import LeaderboardView from './components/leaderboard/LeaderboardView';
 import LearningPathView from './components/learning/LearningPathView';
 import PracticalPathView from './components/practical/PracticalPathView';
 import AuthModal from './components/auth/AuthModal';
-import { BookOpen, Terminal, LayoutDashboard, Shield, LogIn } from 'lucide-react';
+import CramSheetModal from './components/common/CramSheetModal';
+import CursorGlow from './components/common/CursorGlow';
+import { BookOpen, Terminal, LayoutDashboard, Shield, LogIn, Zap } from 'lucide-react';
 import './App.css';
 
 export default function App() {
@@ -20,26 +22,51 @@ export default function App() {
     }
   });
 
-  // User Auth State
+  // User Auth State: unauthenticated visitor by default if not previously logged in
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const savedUser = localStorage.getItem('commitdrive_user');
       if (savedUser) return JSON.parse(savedUser);
-      // Default to demo student so reviewer lands right on Dashboard
-      return {
-        name: 'Mikro Student',
-        email: 'cs.placement@prep.edu',
-        role: 'SDE Aspirant 2026',
-        targetYear: '2026',
-        streak: 3
-      };
+      return null;
     } catch {
       return null;
     }
   });
 
-  // Auth Modal State
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  // Auth Modal State with Tab Selection ('signin' | 'signup')
+  const [authModalConfig, setAuthModalConfig] = useState({ isOpen: false, tab: 'signin' });
+  const handleOpenAuth = (tab = 'signin') => setAuthModalConfig({ isOpen: true, tab });
+  const handleCloseAuth = () => setAuthModalConfig(prev => ({ ...prev, isOpen: false }));
+
+  // Emergency Cram Sheet Modal State
+  const [cramSheetConfig, setCramSheetConfig] = useState({ isOpen: false, subject: null, track: 'all' });
+  const handleOpenCramSheet = (subject = null, track = 'all') => setCramSheetConfig({ isOpen: true, subject, track: track || 'all' });
+  const handleCloseCramSheet = () => setCramSheetConfig(prev => ({ ...prev, isOpen: false }));
+
+  // Global listener for opening Cram Sheet from any child component or event
+  useEffect(() => {
+    const handleCramEvent = (e) => {
+      const subject = e.detail?.subject !== undefined ? e.detail.subject : null;
+      const track = e.detail?.track || 'all';
+      handleOpenCramSheet(subject, track);
+    };
+    window.addEventListener('commitdrive_open_cram_sheet', handleCramEvent);
+    return () => window.removeEventListener('commitdrive_open_cram_sheet', handleCramEvent);
+  }, []);
+
+  // Quick 1-Click Demo Login for reviewing and testing
+  const handleQuickDemoLogin = () => {
+    handleLoginSuccess({
+      id: 'a0000000-0000-0000-0000-000000000001',
+      name: 'Demo Student',
+      email: 'demo@commitdrive.dev',
+      role: 'SDE Aspirant (Demo)',
+      targetYear: '2026',
+      streak: 1,
+      targetCompanyTier: 'Tier 1 Product Companies',
+      isDemo: true
+    });
+  };
 
   // Sync data-theme attribute with current view
   // Practical view uses 'practical' (dark Terminal Zone)
@@ -90,8 +117,9 @@ export default function App() {
         currentView={currentView}
         onNavigate={setCurrentView}
         currentUser={currentUser}
-        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onOpenAuth={() => handleOpenAuth('signin')}
         onLogout={handleLogout}
+        onOpenCramSheet={handleOpenCramSheet}
       />
 
       {/* Main View Router */}
@@ -99,27 +127,49 @@ export default function App() {
         <Dashboard 
           currentUser={currentUser}
           onNavigate={setCurrentView}
+          onOpenAuth={handleOpenAuth}
+          onDemoLogin={handleQuickDemoLogin}
+          onOpenCramSheet={handleOpenCramSheet}
         />
       ) : currentView === 'leaderboard' ? (
         <LeaderboardView 
           currentUser={currentUser}
           onNavigate={setCurrentView}
+          onOpenAuth={handleOpenAuth}
+          onDemoLogin={handleQuickDemoLogin}
         />
       ) : currentView === 'learning' ? (
         <LearningPathView 
+          currentUser={currentUser}
           onNavigate={setCurrentView}
+          onOpenAuth={handleOpenAuth}
+          onDemoLogin={handleQuickDemoLogin}
+          onOpenCramSheet={handleOpenCramSheet}
         />
       ) : (
         <PracticalPathView 
+          currentUser={currentUser}
           onNavigate={setCurrentView}
+          onOpenAuth={handleOpenAuth}
+          onDemoLogin={handleQuickDemoLogin}
+          onOpenCramSheet={handleOpenCramSheet}
         />
       )}
 
       {/* Frontend Auth Modal */}
       <AuthModal 
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
+        isOpen={authModalConfig.isOpen}
+        initialTab={authModalConfig.tab}
+        onClose={handleCloseAuth}
         onLoginSuccess={handleLoginSuccess}
+      />
+
+      {/* Emergency Cram Sheet Modal */}
+      <CramSheetModal 
+        isOpen={cramSheetConfig.isOpen}
+        initialSubject={cramSheetConfig.subject}
+        initialTrack={cramSheetConfig.track || 'all'}
+        onClose={handleCloseCramSheet}
       />
 
       {/* Footer / Shell Status Info */}
@@ -159,7 +209,7 @@ export default function App() {
             {!currentUser && (
               <button 
                 className="footer-signin-trigger theme-transition"
-                onClick={() => setIsAuthModalOpen(true)}
+                onClick={() => handleOpenAuth('signin')}
               >
                 <LogIn size={13} />
                 <span>Sign In / Demo</span>
@@ -168,6 +218,9 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* Subtle Trailing Cursor Glow */}
+      <CursorGlow />
     </div>
   );
 }

@@ -1,10 +1,18 @@
 // Master Learning Curriculum Entry Point — CommitDrive
 // Aggregates all 30 foundational topics across Operating Systems, DBMS, and Computer Networks.
-// Review Candidate: Draft v1.0 — Ready for editorial review against standard references
+// Enriched with 3-Tier Placement Calibrations, 60s Elevator Pitches, and Trap Question Vaults.
 
 import { osTopics } from './osTopics.js';
 import { dbmsTopics } from './dbmsTopics.js';
 import { cnTopics } from './cnTopics.js';
+import { topicInterviewData } from './interviewEnrichment.js';
+
+export const CURRICULUM_TIERS = [
+  { id: 'all', label: 'All Tiers', shortLabel: 'All', badge: 'All Levels' },
+  { id: 'L100', label: 'L100: Foundations', shortLabel: 'L100 Foundations', badge: 'ELI5 & Basics' },
+  { id: 'L200', label: 'L200: Placement Core', shortLabel: 'L200 Placement Core', badge: 'SDE-1 Standard' },
+  { id: 'L300', label: 'L300: FAANG & Systems', shortLabel: 'L300 FAANG Systems', badge: 'High Scale' }
+];
 
 export const subjects = [
   {
@@ -39,13 +47,50 @@ export const subjects = [
   }
 ];
 
+// Helper: Attach calibrated interview tier, 60s elevator pitch, and trap questions
+function enrichTopicWithInterviewData(topic) {
+  const interview = topicInterviewData[topic.id];
+  let tier = 'L200';
+  let tierName = 'Placement Core';
+  if (topic.difficulty === 'Beginner') {
+    tier = 'L100';
+    tierName = 'Foundations (ELI5)';
+  } else if (topic.difficulty === 'Advanced') {
+    tier = 'L300';
+    tierName = 'FAANG Systems';
+  }
+
+  if (interview?.tier) {
+    tier = interview.tier;
+    tierName = interview.tierName || tierName;
+  }
+
+  return {
+    ...topic,
+    tier,
+    tierName,
+    frequency: interview?.frequency || 'Standard SDE-1 placement question',
+    interviewScript60s: interview ? {
+      duration: '60s',
+      targetPrompt: interview.targetPrompt,
+      script: interview.script,
+      keywords: interview.keywords || []
+    } : null,
+    trapQuestions: interview?.trapQuestions || []
+  };
+}
+
+const enrichedOsTopics = osTopics.map(enrichTopicWithInterviewData);
+const enrichedDbmsTopics = dbmsTopics.map(enrichTopicWithInterviewData);
+const enrichedCnTopics = cnTopics.map(enrichTopicWithInterviewData);
+
 // Master topics lookup map
-export const allTopics = [...osTopics, ...dbmsTopics, ...cnTopics];
+export const allTopics = [...enrichedOsTopics, ...enrichedDbmsTopics, ...enrichedCnTopics];
 
 export const curriculumData = {
-  os: osTopics,
-  dbms: dbmsTopics,
-  cn: cnTopics
+  os: enrichedOsTopics,
+  dbms: enrichedDbmsTopics,
+  cn: enrichedCnTopics
 };
 
 // Helper: Get all subjects

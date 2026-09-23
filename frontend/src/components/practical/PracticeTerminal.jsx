@@ -21,12 +21,20 @@ import {
 } from 'lucide-react';
 import { getModuleMissions, getPracticalModule } from '../../data/practicalCurriculum';
 
-export default function PracticeTerminal({ moduleId, completedMissions, onCompleteMission }) {
+export default function PracticeTerminal({ 
+  moduleId, 
+  completedMissions, 
+  onCompleteMission,
+  currentUser,
+  isDemo = false,
+  onOpenAuth 
+}) {
   const currentModule = getPracticalModule(moduleId);
   const missions = getModuleMissions(moduleId);
 
   // Active mission state (defaults to first incomplete mission, or first mission)
   const [activeMissionId, setActiveMissionId] = useState(() => {
+    if (isDemo) return missions[0]?.id || 'git-1';
     const firstIncomplete = missions.find(m => !completedMissions.includes(m.id));
     return firstIncomplete ? firstIncomplete.id : missions[0]?.id || 'git-1';
   });
@@ -45,6 +53,7 @@ export default function PracticeTerminal({ moduleId, completedMissions, onComple
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [isAnswerUnlocked, setIsAnswerUnlocked] = useState(false);
   const [copiedSolution, setCopiedSolution] = useState(false);
+  const [showViva, setShowViva] = useState(false);
 
   // Reference for auto-scrolling terminal to bottom
   const logsEndRef = useRef(null);
@@ -66,6 +75,7 @@ export default function PracticeTerminal({ moduleId, completedMissions, onComple
       setFailedAttempts(0);
       setIsAnswerUnlocked(false);
       setCopiedSolution(false);
+      setShowViva(false);
     }
   }, [activeMissionId, moduleId]);
 
@@ -308,20 +318,21 @@ export default function PracticeTerminal({ moduleId, completedMissions, onComple
           {missions.map((mission, idx) => {
             const isCompleted = completedMissions.includes(mission.id);
             const isSelected = activeMissionId === mission.id;
+            const isDemoLocked = isDemo && idx > 0;
             // A mission is locked if the previous mission is not completed (except Mission 1)
-            const isLocked = idx > 0 && !completedMissions.includes(missions[idx - 1].id) && !isCompleted;
+            const isProgressionLocked = !isDemo && idx > 0 && !completedMissions.includes(missions[idx - 1].id) && !isCompleted;
 
             return (
               <button
                 key={mission.id}
-                disabled={isLocked}
-                className={`mission-item-btn ${isSelected ? 'selected' : ''} ${isCompleted ? 'completed' : ''} ${isLocked ? 'locked' : ''} theme-transition`}
+                disabled={isProgressionLocked}
+                className={`mission-item-btn ${isSelected ? 'selected' : ''} ${isCompleted ? 'completed' : ''} ${isProgressionLocked ? 'locked' : ''} ${isDemoLocked ? 'demo-locked' : ''} theme-transition`}
                 onClick={() => setActiveMissionId(mission.id)}
               >
                 <div className="mission-status-icon">
                   {isCompleted ? (
                     <CheckCircle2 size={15} className="status-completed-icon" />
-                  ) : isLocked ? (
+                  ) : (isProgressionLocked || isDemoLocked) ? (
                     <Lock size={13} className="status-locked-icon" />
                   ) : (
                     <span className="mission-num-badge">{idx + 1}</span>
@@ -330,9 +341,14 @@ export default function PracticeTerminal({ moduleId, completedMissions, onComple
 
                 <div className="mission-item-text">
                   <span className="mission-item-title">{mission.title}</span>
-                  <span className={`mission-diff-tag ${mission.difficulty.toLowerCase()}`}>
-                    {mission.difficulty}
-                  </span>
+                  <div className="mission-meta-tags-row">
+                    <span className={`mission-diff-tag ${mission.difficulty.toLowerCase()}`}>
+                      {mission.difficulty}
+                    </span>
+                    {isDemoLocked && (
+                      <span className="demo-scope-lock-pill">Demo Lock</span>
+                    )}
+                  </div>
                 </div>
 
                 {isSelected && <ChevronRight size={14} className="mission-selected-arrow" />}
@@ -362,14 +378,47 @@ export default function PracticeTerminal({ moduleId, completedMissions, onComple
           2. Main Mission Briefing & Interactive Terminal Canvas
           ===================================================================== */}
       <main className="terminal-main-canvas theme-transition">
-        
-        {/* Mission Briefing Card */}
-        <div className="mission-briefing-card theme-transition">
-          <div className="briefing-header-row">
-            <div>
-              <span className="briefing-eyebrow">Mission 0{activeMission.order} • Story Context</span>
-              <h2 className="briefing-title">{activeMission.title}</h2>
+
+        {isDemo && activeMission.order > 1 ? (
+          <div className="demo-mission-lock-card theme-transition animate-fadeIn">
+            <div className="demo-mission-lock-badge">
+              <Lock size={18} className="demo-lock-icon" />
+              <span>Demo Mode Scope Limit</span>
             </div>
+            <h2 className="demo-lock-title">Mission 0{activeMission.order}: "{activeMission.title}" is Gated</h2>
+            <p className="demo-lock-desc">
+              In Demo Mode, you have full interactive access to <strong>Mission 01 ({missions[0]?.title})</strong> in each lab module.
+            </p>
+            <p className="demo-lock-sub">
+              To unlock all 8 story-driven missions in {currentModule.name} and the full 24-lab hands-on systems curriculum, sign up for your free account.
+            </p>
+            <div className="demo-lock-actions">
+              <button 
+                type="button"
+                className="demo-lock-signup-btn theme-transition"
+                onClick={() => onOpenAuth && onOpenAuth('signup')}
+              >
+                <span>Sign up to unlock all {currentModule.name} missions</span>
+                <ArrowRight size={15} />
+              </button>
+              <button 
+                type="button"
+                className="demo-lock-back-btn theme-transition"
+                onClick={() => setActiveMissionId(missions[0]?.id)}
+              >
+                <span>← Back to Mission 01</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Mission Briefing Card */}
+            <div className="mission-briefing-card theme-transition">
+              <div className="briefing-header-row">
+                <div>
+                  <span className="briefing-eyebrow">Mission 0{activeMission.order} • Story Context</span>
+                  <h2 className="briefing-title">{activeMission.title}</h2>
+                </div>
             
             <div className="briefing-action-buttons">
               {failedAttempts > 0 && (
@@ -393,6 +442,17 @@ export default function PracticeTerminal({ moduleId, completedMissions, onComple
                 >
                   <KeyRound size={13} />
                   <span>{isAnswerUnlocked ? 'Hide Solution' : 'View Solution'}</span>
+                </button>
+              )}
+
+              {activeMission.interviewViva && (
+                <button 
+                  className={`briefing-btn viva-btn ${showViva ? 'active' : ''} theme-transition`}
+                  onClick={() => setShowViva(!showViva)}
+                  title="Toggle SDE-1 Interview Viva Question"
+                >
+                  <Sparkles size={13} />
+                  <span>{showViva ? 'Hide Viva' : '🎯 Interview Viva'}</span>
                 </button>
               )}
 
@@ -428,6 +488,25 @@ export default function PracticeTerminal({ moduleId, completedMissions, onComple
             <strong className="objective-label">Objective:</strong>
             <span className="objective-text">{activeMission.objective}</span>
           </div>
+
+          {/* SDE-1 Interview Viva Scenario Callout */}
+          {showViva && activeMission.interviewViva && (
+            <div className="mission-viva-callout animate-fadeIn theme-transition">
+              <div className="viva-callout-header">
+                <div className="viva-badge">
+                  <Sparkles size={13} />
+                  <span>SDE-1 Interview Viva Question</span>
+                </div>
+              </div>
+              <p className="viva-question-text">
+                "{activeMission.interviewViva.question}"
+              </p>
+              <div className="viva-answer-box">
+                <strong className="viva-answer-label">Winning Technical Answer:</strong>
+                <p className="viva-answer-text">{activeMission.interviewViva.answer}</p>
+              </div>
+            </div>
+          )}
 
           {/* Expandable Hint Callout */}
           {showHint && (
@@ -578,23 +657,43 @@ export default function PracticeTerminal({ moduleId, completedMissions, onComple
         </div>
 
         {/* Mission Completion Action Footer */}
-        {completedMissions.includes(activeMission.id) && nextMission && (
+        {completedMissions.includes(activeMission.id) && (
           <div className="mission-completed-footer animate-fadeIn">
             <div className="footer-success-banner">
               <CheckCircle2 size={18} className="success-icon" />
               <div>
                 <strong>Mission 0{activeMission.order} Mastered!</strong>
-                <p>Advance to Mission 0{nextMission.order}: "{nextMission.title}"</p>
+                {isDemo ? (
+                  <p>Demo preview complete for {currentModule.shortName}. Sign up to unlock Mission 02 & full lab!</p>
+                ) : nextMission ? (
+                  <p>Advance to Mission 0{nextMission.order}: "{nextMission.title}"</p>
+                ) : (
+                  <p>All missions mastered in {currentModule.name}!</p>
+                )}
               </div>
             </div>
-            <button 
-              className="advance-mission-btn theme-transition"
-              onClick={() => setActiveMissionId(nextMission.id)}
-            >
-              <span>Next mission</span>
-              <ArrowRight size={15} />
-            </button>
+            {isDemo ? (
+              <button 
+                type="button"
+                className="advance-mission-btn demo-cta theme-transition"
+                onClick={() => onOpenAuth && onOpenAuth('signup')}
+              >
+                <span>Sign up to unlock Mission 02</span>
+                <ArrowRight size={15} />
+              </button>
+            ) : nextMission && (
+              <button 
+                type="button"
+                className="advance-mission-btn theme-transition"
+                onClick={() => setActiveMissionId(nextMission.id)}
+              >
+                <span>Next mission</span>
+                <ArrowRight size={15} />
+              </button>
+            )}
           </div>
+        )}
+          </>
         )}
 
       </main>

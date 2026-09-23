@@ -14,9 +14,10 @@ import { practicalModules, calculateModuleProgress } from '../../data/practicalC
 import { practicalApi } from '../../services/api';
 import PracticeTerminal from './PracticeTerminal';
 import MockTestView from './MockTestView';
+import GatedContentPreview from '../layout/GatedContentPreview';
 import './PracticalPathView.css';
 
-export default function PracticalPathView({ onNavigate }) {
+export default function PracticalPathView({ currentUser, onNavigate, onOpenAuth, onDemoLogin }) {
   // Active Module State: 'git' | 'linux' | 'sql'
   const [activeModuleId, setActiveModuleId] = useState(() => {
     try {
@@ -100,94 +101,121 @@ export default function PracticalPathView({ onNavigate }) {
   return (
     <div className="practical-path-page theme-transition">
       <div className="content-wrapper practical-container">
-        
-        {/* ===================================================================
-            1. Practical Path Top Navigation Header
-            =================================================================== */}
-        <header className="practical-nav-header">
-          <div className="practical-nav-left">
-            <span className="practical-eyebrow">Terminal Zone • Hands-on lab</span>
-            <h1 className="practical-nav-title">Practical Engineering & Systems Lab</h1>
-          </div>
 
-          {/* Module Selector Tabs (Git / Linux / SQL) */}
-          <div className="module-tabs-track theme-transition" role="tablist">
-            {practicalModules.map((mod) => {
-              const isActive = activeModuleId === mod.id;
-              const progressPct = calculateModuleProgress(mod.id, completedMissions);
+        <GatedContentPreview
+          isGated={!currentUser}
+          badgeText="Terminal Systems & Shell Lab"
+          title="Sign up to run interactive terminal labs"
+          subtitle="Experience real Git, Linux & SQL workflows. Execute commands in our simulated browser shell with automated regex grading, step-by-step hints, and diagnostic mock tests."
+          features={[
+            '24 interactive hands-on lab missions across Git, Linux & MySQL',
+            'Automated grading engine with real-world failure hints & solution walk-throughs',
+            '15-minute timed diagnostic mock assessments with performance analytics',
+            'Synchronized progress tracking & XP for placement interview readiness'
+          ]}
+          ctaText="Sign up to unlock full access"
+          onSignUp={() => onOpenAuth && onOpenAuth('signup')}
+          onSignIn={() => onOpenAuth && onOpenAuth('signin')}
+          onDemoLogin={onDemoLogin}
+          previewContent={
+            <>
+              {/* ===================================================================
+                  1. Practical Path Top Navigation Header
+                  =================================================================== */}
+              <header className="practical-nav-header">
+                <div className="practical-nav-left">
+                  <span className="practical-eyebrow">Terminal Zone • Hands-on lab</span>
+                  <h1 className="practical-nav-title">Practical Engineering & Systems Lab</h1>
+                </div>
 
-              return (
-                <button
-                  key={mod.id}
-                  role="tab"
-                  aria-selected={isActive}
-                  className={`module-tab-btn ${isActive ? 'active' : ''} theme-transition`}
-                  onClick={() => setActiveModuleId(mod.id)}
-                >
-                  <div className="tab-icon-box theme-transition">
-                    {getModuleIcon(mod.id, 16)}
-                  </div>
-                  <div className="tab-text-col">
-                    <span className="tab-mod-name">{mod.name}</span>
-                    <span className="tab-progress-meta">
-                      {progressPct}% mastered
-                    </span>
-                  </div>
-                  {isActive && <div className="tab-active-indicator" />}
-                </button>
-              );
-            })}
-          </div>
-        </header>
+                {/* Module Selector Tabs (Git / Linux / SQL) */}
+                <div className="module-tabs-track theme-transition" role="tablist">
+                  {practicalModules.map((mod) => {
+                    const isActive = activeModuleId === mod.id;
+                    const progressPct = calculateModuleProgress(mod.id, completedMissions);
 
-        {/* ===================================================================
-            2. Mode Switcher Bar (Practice Terminal vs Mock Test)
-            =================================================================== */}
-        <div className="mode-switcher-bar theme-transition">
-          <div className="mode-buttons-group">
-            <button
-              className={`mode-toggle-btn ${activeMode === 'practice' ? 'active' : ''} theme-transition`}
-              onClick={() => setActiveMode('practice')}
-            >
-              <Terminal size={15} />
-              <span>Practice Mode (Simulated Terminal)</span>
-            </button>
+                    return (
+                      <button
+                        key={mod.id}
+                        role="tab"
+                        aria-selected={isActive}
+                        className={`module-tab-btn ${isActive ? 'active' : ''} theme-transition`}
+                        onClick={() => setActiveModuleId(mod.id)}
+                      >
+                        <div className="tab-icon-box theme-transition">
+                          {getModuleIcon(mod.id, 16)}
+                        </div>
+                        <div className="tab-text-col">
+                          <span className="tab-mod-name">{mod.name}</span>
+                          <span className="tab-progress-meta">
+                            {progressPct}% mastered
+                          </span>
+                        </div>
+                        {isActive && <div className="tab-active-indicator" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </header>
 
-            <button
-              className={`mode-toggle-btn ${activeMode === 'mock-test' ? 'active' : ''} theme-transition`}
-              onClick={() => setActiveMode('mock-test')}
-            >
-              <FileCheck2 size={15} />
-              <span>Mock Test Mode (Timed Test)</span>
-            </button>
-          </div>
+              {/* ===================================================================
+                  2. Mode Switcher Bar (Practice Terminal vs Mock Test)
+                  =================================================================== */}
+              <div className="mode-switcher-bar theme-transition">
+                <div className="mode-buttons-group">
+                  <button
+                    className={`mode-toggle-btn ${activeMode === 'practice' ? 'active' : ''} theme-transition`}
+                    onClick={() => setActiveMode('practice')}
+                  >
+                    <Terminal size={15} />
+                    <span>Practice Mode (Simulated Terminal)</span>
+                  </button>
 
-          <div className="mode-context-hint">
+                  <button
+                    className={`mode-toggle-btn ${activeMode === 'mock-test' ? 'active' : ''} theme-transition`}
+                    onClick={() => setActiveMode('mock-test')}
+                  >
+                    <FileCheck2 size={15} />
+                    <span>Mock Test Mode (Timed Test)</span>
+                  </button>
+                </div>
+
+                <div className="mode-context-hint">
+                  {activeMode === 'practice' ? (
+                    <span>🛠 Story-based terminal missions with regex validation & under-the-hood explanations</span>
+                  ) : (
+                    <span>⏱ 15-minute timed test with automated diagnostic report</span>
+                  )}
+                </div>
+              </div>
+            </>
+          }
+        >
+          {/* ===================================================================
+              3. Dynamic Mode Canvas
+              =================================================================== */}
+          <div className="practical-canvas-wrapper">
             {activeMode === 'practice' ? (
-              <span>🛠 Story-based terminal missions with regex validation & under-the-hood explanations</span>
+              <PracticeTerminal 
+                moduleId={activeModuleId}
+                completedMissions={completedMissions}
+                onCompleteMission={handleCompleteMission}
+                currentUser={currentUser}
+                isDemo={currentUser?.isDemo}
+                onOpenAuth={onOpenAuth}
+              />
             ) : (
-              <span>⏱ 15-minute timed test with automated diagnostic report</span>
+              <MockTestView 
+                moduleId={activeModuleId}
+                onSwitchToPractice={() => setActiveMode('practice')}
+                currentUser={currentUser}
+                isDemo={currentUser?.isDemo}
+                onOpenAuth={onOpenAuth}
+                onDemoLogin={onDemoLogin}
+              />
             )}
           </div>
-        </div>
-
-        {/* ===================================================================
-            3. Dynamic Mode Canvas
-            =================================================================== */}
-        <div className="practical-canvas-wrapper">
-          {activeMode === 'practice' ? (
-            <PracticeTerminal 
-              moduleId={activeModuleId}
-              completedMissions={completedMissions}
-              onCompleteMission={handleCompleteMission}
-            />
-          ) : (
-            <MockTestView 
-              moduleId={activeModuleId}
-              onSwitchToPractice={() => setActiveMode('practice')}
-            />
-          )}
-        </div>
+        </GatedContentPreview>
 
       </div>
     </div>

@@ -1972,3 +1972,223 @@
   margin: 0;
 }
 
+/* ==========================================================================
+   Demo Mode Scoped Limits: Mission Lock & Mock Test Gate
+   ========================================================================== */
+.demo-mission-lock-card,
+.demo-mock-gate-card {
+  background: rgba(16, 26, 21, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: var(--radius-lg, 14px);
+  padding: 44px 32px;
+  text-align: center;
+  max-width: 640px;
+  margin: 40px auto;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4), 0 0 24px rgba(16, 185, 129, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.demo-mission-lock-badge,
+.demo-mock-lock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(244, 162, 97, 0.12);
+  border: 1px solid rgba(244, 162, 97, 0.35);
+  color: #f4a261;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 6px 14px;
+  border-radius: 999px;
+  margin-bottom: 20px;
+}
+
+.demo-lock-title,
+.demo-mock-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #f3fcf7;
+  margin: 0 0 14px 0;
+  letter-spacing: -0.01em;
+}
+
+.demo-lock-desc,
+.demo-mock-desc {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #a4bab0;
+  margin: 0 0 10px 0;
+  max-width: 520px;
+}
+
+.demo-lock-sub,
+.demo-mock-sub {
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: #7d968b;
+  margin: 0 0 28px 0;
+  max-width: 500px;
+}
+
+.demo-lock-actions,
+.demo-mock-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.demo-lock-signup-btn,
+.demo-mock-signup-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-md, 8px);
+  padding: 12px 22px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.demo-lock-signup-btn:hover,
+.demo-mock-signup-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+}
+
+.demo-lock-back-btn,
+.demo-mock-practice-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #dce8e2;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md, 8px);
+  padding: 12px 18px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.demo-lock-back-btn:hover,
+.demo-mock-practice-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.demo-scope-lock-pill {
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(244, 162, 97, 0.15);
+  color: #f4a261;
+  border: 1px solid rgba(244, 162, 97, 0.3);
+  border-radius: 4px;
+  padding: 2px 5px;
+}
+
+.mission-meta-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.advance-mission-btn.demo-cta {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+}
+
+/* SDE-1 Interview Viva Scenario Callout */
+.briefing-btn.viva-btn {
+  background: rgba(244, 162, 97, 0.12);
+  border: 1px solid rgba(244, 162, 97, 0.3);
+  color: #f4a261;
+}
+
+.briefing-btn.viva-btn:hover,
+.briefing-btn.viva-btn.active {
+  background: #f4a261;
+  color: #0d1210;
+  border-color: #f4a261;
+  box-shadow: 0 0 12px rgba(244, 162, 97, 0.35);
+}
+
+.mission-viva-callout {
+  margin: 12px 0;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, rgba(244, 162, 97, 0.08) 0%, rgba(13, 18, 16, 0.7) 100%);
+  border: 1px solid rgba(244, 162, 97, 0.3);
+  border-left: 4px solid #f4a261;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.viva-callout-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.viva-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #f4a261;
+}
+
+.viva-question-text {
+  margin: 0 0 10px 0;
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.45;
+}
+
+.viva-answer-box {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.viva-answer-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #588b8b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.viva-answer-text {
+  margin: 0;
+  font-size: 0.84rem;
+  color: #c9d1d9;
+  line-height: 1.5;
+}
+
+

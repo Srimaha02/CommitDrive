@@ -1,0 +1,27 @@
+/* ==========================================================================
+   Tech Flying Cursor Animation (Code Glyphs, Circuit Sparks & Cyber Reticle)
+   ========================================================================== */
+
+.tech-cursor-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 99999;
+  overflow: hidden;
+  will-change: transform;
+}
+
+/* Deep Terminal Zone (Dark Mode): Screen blending for neon matrix bloom */
+[data-theme="practical"] .tech-cursor-canvas {
+  mix-blend-mode: screen;
+}
+
+/* Automatically disable on touch screens and for users with motion sensitivity */
+@media (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .tech-cursor-canvas {
+    display: none !important;
+  }
+}

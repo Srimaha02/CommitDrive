@@ -19,12 +19,20 @@ import {
   Filter,
   Check,
   X,
-  Layers
+  Layers,
+  Lock
 } from 'lucide-react';
 import { getModuleQuestions, getPracticalModule, evaluateMockTest } from '../../data/practicalCurriculum';
 import { practicalApi } from '../../services/api';
 
-export default function MockTestView({ moduleId, onSwitchToPractice }) {
+export default function MockTestView({ 
+  moduleId, 
+  onSwitchToPractice,
+  currentUser,
+  isDemo = false,
+  onOpenAuth,
+  onDemoLogin
+}) {
   const currentModule = getPracticalModule(moduleId);
   const questions = getModuleQuestions(moduleId);
 
@@ -177,11 +185,45 @@ export default function MockTestView({ moduleId, onSwitchToPractice }) {
   return (
     <div className="mock-test-layout theme-transition">
       
-      {/* =====================================================================
-          SCENARIO A: ACTIVE TEST IN PROGRESS
-          ===================================================================== */}
-      {testState === 'in-progress' && (
-        <div className="test-active-container">
+      {isDemo ? (
+        <div className="demo-mock-gate-card theme-transition animate-fadeIn">
+          <div className="demo-mock-lock-badge">
+            <Lock size={18} className="demo-lock-icon" />
+            <span>Registered Student Assessment</span>
+          </div>
+          <h2 className="demo-mock-title">Timed Mock Assessments Are Gated</h2>
+          <p className="demo-mock-desc">
+            In Demo Mode, you have full interactive access to <strong>Mission 01</strong> in each practical lab module (Git, Linux & SQL).
+          </p>
+          <p className="demo-mock-sub">
+            Timed 15-minute diagnostic mock tests, question-by-question scoring, performance analytics, and placement percentile ratings require a free registered account.
+          </p>
+          <div className="demo-mock-actions">
+            <button 
+              type="button"
+              className="demo-mock-signup-btn theme-transition"
+              onClick={() => onOpenAuth && onOpenAuth('signup')}
+            >
+              <span>Sign up for full access to Mock Tests</span>
+              <ArrowRight size={15} />
+            </button>
+            <button 
+              type="button"
+              className="demo-mock-practice-btn theme-transition"
+              onClick={onSwitchToPractice}
+            >
+              <Terminal size={15} />
+              <span>Back to Practice Terminal (Mission 1 Unlocked)</span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* =====================================================================
+              SCENARIO A: ACTIVE TEST IN PROGRESS
+              ===================================================================== */}
+          {testState === 'in-progress' && (
+            <div className="test-active-container">
           
           {/* 1. Test Control Bar: Timer, Progress & Submit */}
           <header className="test-control-bar theme-transition">
@@ -609,6 +651,8 @@ export default function MockTestView({ moduleId, onSwitchToPractice }) {
           </section>
 
         </div>
+      )}
+        </>
       )}
 
     </div>

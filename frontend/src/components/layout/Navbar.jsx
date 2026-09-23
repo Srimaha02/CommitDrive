@@ -13,7 +13,8 @@ import {
   ExternalLink,
   ShieldCheck,
   LayoutDashboard,
-  Trophy
+  Trophy,
+  Zap
 } from 'lucide-react';
 import { dashboardApi } from '../../services/api';
 import './Navbar.css';
@@ -23,7 +24,8 @@ export default function Navbar({
   onNavigate, 
   currentUser, 
   onOpenAuth, 
-  onLogout 
+  onLogout,
+  onOpenCramSheet
 }) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [readinessPct, setReadinessPct] = useState(0);
@@ -177,6 +179,23 @@ export default function Navbar({
             </div>
           )}
 
+          {/* Night-Before Cram Sheet Quick Action */}
+          <button 
+            type="button" 
+            className="nav-cram-btn theme-transition"
+            onClick={() => {
+              if (onOpenCramSheet) {
+                onOpenCramSheet(null);
+              } else {
+                window.dispatchEvent(new CustomEvent('commitdrive_open_cram_sheet', { detail: { subject: null } }));
+              }
+            }}
+            title="Open Night-Before Interview Emergency Cram Sheet (Choose Subject)"
+          >
+            <Zap size={13} className="nav-cram-icon" />
+            <span className="nav-cram-text">Cram Sheet</span>
+          </button>
+
           {/* Quick Progress Metric */}
           <div className="metric-pill theme-transition" title="Placement Readiness">
             <CheckCircle2 size={16} className="metric-icon" />
@@ -199,6 +218,9 @@ export default function Navbar({
                   </span>
                   <span className="online-beacon" />
                 </div>
+                {currentUser.isDemo && (
+                  <span className="nav-demo-badge">Demo</span>
+                )}
                 <ChevronDown size={14} className={`chevron-indicator ${showProfileMenu ? 'rotated' : ''}`} />
               </button>
 
@@ -264,10 +286,27 @@ export default function Navbar({
                     onClick={() => { setShowProfileMenu(false); onNavigate('practical'); }}
                   >
                     <Terminal size={15} />
-                    <span>Terminal Zone (Lab)</span>
+                    <span>Terminal Zone (Labs)</span>
                   </button>
 
                   <div className="dropdown-divider" />
+
+                  {currentUser.isDemo && (
+                    <>
+                      <button 
+                        className="dropdown-item signup-upgrade-item theme-transition" 
+                        role="menuitem"
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          if (onOpenAuth) onOpenAuth('signup');
+                        }}
+                      >
+                        <Sparkles size={15} className="upgrade-sparkle-icon" />
+                        <span>Sign Up for Full Access</span>
+                      </button>
+                      <div className="dropdown-divider" />
+                    </>
+                  )}
 
                   <button 
                     className="dropdown-item logout-item theme-transition" 

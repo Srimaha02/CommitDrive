@@ -28,6 +28,7 @@ import { osTopics } from '../../data/osTopics';
 import { dbmsTopics } from '../../data/dbmsTopics';
 import { cnTopics } from '../../data/cnTopics';
 import { practicalMissions } from '../../data/practicalCurriculum';
+import GatedContentPreview from '../layout/GatedContentPreview';
 import './Dashboard.css';
 
 // Researched public interview patterns for companies with well-documented recruitment data
@@ -265,10 +266,16 @@ const getCompanyData = (companyName, tierItem) => {
   };
 };
 
-export default function Dashboard({ currentUser, onNavigate }) {
+export default function Dashboard({ 
+  currentUser, 
+  onNavigate, 
+  onOpenAuth, 
+  onDemoLogin,
+  onOpenCramSheet
+}) {
   const student = currentUser || {
-    name: 'Student',
-    role: 'SDE Aspirant',
+    name: 'SDE Aspirant',
+    role: 'SDE Aspirant 2026',
     targetYear: '2026',
     streak: 0
   };
@@ -635,42 +642,112 @@ export default function Dashboard({ currentUser, onNavigate }) {
     <main className="dashboard-page theme-transition">
       <div className="content-wrapper dashboard-container">
 
-        {/* =================================================================
-            1. Welcome Header & Daily Tip
-            ================================================================= */}
-        <section className="dash-hero-section">
-          <div className="dash-hero-left">
-            <div className="dash-cohort-tag theme-transition">
-              <Target size={14} className="tag-icon" />
-              <span>Target: SDE 1 • Class of {student.targetYear || '2026'}</span>
-            </div>
-            <h1 className="dash-greeting">
-              Welcome back, <span className="highlight-name">{student.name}</span> 👋
-            </h1>
-            <p className="dash-sub">
-              Your placement preparation is <strong className="readiness-percent">{overallPct}% ready</strong> for upcoming campus drives and technical screening rounds.
-            </p>
-          </div>
+        <GatedContentPreview
+          isGated={!currentUser}
+          badgeText="Placement Engineering Suite"
+          title="Sign up to unlock full dashboard access"
+          subtitle="Join thousands of 2026 campus placement candidates accessing personalized readiness audits, interactive terminal labs, and company hiring gates."
+          features={[
+            'Personalized readiness matrix across 6 core CS subjects',
+            'Curated hiring patterns & interview questions for TCS, Razorpay, FAANG & FinTech',
+            'Synchronized progress tracking across Study Corner & Terminal Zone',
+            '7-day retention streak booster & placement milestone leaderboard'
+          ]}
+          ctaText="Sign up to unlock full access"
+          onSignUp={() => onOpenAuth && onOpenAuth('signup')}
+          onSignIn={() => onOpenAuth && onOpenAuth('signin')}
+          onDemoLogin={onDemoLogin}
+          previewContent={
+            /* =================================================================
+                1. Welcome Header & Daily Tip (Fully Visible Preview)
+                ================================================================= */
+            <section className="dash-hero-section">
+              <div className="dash-hero-left">
+                <div className="dash-cohort-tag theme-transition">
+                  <Target size={14} className="tag-icon" />
+                  <span>Target: SDE 1 • Class of {student.targetYear || '2026'}</span>
+                </div>
+                <h1 className="dash-greeting">
+                  Welcome back, <span className="highlight-name">{student.name}</span> 👋
+                </h1>
+                <p className="dash-sub">
+                  Your placement preparation is <strong className="readiness-percent">{overallPct}% ready</strong> for upcoming campus drives and technical screening rounds.
+                </p>
+              </div>
 
-          {/* Daily Placement Tip Card */}
-          <div className="daily-tip-card theme-transition">
-            <div className="tip-header">
-              <span className="tip-badge">
-                <Sparkles size={13} />
-                <span>Placement Insight of the Day</span>
-              </span>
-              <span className="tip-source">Amazon & Uber SDE Interviews</span>
-            </div>
-            <p className="tip-content">
-              "78% of OS screening rounds test whether you can clearly explain how the <strong>Working Set Model</strong> and <strong>TLB (Translation Lookaside Buffer)</strong> mitigate page faults during memory thrashing."
-            </p>
-          </div>
-        </section>
+              {/* Daily Placement Tip Card */}
+              <div className="daily-tip-card theme-transition">
+                <div className="tip-header">
+                  <span className="tip-badge">
+                    <Sparkles size={13} />
+                    <span>Placement Insight of the Day</span>
+                  </span>
+                  <span className="tip-source">Amazon & Uber SDE Interviews</span>
+                </div>
+                <p className="tip-content">
+                  "78% of OS screening rounds test whether you can clearly explain how the <strong>Working Set Model</strong> and <strong>TLB (Translation Lookaside Buffer)</strong> mitigate page faults during memory thrashing."
+                </p>
+              </div>
 
-        {/* =================================================================
-            2. Distinctive Element: Placement Engineering Rank & Adaptive Focus Quest
-            ================================================================= */}
-        <section className="rank-quest-section theme-transition">
+              {/* Emergency Cram Sheet Banner Card */}
+              <div 
+                className="dash-cram-card theme-transition"
+                onClick={() => {
+                  if (onOpenCramSheet) onOpenCramSheet(null);
+                  else window.dispatchEvent(new CustomEvent('commitdrive_open_cram_sheet', { detail: { subject: null } }));
+                }}
+                role="button"
+                tabIndex={0}
+              >
+                <div className="cram-card-left">
+                  <div className="cram-badge-icon">
+                    <Zap size={16} />
+                  </div>
+                  <div>
+                    <div className="cram-tag-row">
+                      <span className="cram-tag">Night-Before Rapid Revision</span>
+                      <span className="cram-pill">OS • DBMS • Networks • Practical</span>
+                    </div>
+                    <h4 className="cram-card-title">Placement Emergency Cram Sheet</h4>
+                    <p className="cram-card-desc">High-frequency formulas, CPU scheduling, ACID anomaly matrix, and top 20 trap questions ready to print or scan.</p>
+                  </div>
+                </div>
+                <button type="button" className="cram-open-btn theme-transition">
+                  <span>Open Sheet</span>
+                  <ArrowRight size={13} />
+                </button>
+              </div>
+
+              {/* Demo Mode Scope Status Banner */}
+              {currentUser?.isDemo && (
+                <div className="dash-demo-banner theme-transition animate-fadeIn">
+                  <div className="demo-banner-left">
+                    <span className="demo-banner-pill">
+                      <Zap size={13} />
+                      <span>Demo Mode Active</span>
+                    </span>
+                    <p className="demo-banner-text">
+                      You're exploring CommitDrive in <strong>Scoped Demo Mode</strong> (1 sample topic & mission unlocked per subject). Sign up to save permanent progress, unlock all 30 theory topics, 24 terminal labs, and diagnostic mock tests.
+                    </p>
+                  </div>
+                  <button 
+                    type="button"
+                    className="demo-banner-cta theme-transition"
+                    onClick={() => onOpenAuth && onOpenAuth('signup')}
+                  >
+                    <span>Sign up for full access</span>
+                    <ArrowRight size={14} />
+                  </button>
+                </div>
+              )}
+            </section>
+          }
+        >
+
+          {/* =================================================================
+              2. Distinctive Element: Placement Engineering Rank & Adaptive Focus Quest
+              ================================================================= */}
+          <section className="rank-quest-section theme-transition">
           <div className="rank-quest-grid">
             
             {/* Engineering Rank & XP Card */}
@@ -798,82 +875,14 @@ export default function Dashboard({ currentUser, onNavigate }) {
         </section>
 
         {/* =================================================================
-            4. General Industry Placement Awareness & Hiring Tiers
+            4. Dual "Continue Learning" Action Cards
             ================================================================= */}
-        <section className="company-runway-section theme-transition">
-          <div className="runway-header">
-            <div>
-              <div className="runway-eyebrow">Industry Landscape • Placement Awareness</div>
-              <h2 className="runway-title">Campus Hiring Tiers & Industry Expectations</h2>
-            </div>
-            <div className="runway-status-indicator">
-              <Building size={15} />
-              <span>General Industry Context</span>
-            </div>
-          </div>
-
-          <div className="company-gates-grid">
-            {industryTiers.map((tierItem, idx) => (
-              <div key={idx} className="gate-card theme-transition">
-                <div className="gate-card-top">
-                  <div className="gate-tier-info">
-                    <span className="gate-tier-badge">{tierItem.tier}</span>
-                    <span className="gate-ctc-pill">{tierItem.ctcRange}</span>
-                  </div>
-                </div>
-
-                <h3 className="gate-title">{tierItem.title}</h3>
-
-                <div className="gate-focus-area">
-                  <span className="focus-area-label">Evaluation Focus</span>
-                  <p className="focus-area-text">{tierItem.focusArea}</p>
-                </div>
-
-                <div className="gate-companies-wrap">
-                  <span className="companies-label">Common Recruiters (Click to inspect):</span>
-                  <div className="companies-tags">
-                    {tierItem.companies.map((co, cIdx) => (
-                      <button 
-                        key={cIdx} 
-                        type="button"
-                        className="company-chip-btn theme-transition"
-                        onClick={() => setSelectedCompany(getCompanyData(co, tierItem))}
-                        title={`View ${co} interview details`}
-                      >
-                        <span>{co}</span>
-                        <ChevronRight size={11} className="chip-arrow" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="gate-card-action">
-                  <button
-                    type="button"
-                    className="tier-practice-btn theme-transition"
-                    onClick={() => handlePracticeTier(tierItem.practiceTarget)}
-                  >
-                    <span>Practice these topics</span>
-                    <ArrowRight size={13} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Illustrative Disclaimer */}
-          <div className="runway-disclaimer theme-transition">
-            <Info size={14} className="disclaimer-icon" />
-            <span>Ranges are approximate 2026 estimates and vary significantly by college, location, and individual performance — always verify current figures on official company career pages before making decisions.</span>
-          </div>
-        </section>
-
-        {/* =================================================================
-            5. Dual "Continue Learning" Action Cards
-            ================================================================= */}
-        <section className="continue-learning-section">
+        <section className="continue-learning-section theme-transition">
           <div className="section-title-row">
-            <h2 className="section-main-heading">Continue Your Learning Tracks</h2>
+            <div>
+              <div className="continue-eyebrow">Active Study Tracks</div>
+              <h2 className="section-main-heading">Continue Your Learning Tracks</h2>
+            </div>
             <span className="section-sub-tag">Pick up right where you left off</span>
           </div>
 
@@ -967,7 +976,7 @@ export default function Dashboard({ currentUser, onNavigate }) {
         </section>
 
         {/* =================================================================
-            6. Overall Placement Readiness Matrix
+            5. Overall Placement Readiness Matrix
             ================================================================= */}
         <section className="readiness-matrix-section theme-transition">
           <div className="readiness-header">
@@ -1102,7 +1111,80 @@ export default function Dashboard({ currentUser, onNavigate }) {
 
         </section>
 
-      </div>
+        {/* =================================================================
+            6. General Industry Placement Awareness & Hiring Tiers
+            ================================================================= */}
+        <section className="company-runway-section theme-transition">
+          <div className="runway-header">
+            <div>
+              <div className="runway-eyebrow">Industry Landscape • Placement Awareness</div>
+              <h2 className="runway-title">Campus Hiring Tiers & Industry Expectations</h2>
+            </div>
+            <div className="runway-status-indicator">
+              <Building size={15} />
+              <span>General Industry Context</span>
+            </div>
+          </div>
+
+          <div className="company-gates-grid">
+            {industryTiers.map((tierItem, idx) => (
+              <div key={idx} className="gate-card theme-transition">
+                <div className="gate-card-top">
+                  <div className="gate-tier-info">
+                    <span className="gate-tier-badge">{tierItem.tier}</span>
+                    <span className="gate-ctc-pill">{tierItem.ctcRange}</span>
+                  </div>
+                </div>
+
+                <h3 className="gate-title">{tierItem.title}</h3>
+
+                <div className="gate-focus-area">
+                  <span className="focus-area-label">Evaluation Focus</span>
+                  <p className="focus-area-text">{tierItem.focusArea}</p>
+                </div>
+
+                <div className="gate-companies-wrap">
+                  <span className="companies-label">Common Recruiters (Click to inspect):</span>
+                  <div className="companies-tags">
+                    {tierItem.companies.map((co, cIdx) => (
+                      <button 
+                        key={cIdx} 
+                        type="button"
+                        className="company-chip-btn theme-transition"
+                        onClick={() => setSelectedCompany(getCompanyData(co, tierItem))}
+                        title={`View ${co} interview details`}
+                      >
+                        <span>{co}</span>
+                        <ChevronRight size={11} className="chip-arrow" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="gate-card-action">
+                  <button
+                    type="button"
+                    className="tier-practice-btn theme-transition"
+                    onClick={() => handlePracticeTier(tierItem.practiceTarget)}
+                  >
+                    <span>Practice these topics</span>
+                    <ArrowRight size={13} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Illustrative Disclaimer */}
+          <div className="runway-disclaimer theme-transition">
+            <Info size={14} className="disclaimer-icon" />
+            <span>Ranges are approximate 2026 estimates and vary significantly by college, location, and individual performance — always verify current figures on official company career pages before making decisions.</span>
+          </div>
+        </section>
+
+      </GatedContentPreview>
+
+    </div>
 
       {/* =================================================================
           7. Company-Specific Interview Pattern Popup Modal
