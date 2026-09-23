@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Cyber Spider Web & Plexus Constellation Canvas
+   Dark Cyber Ribbon & Precision Nexus Trail Canvas
    ========================================================================== */
 
 .tech-cursor-canvas {
@@ -12,18 +12,7 @@
   z-index: 99999;
   overflow: hidden;
   will-change: transform;
-}
-
-/* Screen blending for luminous bloom on dark backgrounds */
-[data-theme="practical"] .tech-cursor-canvas,
-html[data-mode="dark"] .tech-cursor-canvas {
-  mix-blend-mode: screen;
-}
-
-/* Light Mode: Normal blending with crisp saturated lines */
-html[data-mode="light"]:not([data-theme="practical"]) .tech-cursor-canvas {
   mix-blend-mode: normal;
-  opacity: 0.9;
 }
 
 /* Automatically disable on touch screens and for users with motion sensitivity */
