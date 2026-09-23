@@ -77,6 +77,52 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
     }
   }, [isOpen, initialSubject, initialTrack, initialTopic]);
 
+  // Filter questions for active subject: combine flagship cram questions with placement interview questions
+  // NOTE: Must run unconditionally BEFORE 'if (!isOpen) return null' to strictly adhere to React's Rules of Hooks!
+  const allSubjectQuestions = useMemo(() => {
+    if (!selectedSubject || !topicWiseCramData[selectedSubject]) return [];
+    const flagshipQuestions = topicWiseCramData[selectedSubject].questions || [];
+    const topicList = selectedSubject === 'os' ? osTopics : selectedSubject === 'dbms' ? dbmsTopics : selectedSubject === 'cn' ? cnTopics : [];
+    const existingTitles = new Set(flagshipQuestions.map(q => q.question.toLowerCase().trim()));
+    
+    const extraQuestions = [];
+    topicList.forEach((topicObj, tIdx) => {
+      const cramTopicName = topicWiseCramData[selectedSubject].topics[tIdx] || topicObj.title;
+      (topicObj.interviewQuestions || []).forEach((iq, iqIdx) => {
+        const titleKey = iq.question.toLowerCase().trim();
+        if (existingTitles.has(titleKey)) return;
+        
+        extraQuestions.push({
+          id: `${selectedSubject}-extra-${topicObj.id}-${iqIdx}`,
+          topic: cramTopicName,
+          level: iqIdx === 0 ? 'basic' : iqIdx === 1 ? 'intermediate' : 'advanced',
+          levelLabel: iqIdx === 0 ? 'Basic (Freshers / L100)' : iqIdx === 1 ? 'Intermediate (Core / L200)' : 'Advanced (FAANG / L300)',
+          question: iq.question,
+          frequency: iq.frequency ? `${iq.frequency} Frequency in Technical Rounds` : 'Frequently tested in SDE-1 interviews',
+          companyTags: iq.companyTags || ['Product Companies', 'Tier-1'],
+          reference: {
+            source: `CommitDrive ${selectedSubject ? selectedSubject.toUpperCase() : ''} Verified Bank`,
+            citation: 'Standard Placement Technical Evaluation Rubric',
+            linkText: 'Curated Solution'
+          },
+          tackleStrategy: {
+            interviewerIntent: 'Testing foundational conceptual clarity, step-by-step logic, and edge cases under interview pressure.',
+            verbalBlueprint: [
+              '1. State a concise, direct definition in 15 seconds.',
+              '2. Walk through the architectural mechanism or hardware/system execution flow.',
+              '3. Discuss a real-world software trade-off or failure scenario.'
+            ]
+          },
+          modelAnswer: {
+            summary: iq.answer
+          }
+        });
+      });
+    });
+
+    return [...flagshipQuestions, ...extraQuestions];
+  }, [selectedSubject]);
+
   if (!isOpen) return null;
 
   const currentSubjectData = selectedSubject ? topicWiseCramData[selectedSubject] : null;
@@ -455,51 +501,6 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
     return <Terminal size={size} />;
   };
 
-  // Filter questions for active subject: combine flagship cram questions with placement interview questions
-  const allSubjectQuestions = useMemo(() => {
-    if (!selectedSubject || !topicWiseCramData[selectedSubject]) return [];
-    const flagshipQuestions = topicWiseCramData[selectedSubject].questions || [];
-    const topicList = selectedSubject === 'os' ? osTopics : selectedSubject === 'dbms' ? dbmsTopics : cnTopics;
-    const existingTitles = new Set(flagshipQuestions.map(q => q.question.toLowerCase().trim()));
-    
-    const extraQuestions = [];
-    topicList.forEach((topicObj, tIdx) => {
-      const cramTopicName = topicWiseCramData[selectedSubject].topics[tIdx] || topicObj.title;
-      (topicObj.interviewQuestions || []).forEach((iq, iqIdx) => {
-        const titleKey = iq.question.toLowerCase().trim();
-        if (existingTitles.has(titleKey)) return;
-        
-        extraQuestions.push({
-          id: `${selectedSubject}-extra-${topicObj.id}-${iqIdx}`,
-          topic: cramTopicName,
-          level: iqIdx === 0 ? 'basic' : iqIdx === 1 ? 'intermediate' : 'advanced',
-          levelLabel: iqIdx === 0 ? 'Basic (Freshers / L100)' : iqIdx === 1 ? 'Intermediate (Core / L200)' : 'Advanced (FAANG / L300)',
-          question: iq.question,
-          frequency: iq.frequency ? `${iq.frequency} Frequency in Technical Rounds` : 'Frequently tested in SDE-1 interviews',
-          companyTags: iq.companyTags || ['Product Companies', 'Tier-1'],
-          reference: {
-            source: `CommitDrive ${currentSubjectData?.shortName || ''} Verified Bank`,
-            citation: 'Standard Placement Technical Evaluation Rubric',
-            linkText: 'Curated Solution'
-          },
-          tackleStrategy: {
-            interviewerIntent: 'Testing foundational conceptual clarity, step-by-step logic, and edge cases under interview pressure.',
-            verbalBlueprint: [
-              '1. State a concise, direct definition in 15 seconds.',
-              '2. Walk through the architectural mechanism or hardware/system execution flow.',
-              '3. Discuss a real-world software trade-off or failure scenario.'
-            ]
-          },
-          modelAnswer: {
-            summary: iq.answer
-          }
-        });
-      });
-    });
-
-    return [...flagshipQuestions, ...extraQuestions];
-  }, [selectedSubject, currentSubjectData]);
-  
   // 1. Filter by Company Track first
   const trackFilteredQuestions = filterQuestionsByTrack(allSubjectQuestions, selectedTrack);
 
@@ -913,9 +914,9 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
                             ))}
                             
                             {q.reference && (
-                              <span className="faq-reference-chip" title={q.reference.citation}>
+                              <span className="faq-reference-chip" title={q.reference.citation || ''}>
                                 <BookMarked size={11} />
-                                <span>{q.reference.source.split('&')[0].trim()}</span>
+                                <span>{(q.reference.source || 'Verified Source').split('&')[0].trim()}</span>
                               </span>
                             )}
 
