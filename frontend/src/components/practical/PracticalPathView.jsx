@@ -9,13 +9,16 @@ import {
   Sparkles, 
   Shield, 
   ChevronRight,
-  Code2
+  Code2,
+  Cpu
 } from 'lucide-react';
 import { practicalModules, calculateModuleProgress } from '../../data/practicalCurriculum';
 import { practicalApi } from '../../services/api';
 import PracticeTerminal from './PracticeTerminal';
 import MockTestView from './MockTestView';
 import SqlSandboxView from './SqlSandboxView';
+import LinuxSandboxView from './LinuxSandboxView';
+import GitSandboxView from './GitSandboxView';
 import GatedContentPreview from '../layout/GatedContentPreview';
 import './PracticalPathView.css';
 
@@ -197,6 +200,38 @@ export default function PracticalPathView({ currentUser, onNavigate, onOpenAuth,
                     </button>
                   )}
 
+                  {/* Real Linux Virtual Shell (Available for Linux) */}
+                  {activeModuleId === 'linux' && (
+                    <button
+                      className={`mode-toggle-btn ${activeMode === 'sandbox' ? 'active' : ''} theme-transition`}
+                      onClick={() => setActiveMode('sandbox')}
+                      style={{
+                        borderColor: activeMode === 'sandbox' ? '#10b981' : undefined,
+                        background: activeMode === 'sandbox' ? 'rgba(16, 185, 129, 0.08)' : undefined
+                      }}
+                    >
+                      <Cpu size={15} style={{ color: '#10b981' }} />
+                      <span style={{ fontWeight: 700 }}>Linux Shell (VFS)</span>
+                      <span style={{ fontSize: '0.68rem', padding: '1px 5px', background: '#10b981', color: '#090d0b', borderRadius: '4px', fontWeight: 'bold' }}>REAL SHELL</span>
+                    </button>
+                  )}
+
+                  {/* Real Git Virtual Sandbox (Available for Git) */}
+                  {activeModuleId === 'git' && (
+                    <button
+                      className={`mode-toggle-btn ${activeMode === 'sandbox' ? 'active' : ''} theme-transition`}
+                      onClick={() => setActiveMode('sandbox')}
+                      style={{
+                        borderColor: activeMode === 'sandbox' ? '#f43f5e' : undefined,
+                        background: activeMode === 'sandbox' ? 'rgba(244, 63, 94, 0.08)' : undefined
+                      }}
+                    >
+                      <GitBranch size={15} style={{ color: '#f43f5e' }} />
+                      <span style={{ fontWeight: 700 }}>Git Sandbox (DAG)</span>
+                      <span style={{ fontSize: '0.68rem', padding: '1px 5px', background: '#f43f5e', color: '#fff', borderRadius: '4px', fontWeight: 'bold' }}>REAL DAG</span>
+                    </button>
+                  )}
+
                   <button
                     className={`mode-toggle-btn ${activeMode === 'mock-test' ? 'active' : ''} theme-transition`}
                     onClick={() => setActiveMode('mock-test')}
@@ -208,7 +243,13 @@ export default function PracticalPathView({ currentUser, onNavigate, onOpenAuth,
 
                 <div className="mode-context-hint">
                   {activeMode === 'sandbox' ? (
-                    <span>⚡ Real SQLite in WebAssembly: Execute live queries against placement datasets & test LeetCode challenges</span>
+                    activeModuleId === 'sql' ? (
+                      <span>⚡ Real SQLite in WebAssembly: Execute live queries against placement datasets & test LeetCode challenges</span>
+                    ) : activeModuleId === 'linux' ? (
+                      <span>⚡ In-memory Linux VFS: Arbitrary Unix shell with real filesystem tree, pipes (|), redirection (&gt;), & permissions</span>
+                    ) : (
+                      <span>⚡ In-memory Git State Machine: Arbitrary git commands, branching, staging index, & visual commit DAG graph</span>
+                    )
                   ) : activeMode === 'practice' ? (
                     <span>🛠 Story-based terminal missions with regex validation & under-the-hood explanations</span>
                   ) : (
@@ -223,8 +264,14 @@ export default function PracticalPathView({ currentUser, onNavigate, onOpenAuth,
               3. Dynamic Mode Canvas
               =================================================================== */}
           <div className="practical-canvas-wrapper">
-            {activeMode === 'sandbox' && activeModuleId === 'sql' ? (
-              <SqlSandboxView currentUser={currentUser} />
+            {activeMode === 'sandbox' ? (
+              activeModuleId === 'sql' ? (
+                <SqlSandboxView currentUser={currentUser} />
+              ) : activeModuleId === 'linux' ? (
+                <LinuxSandboxView currentUser={currentUser} />
+              ) : (
+                <GitSandboxView currentUser={currentUser} />
+              )
             ) : activeMode === 'practice' ? (
               <PracticeTerminal 
                 moduleId={activeModuleId}
