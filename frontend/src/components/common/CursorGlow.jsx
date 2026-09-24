@@ -64,11 +64,12 @@ export default function CursorGlow() {
 
       // Check magnetic hover over interactive targets
       const target = e.target;
-      const interactiveEl = target?.closest?.(
+      const targetEl = target instanceof Element ? target : target?.parentElement;
+      const interactiveEl = targetEl?.closest?.(
         'button, a, input, select, textarea, [role="button"], .clickable, .interactive, .subject-tab-btn, .module-tab-btn, .topic-list-item, .mission-item-btn, .mode-toggle-btn, .tab-btn'
       );
 
-      if (interactiveEl) {
+      if (interactiveEl && typeof interactiveEl.getBoundingClientRect === 'function') {
         isHovering = true;
         const rect = interactiveEl.getBoundingClientRect();
         // Magnetic pull towards center of element (weighted 40% towards center, 60% towards mouse)
@@ -78,8 +79,7 @@ export default function CursorGlow() {
           x: centerX,
           y: centerY,
           width: rect.width,
-          height: rect.height,
-          radius: window.getComputedStyle(interactiveEl).borderRadius
+          height: rect.height
         };
       } else {
         isHovering = false;
