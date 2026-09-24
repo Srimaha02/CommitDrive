@@ -1079,6 +1079,391 @@
   margin-bottom: 20px;
 }
 
+/* ============================================================
+   AI Voice Pitch Studio & AI Recruiter Report Styles
+   ============================================================ */
+
+.viva-pitch-studio {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.viva-pitch-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.viva-pitch-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #e0e7ff;
+}
+
+.viva-ai-bot-icon {
+  color: #818cf8;
+}
+
+.viva-pitch-pill {
+  font-size: 10px;
+  padding: 2px 7px;
+  background: rgba(99, 102, 241, 0.18);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: 999px;
+  color: #a5b4fc;
+  font-weight: 600;
+}
+
+.viva-pitch-timing {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.viva-pitch-input-box {
+  position: relative;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.25);
+  transition: all 0.2s ease;
+}
+
+.viva-pitch-input-box.is-recording {
+  border-color: #f43f5e;
+  box-shadow: 0 0 16px rgba(244, 63, 94, 0.2);
+}
+
+.viva-pitch-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: transparent;
+  border: none;
+  padding: 12px 14px;
+  color: #f8fafc;
+  font-size: 13px;
+  line-height: 1.5;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.viva-audio-pulse-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px 10px;
+  font-size: 11px;
+  color: #fb7185;
+  font-weight: 600;
+}
+
+.pulse-bar {
+  display: inline-block;
+  width: 3px;
+  height: 12px;
+  background: #f43f5e;
+  border-radius: 2px;
+  animation: audioWave 0.7s infinite alternate ease-in-out;
+}
+
+.pulse-bar:nth-child(2) { animation-delay: 0.15s; height: 16px; }
+.pulse-bar:nth-child(3) { animation-delay: 0.3s; height: 10px; }
+.pulse-bar:nth-child(4) { animation-delay: 0.45s; height: 14px; }
+
+@keyframes audioWave {
+  0% { transform: scaleY(0.4); opacity: 0.5; }
+  100% { transform: scaleY(1.3); opacity: 1; }
+}
+
+.viva-pitch-controls-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.viva-mic-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #f1f5f9;
+  transition: all 0.2s ease;
+}
+
+.viva-mic-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.viva-mic-toggle-btn.recording {
+  background: rgba(244, 63, 94, 0.18);
+  border-color: #f43f5e;
+  color: #f43f5e;
+  animation: micPulse 1.2s infinite;
+}
+
+@keyframes micPulse {
+  0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(244, 63, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+}
+
+.viva-clear-pitch-btn {
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+}
+
+.viva-clear-pitch-btn:hover {
+  color: #f87171;
+}
+
+.viva-pitch-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.viva-evaluate-ai-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border: none;
+  border-radius: 9px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+  transition: all 0.2s ease;
+}
+
+.viva-evaluate-ai-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+}
+
+.viva-evaluate-ai-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.viva-quick-reveal-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.viva-quick-reveal-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #ffffff;
+}
+
+/* AI Report Card Inside Reveal Panel */
+.viva-ai-report-card {
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.viva-ai-report-card.nailed {
+  background: rgba(74, 222, 128, 0.07);
+  border-color: rgba(74, 222, 128, 0.3);
+}
+
+.viva-ai-report-card.partial {
+  background: rgba(245, 158, 11, 0.07);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.viva-ai-report-card.missed {
+  background: rgba(248, 113, 113, 0.07);
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+.viva-ai-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.viva-ai-verdict-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.viva-ai-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #818cf8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.viva-ai-verdict-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.viva-ai-score-pill {
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.viva-ai-score-pill .score-num {
+  font-size: 18px;
+  font-weight: 800;
+  color: #38bdf8;
+}
+
+.viva-ai-score-pill .score-denom {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.viva-ai-concepts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 600px) {
+  .viva-ai-concepts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.viva-ai-concept-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.concept-col-title {
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.concept-col-title.covered { color: #4ade80; }
+.concept-col-title.missing { color: #f59e0b; }
+
+.concept-chips-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.concept-chip {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.concept-chip.hit {
+  background: rgba(74, 222, 128, 0.15);
+  color: #86efac;
+}
+
+.concept-chip.missed {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fde68a;
+}
+
+.concept-empty {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
+
+.viva-ai-trap-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  font-size: 11.5px;
+  color: #fca5a5;
+  line-height: 1.4;
+}
+
+.viva-ai-tips-block {
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.viva-ai-tips-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #a5b4fc;
+}
+
+.viva-ai-tips-list {
+  margin: 4px 0 0 0;
+  padding-left: 18px;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.45;
+}
+
 /* ---- Responsive ---- */
 @media (max-width: 640px) {
   .viva-modal { border-radius: 14px; }
@@ -1089,4 +1474,6 @@
   .viva-results-ctas { grid-template-columns: 1fr; }
   .viva-verdict-banner { flex-direction: column; text-align: center; }
   .viva-question-text { font-size: 15px; }
+  .viva-pitch-actions-row { flex-direction: column; }
 }
+

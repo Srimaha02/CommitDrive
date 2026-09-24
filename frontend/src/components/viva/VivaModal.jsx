@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   X,
   Target,
@@ -20,7 +20,13 @@ import {
   Flag,
   SkipForward,
   Eye,
-  Tag
+  Tag,
+  Mic,
+  MicOff,
+  Bot,
+  AlertCircle,
+  CheckCircle2,
+  Volume2
 } from 'lucide-react';
 import {
   VIVA_SUBJECTS,
@@ -32,6 +38,10 @@ import {
   calculateVivaResult,
   formatVivaTime,
 } from '../../data/vivaEngine';
+import {
+  evaluateCandidateAnswer,
+  SpeechDictationSession
+} from '../../data/aiVivaCoachEngine';
 import { COMPANY_TRACKS } from '../../data/companyTracksData';
 import './VivaModal.css';
 
@@ -62,6 +72,61 @@ export default function VivaModal({ isOpen, onClose, onOpenCramSheet }) {
 
   // -- Results state
   const [result, setResult]                 = useState(null);
+
+  // -- AI Voice Coach state
+  const [candidateSpeechText, setCandidateSpeechText] = useState('');
+  const [isRecording, setIsRecording]                 = useState(false);
+  const [aiEvaluation, setAiEvaluation]               = useState(null);
+  const [isEvaluating, setIsEvaluating]               = useState(false);
+  const dictationRef                                  = useRef(null);
+
+  // Setup dictation session on mount
+  useEffect(() => {
+    dictationRef.current = new SpeechDictationSession(
+      (text) => setCandidateSpeechText(text),
+      (active) => setIsRecording(active)
+    );
+    return () => {
+      dictationRef.current?.stop();
+    };
+  }, []);
+
+  // Reset per question when index or screen changes
+  useEffect(() => {
+    dictationRef.current?.stop();
+    setCandidateSpeechText('');
+    setIsRecording(false);
+    setAiEvaluation(null);
+    setIsEvaluating(false);
+  }, [currentIndex, screen]);
+
+  // Toggle microphone dictation
+  const handleToggleMic = () => {
+    if (!dictationRef.current) return;
+    if (dictationRef.current.isListening) {
+      dictationRef.current.stop();
+    } else {
+      dictationRef.current.start();
+    }
+  };
+
+  // Run AI Recruiter evaluation
+  const handleEvaluateWithAI = () => {
+    dictationRef.current?.stop();
+    setIsEvaluating(true);
+    const evalReport = evaluateCandidateAnswer(candidateSpeechText, currentQ, selectedTrack);
+    setAiEvaluation(evalReport);
+    setIsEvaluating(false);
+    setIsRevealed(true);
+
+    // Pre-select rating based on AI verdict if not already rated
+    if (evalReport.verdictClass && currentQ) {
+      setRatings(prev => ({
+        ...prev,
+        [currentQ.id]: evalReport.verdictClass
+      }));
+    }
+  };
 
   // -- ESC key handler
   useEffect(() => {
@@ -405,19 +470,160 @@ export default function VivaModal({ isOpen, onClose, onOpenCramSheet }) {
           <div className="viva-question-text">{currentQ.question}</div>
         </div>
 
-        {/* Reveal / Answer zone */}
+        {/* Answer Pitch Studio (Before Reveal) */}
         {!isRevealed ? (
-          <div className="viva-reveal-zone">
-            <p className="viva-reveal-hint">
-              Think through your answer, then reveal the model response to self-assess.
-            </p>
-            <button className="viva-reveal-btn" onClick={() => setIsRevealed(true)}>
-              <Eye size={15} />
-              Reveal Model Answer
-            </button>
+          <div className="viva-pitch-studio">
+            <div className="viva-pitch-header">
+              <div className="viva-pitch-title">
+                <Bot size={15} className="viva-ai-bot-icon" />
+                <span>AI Voice Pitch Studio</span>
+                <span className="viva-pitch-pill">Gate: {activeTrackData.label}</span>
+              </div>
+              <div className="viva-pitch-timing">
+                <Clock size={12} />
+                <span>Target: 45–60s verbal delivery</span>
+              </div>
+            </div>
+
+            {/* Answer Text Area (Driven by voice dictation or typing) */}
+            <div className={`viva-pitch-input-box ${isRecording ? 'is-recording' : ''}`}>
+              <textarea
+                className="viva-pitch-textarea"
+                rows={4}
+                value={candidateSpeechText}
+                onChange={(e) => setCandidateSpeechText(e.target.value)}
+                placeholder="Click the microphone below to dictate your verbal answer, or type here... The AI Recruiter will evaluate your concept depth, keywords, and trap avoidance."
+              />
+              {isRecording && (
+                <div className="viva-audio-pulse-indicator">
+                  <span className="pulse-bar" />
+                  <span className="pulse-bar" />
+                  <span className="pulse-bar" />
+                  <span className="pulse-bar" />
+                  <span>Listening live... Speak clearly</span>
+                </div>
+              )}
+            </div>
+
+            {/* Controls Bar */}
+            <div className="viva-pitch-controls-bar">
+              <button
+                type="button"
+                className={`viva-mic-toggle-btn ${isRecording ? 'recording' : ''}`}
+                onClick={handleToggleMic}
+                title={isRecording ? 'Click to stop dictation' : 'Click to start voice dictation'}
+              >
+                {isRecording ? <MicOff size={16} /> : <Mic size={16} />}
+                <span>{isRecording ? 'Stop Recording' : 'Record Verbal Pitch'}</span>
+              </button>
+
+              {candidateSpeechText && (
+                <button
+                  type="button"
+                  className="viva-clear-pitch-btn"
+                  onClick={() => setCandidateSpeechText('')}
+                >
+                  Clear text
+                </button>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="viva-pitch-actions-row">
+              <button
+                className="viva-evaluate-ai-btn"
+                onClick={handleEvaluateWithAI}
+                disabled={isEvaluating}
+              >
+                <Sparkles size={15} />
+                <span>{isEvaluating ? 'Analyzing Answer...' : 'Evaluate Answer with AI Coach'}</span>
+              </button>
+
+              <button
+                className="viva-quick-reveal-btn"
+                onClick={() => setIsRevealed(true)}
+              >
+                <Eye size={14} />
+                <span>Quick Reveal Answer</span>
+              </button>
+            </div>
           </div>
         ) : (
           <div className="viva-answer-panel">
+            {/* AI Recruiter Assessment Card (if evaluated with AI) */}
+            {aiEvaluation && (
+              <div className={`viva-ai-report-card ${aiEvaluation.verdictClass}`}>
+                <div className="viva-ai-card-top">
+                  <div className="viva-ai-verdict-group">
+                    <span className="viva-ai-chip">
+                      <Bot size={13} />
+                      AI Recruiter Verdict
+                    </span>
+                    <h4 className="viva-ai-verdict-title">{aiEvaluation.verdict}</h4>
+                  </div>
+                  <div className="viva-ai-score-pill">
+                    <span className="score-num">{aiEvaluation.score}</span>
+                    <span className="score-denom">/100</span>
+                  </div>
+                </div>
+
+                {/* Covered vs Missing Concepts */}
+                <div className="viva-ai-concepts-grid">
+                  <div className="viva-ai-concept-col">
+                    <span className="concept-col-title covered">
+                      <CheckCircle2 size={13} /> Concepts Hit ({aiEvaluation.coveredKeywords.length})
+                    </span>
+                    <div className="concept-chips-wrap">
+                      {aiEvaluation.coveredKeywords.length > 0 ? (
+                        aiEvaluation.coveredKeywords.map((kw, i) => (
+                          <span key={i} className="concept-chip hit">{kw}</span>
+                        ))
+                      ) : (
+                        <span className="concept-empty">None detected yet</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="viva-ai-concept-col">
+                    <span className="concept-col-title missing">
+                      <AlertCircle size={13} /> Missed Placement Keywords ({aiEvaluation.missingKeywords.length})
+                    </span>
+                    <div className="concept-chips-wrap">
+                      {aiEvaluation.missingKeywords.length > 0 ? (
+                        aiEvaluation.missingKeywords.map((kw, i) => (
+                          <span key={i} className="concept-chip missed">{kw}</span>
+                        ))
+                      ) : (
+                        <span className="concept-chip hit">All Key Terms Covered!</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Trap Warning Alert if candidate fell into rookie mistake */}
+                {aiEvaluation.trapTriggered && (
+                  <div className="viva-ai-trap-alert">
+                    <AlertTriangle size={14} />
+                    <div>
+                      <strong>Rookie Trap Detected:</strong> {aiEvaluation.trapFeedback}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recruiter Actionable Tips */}
+                {aiEvaluation.actionableTips?.length > 0 && (
+                  <div className="viva-ai-tips-block">
+                    <span className="viva-ai-tips-title">💡 Actionable Recruiter Feedback:</span>
+                    <ul className="viva-ai-tips-list">
+                      {aiEvaluation.actionableTips.map((tip, i) => (
+                        <li key={i}>{tip}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Summary */}
             <div className="viva-answer-section-label">
               <BookOpen size={12} />
