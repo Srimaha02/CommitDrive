@@ -1,23 +1,98 @@
 /* ==========================================================================
-   Dark Cyber Ribbon & Precision Nexus Trail Canvas
+   Fluid Magnetic Halo & Velocity Stretch Cursor
    ========================================================================== */
 
-.tech-cursor-canvas {
+:root {
+  --cursor-halo-size: 34px;
+  --cursor-halo-border: rgba(232, 96, 74, 0.45);
+  --cursor-halo-bg: rgba(232, 96, 74, 0.04);
+  --cursor-halo-glow: rgba(232, 96, 74, 0.12);
+  --cursor-dot-color: #e8604a;
+  --cursor-spotlight-color: rgba(232, 96, 74, 0.04);
+}
+
+/* Learning Theme (Dark Mode) */
+html[data-theme="learning"][data-mode="dark"] {
+  --cursor-halo-border: rgba(240, 106, 85, 0.6);
+  --cursor-halo-bg: rgba(240, 106, 85, 0.08);
+  --cursor-halo-glow: rgba(240, 106, 85, 0.2);
+  --cursor-dot-color: #f06a55;
+  --cursor-spotlight-color: rgba(240, 106, 85, 0.05);
+}
+
+/* Practical Theme (Terminal Zone - Matrix Green / Teal) */
+html[data-theme="practical"] {
+  --cursor-halo-border: rgba(16, 185, 129, 0.65);
+  --cursor-halo-bg: rgba(6, 78, 59, 0.08);
+  --cursor-halo-glow: rgba(16, 185, 129, 0.22);
+  --cursor-dot-color: #34d399;
+  --cursor-spotlight-color: rgba(16, 185, 129, 0.06);
+}
+
+/* Container */
+.fluid-cursor-container {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
   pointer-events: none;
-  z-index: 99999;
+  z-index: 999999;
   overflow: hidden;
-  will-change: transform;
-  mix-blend-mode: normal;
 }
 
-/* Automatically disable on touch screens and for users with motion sensitivity */
+/* 1. Ambient Spotlight (Soft and localized around the halo) */
+.fluid-ambient-spotlight {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--cursor-spotlight-color) 0%, transparent 70%);
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform, opacity;
+  transition: opacity 0.3s ease;
+}
+
+/* 2. Elastic Lagging Halo (Spring Physics & Velocity Stretch) */
+.fluid-halo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--cursor-halo-size);
+  height: var(--cursor-halo-size);
+  border-radius: 50%;
+  border: 1.5px solid var(--cursor-halo-border);
+  background-color: var(--cursor-halo-bg);
+  box-shadow: 0 0 14px var(--cursor-halo-glow), inset 0 0 6px var(--cursor-halo-glow);
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform, opacity, width, height, border-radius;
+  transition: opacity 0.25s ease, border-color 0.3s ease, background-color 0.3s ease;
+  backdrop-filter: blur(0.5px);
+}
+
+/* 3. High-Precision Center Dot (Instant Response) */
+.fluid-dot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--cursor-dot-color);
+  box-shadow: 0 0 8px var(--cursor-dot-color);
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform, opacity;
+  transition: opacity 0.2s ease, transform 0.05s ease-out, background-color 0.3s ease;
+}
+
+/* Automatically disable on touch devices and for users with motion sensitivity */
 @media (pointer: coarse), (prefers-reduced-motion: reduce) {
-  .tech-cursor-canvas {
+  .fluid-cursor-container {
     display: none !important;
   }
 }
