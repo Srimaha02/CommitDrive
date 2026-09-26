@@ -95,10 +95,7 @@ export default function LearningPathView({
   // State: Placement Tier Filter ('all' | 'L100' | 'L200' | 'L300')
   const [selectedTierFilter, setSelectedTierFilter] = useState('all');
 
-  // State: 60-Second Interview Pitch Active Drill Mode
-  const [isPitchHidden, setIsPitchHidden] = useState(false);
-  const [pitchTimerSeconds, setPitchTimerSeconds] = useState(60);
-  const [isPitchTimerRunning, setIsPitchTimerRunning] = useState(false);
+  // State: 60-Second Interview Pitch Copied Toast
   const [isPitchCopied, setIsPitchCopied] = useState(false);
 
   // State: Expanded Traps in Q&A Vault
@@ -163,29 +160,12 @@ export default function LearningPathView({
     }
   }, [completedTopicIds]);
 
-  // Reset flashcard & pitch drill state when changing topic
+  // Reset flashcard state when changing topic
   useEffect(() => {
     setActiveCardIndex(0);
     setIsCardFlipped(false);
-    setIsPitchHidden(false);
-    setIsPitchTimerRunning(false);
-    setPitchTimerSeconds(60);
     setIsPitchCopied(false);
   }, [activeTopicId]);
-
-  // 60-Second Interview Pitch Countdown Timer
-  useEffect(() => {
-    let interval = null;
-    if (isPitchTimerRunning && pitchTimerSeconds > 0) {
-      interval = setInterval(() => {
-        setPitchTimerSeconds(prev => prev - 1);
-      }, 1000);
-    } else if (pitchTimerSeconds === 0 && isPitchTimerRunning) {
-      setIsPitchTimerRunning(false);
-      setIsPitchHidden(false); // Auto-reveal script when time is up
-    }
-    return () => clearInterval(interval);
-  }, [isPitchTimerRunning, pitchTimerSeconds]);
 
   // Current Subject and Topics
   const activeSubject = subjects.find(s => s.id === activeSubjectId) || subjects[0];
@@ -203,24 +183,13 @@ export default function LearningPathView({
   // Active Topic
   const activeTopic = currentTopics.find(t => t.id === activeTopicId) || currentTopics[0] || {};
 
-  // Pitch Drill Actions
+  // Pitch Copy Action
   const handleCopyPitch = () => {
     if (activeTopic.interviewScript60s?.script) {
       navigator.clipboard.writeText(activeTopic.interviewScript60s.script);
       setIsPitchCopied(true);
       setTimeout(() => setIsPitchCopied(false), 2000);
     }
-  };
-
-  const handleStartPitchDrill = () => {
-    setIsPitchHidden(true);
-    setPitchTimerSeconds(60);
-    setIsPitchTimerRunning(true);
-  };
-
-  const handleRevealPitch = () => {
-    setIsPitchHidden(false);
-    setIsPitchTimerRunning(false);
   };
 
   const handleToggleTrap = (trapId) => {
@@ -841,25 +810,6 @@ export default function LearningPathView({
                       <div className="pitch-header-actions">
                         <button
                           type="button"
-                          className={`pitch-drill-btn ${isPitchTimerRunning ? 'active' : ''} theme-transition`}
-                          onClick={isPitchHidden ? handleRevealPitch : handleStartPitchDrill}
-                          title="Hide script and start 60s speaking practice"
-                        >
-                          {isPitchHidden ? (
-                            <>
-                              <Sparkles size={13} />
-                              <span>Reveal Script</span>
-                            </>
-                          ) : (
-                            <>
-                              <Clock size={13} />
-                              <span>{isPitchTimerRunning ? `Drill: ${pitchTimerSeconds}s` : 'Test My Pitch (60s Drill)'}</span>
-                            </>
-                          )}
-                        </button>
-
-                        <button
-                          type="button"
                           className="pitch-copy-btn theme-transition"
                           onClick={handleCopyPitch}
                           title="Copy spoken script to clipboard"
@@ -880,29 +830,10 @@ export default function LearningPathView({
                     </div>
 
                     {/* Spoken Script Container */}
-                    <div className={`pitch-script-box ${isPitchHidden ? 'pitch-is-hidden' : ''} theme-transition`}>
-                      {isPitchHidden ? (
-                        <div className="pitch-hidden-cover">
-                          <div className="pitch-countdown-circle">
-                            <span className="countdown-number">{pitchTimerSeconds}s</span>
-                            <span className="countdown-label">Speak now out loud!</span>
-                          </div>
-                          <p className="pitch-hidden-hint">
-                            Deliver your 60-second answer without reading. Hit the mandatory keywords below!
-                          </p>
-                          <button 
-                            type="button" 
-                            className="pitch-reveal-btn" 
-                            onClick={handleRevealPitch}
-                          >
-                            Done Speaking • Check Model Script
-                          </button>
-                        </div>
-                      ) : (
-                        <blockquote className="pitch-spoken-quote">
-                          "{activeTopic.interviewScript60s.script}"
-                        </blockquote>
-                      )}
+                    <div className="pitch-script-box theme-transition">
+                      <blockquote className="pitch-spoken-quote">
+                        "{activeTopic.interviewScript60s.script}"
+                      </blockquote>
                     </div>
 
                     {/* Non-negotiable Keywords */}
