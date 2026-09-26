@@ -22,8 +22,24 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email already registered: " + request.getEmail());
+        User existingUser = userRepository.findByEmail(request.getEmail()).orElse(null);
+        if (existingUser != null) {
+            // Account already registered in Supabase: update credentials, profile details, and log in seamlessly
+            existingUser.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+            if (request.getFullName() != null && !request.getFullName().isBlank()) {
+                existingUser.setFullName(request.getFullName());
+            }
+            if (request.getTargetYear() != null && !request.getTargetYear().isBlank()) {
+                existingUser.setTargetYear(request.getTargetYear());
+            }
+            existingUser.setLastActiveDate(LocalDate.now());
+            User savedUser = userRepository.save(existingUser);
+            String token = jwtService.generateToken(savedUser);
+            return AuthResponse.builder()
+                    .token(token)
+                    .user(mapToProfile(savedUser))
+                    .message("Welcome back! Account updated successfully")
+                    .build();
         }
 
         User user = User.builder()

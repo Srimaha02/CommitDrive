@@ -11,7 +11,8 @@ import {
   ShieldCheck,
   Zap,
   Eye,
-  EyeOff
+  EyeOff,
+  AlertCircle
 } from 'lucide-react';
 import './AuthModal.css';
 
@@ -212,6 +213,13 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialTab 
 
         {/* Auth Form */}
         <form onSubmit={handleSubmit} className="auth-form">
+          {errorMessage && (
+            <div className="auth-error-banner theme-transition">
+              <AlertCircle size={16} className="error-icon" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
+
           {activeTab === 'signup' && (
             <div className="form-group">
               <label className="form-label">Full Name</label>
@@ -294,8 +302,12 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialTab 
           )}
 
           {/* Primary Submit Button */}
-          <button type="submit" className="auth-submit-btn theme-transition">
-            <span>{activeTab === 'signin' ? 'Sign In to CommitDrive' : 'Complete Registration'}</span>
+          <button type="submit" className="auth-submit-btn theme-transition" disabled={isSubmitting}>
+            <span>
+              {isSubmitting 
+                ? 'Processing...' 
+                : (activeTab === 'signin' ? 'Sign In to CommitDrive' : 'Complete Registration')}
+            </span>
             <ArrowRight size={16} />
           </button>
         </form>

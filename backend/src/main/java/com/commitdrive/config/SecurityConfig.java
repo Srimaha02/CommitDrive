@@ -43,7 +43,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // Public authentication and utility endpoints
                         .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/demo").permitAll()
-                        .requestMatchers("/api/health").permitAll()
+                        .requestMatchers("/api/health", "/error").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         // Protected endpoints: learning, practical, dashboard, and user profile/checkin
                         .requestMatchers("/api/learning/**").authenticated()
