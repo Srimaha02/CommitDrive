@@ -23,15 +23,26 @@
   position: relative;
   width: 100%;
   max-width: 480px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
   background-color: var(--bg-surface-elevated);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
-  padding: 32px 30px;
+  padding: 28px 28px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
   animation: modalScaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.auth-modal-card::-webkit-scrollbar {
+  width: 5px;
+}
+
+.auth-modal-card::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 4px;
 }
 
 @keyframes modalScaleUp {
@@ -246,15 +257,32 @@
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
+.password-input {
+  padding-right: 42px;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  transition: color 0.2s ease;
+}
+
+.password-toggle-btn:hover {
+  color: var(--text-primary);
+}
+
 .form-select {
   appearance: none;
   cursor: pointer;
-}
-
-.form-row-dual {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
 }
 
 .auth-submit-btn {
@@ -278,54 +306,6 @@
   background-color: var(--accent-hover);
   box-shadow: 0 6px 20px var(--accent-glow);
   transform: translateY(-1px);
-}
-
-/* Social Divider & Buttons */
-.social-divider {
-  display: flex;
-  align-items: center;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 0.74rem;
-  letter-spacing: 0.02em;
-}
-
-.social-divider::before,
-.social-divider::after {
-  content: '';
-  flex: 1;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.social-divider span {
-  padding: 0 10px;
-}
-
-.social-buttons-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.social-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-secondary);
-  font-size: 0.8rem;
-  font-weight: 600;
-  transition: all 0.2s ease;
-}
-
-.social-btn:hover {
-  border-color: var(--border-strong);
-  background-color: var(--bg-surface-subtle);
-  color: var(--text-primary);
 }
 
 /* Trust Footer */
