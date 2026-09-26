@@ -21,12 +21,9 @@ import {
   SkipForward,
   Eye,
   Tag,
-  Mic,
-  MicOff,
   Bot,
   AlertCircle,
-  CheckCircle2,
-  Volume2
+  CheckCircle2
 } from 'lucide-react';
 import {
   VIVA_SUBJECTS,
@@ -39,8 +36,7 @@ import {
   formatVivaTime,
 } from '../../data/vivaEngine';
 import {
-  evaluateCandidateAnswer,
-  SpeechDictationSession
+  evaluateCandidateAnswer
 } from '../../data/aiVivaCoachEngine';
 import { COMPANY_TRACKS } from '../../data/companyTracksData';
 import './VivaModal.css';
@@ -73,53 +69,27 @@ export default function VivaModal({ isOpen, onClose, onOpenCramSheet }) {
   // -- Results state
   const [result, setResult]                 = useState(null);
 
-  // -- AI Voice Coach state
-  const [candidateSpeechText, setCandidateSpeechText] = useState('');
-  const [isRecording, setIsRecording]                 = useState(false);
-  const [aiEvaluation, setAiEvaluation]               = useState(null);
+  // -- Technical Answer Evaluation state
+  const [candidateAnswerText, setCandidateAnswerText] = useState('');
+  const [evaluation, setEvaluation]                   = useState(null);
   const [isEvaluating, setIsEvaluating]               = useState(false);
-  const dictationRef                                  = useRef(null);
-
-  // Setup dictation session on mount
-  useEffect(() => {
-    dictationRef.current = new SpeechDictationSession(
-      (text) => setCandidateSpeechText(text),
-      (active) => setIsRecording(active)
-    );
-    return () => {
-      dictationRef.current?.stop();
-    };
-  }, []);
 
   // Reset per question when index or screen changes
   useEffect(() => {
-    dictationRef.current?.stop();
-    setCandidateSpeechText('');
-    setIsRecording(false);
-    setAiEvaluation(null);
+    setCandidateAnswerText('');
+    setEvaluation(null);
     setIsEvaluating(false);
   }, [currentIndex, screen]);
 
-  // Toggle microphone dictation
-  const handleToggleMic = () => {
-    if (!dictationRef.current) return;
-    if (dictationRef.current.isListening) {
-      dictationRef.current.stop();
-    } else {
-      dictationRef.current.start();
-    }
-  };
-
-  // Run AI Recruiter evaluation
-  const handleEvaluateWithAI = () => {
-    dictationRef.current?.stop();
+  // Run keyword and pattern evaluation
+  const handleEvaluateAnswer = () => {
     setIsEvaluating(true);
-    const evalReport = evaluateCandidateAnswer(candidateSpeechText, currentQ, selectedTrack);
-    setAiEvaluation(evalReport);
+    const evalReport = evaluateCandidateAnswer(candidateAnswerText, currentQ, selectedTrack);
+    setEvaluation(evalReport);
     setIsEvaluating(false);
     setIsRevealed(true);
 
-    // Pre-select rating based on AI verdict if not already rated
+    // Pre-select rating based on evaluation verdict if not already rated
     if (evalReport.verdictClass && currentQ) {
       setRatings(prev => ({
         ...prev,
@@ -470,73 +440,54 @@ export default function VivaModal({ isOpen, onClose, onOpenCramSheet }) {
           <div className="viva-question-text">{currentQ.question}</div>
         </div>
 
-        {/* Answer Pitch Studio (Before Reveal) */}
+        {/* Technical Answer Studio (Before Reveal) */}
         {!isRevealed ? (
           <div className="viva-pitch-studio">
             <div className="viva-pitch-header">
               <div className="viva-pitch-title">
-                <Bot size={15} className="viva-ai-bot-icon" />
-                <span>AI Voice Pitch Studio</span>
+                <Target size={15} className="viva-ai-bot-icon" />
+                <span>Technical Answer Studio</span>
                 <span className="viva-pitch-pill">Gate: {activeTrackData.label}</span>
               </div>
               <div className="viva-pitch-timing">
                 <Clock size={12} />
-                <span>Target: 45–60s verbal delivery</span>
+                <span>Target: 30–60s concise explanation</span>
               </div>
             </div>
 
-            {/* Answer Text Area (Driven by voice dictation or typing) */}
-            <div className={`viva-pitch-input-box ${isRecording ? 'is-recording' : ''}`}>
+            {/* Answer Text Area */}
+            <div className="viva-pitch-input-box">
               <textarea
                 className="viva-pitch-textarea"
                 rows={4}
-                value={candidateSpeechText}
-                onChange={(e) => setCandidateSpeechText(e.target.value)}
-                placeholder="Click the microphone below to dictate your verbal answer, or type here... The AI Recruiter will evaluate your concept depth, keywords, and trap avoidance."
+                value={candidateAnswerText}
+                onChange={(e) => setCandidateAnswerText(e.target.value)}
+                placeholder="Type your technical answer or key bullet points here... The evaluator will check your concept depth, keywords, and trap avoidance."
               />
-              {isRecording && (
-                <div className="viva-audio-pulse-indicator">
-                  <span className="pulse-bar" />
-                  <span className="pulse-bar" />
-                  <span className="pulse-bar" />
-                  <span className="pulse-bar" />
-                  <span>Listening live... Speak clearly</span>
-                </div>
-              )}
             </div>
 
             {/* Controls Bar */}
-            <div className="viva-pitch-controls-bar">
-              <button
-                type="button"
-                className={`viva-mic-toggle-btn ${isRecording ? 'recording' : ''}`}
-                onClick={handleToggleMic}
-                title={isRecording ? 'Click to stop dictation' : 'Click to start voice dictation'}
-              >
-                {isRecording ? <MicOff size={16} /> : <Mic size={16} />}
-                <span>{isRecording ? 'Stop Recording' : 'Record Verbal Pitch'}</span>
-              </button>
-
-              {candidateSpeechText && (
+            {candidateAnswerText && (
+              <div className="viva-pitch-controls-bar">
                 <button
                   type="button"
                   className="viva-clear-pitch-btn"
-                  onClick={() => setCandidateSpeechText('')}
+                  onClick={() => setCandidateAnswerText('')}
                 >
                   Clear text
                 </button>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="viva-pitch-actions-row">
               <button
                 className="viva-evaluate-ai-btn"
-                onClick={handleEvaluateWithAI}
+                onClick={handleEvaluateAnswer}
                 disabled={isEvaluating}
               >
                 <Sparkles size={15} />
-                <span>{isEvaluating ? 'Analyzing Answer...' : 'Evaluate Answer with AI Coach'}</span>
+                <span>{isEvaluating ? 'Evaluating Keywords...' : 'Evaluate Answer (Keyword & Pattern Analysis)'}</span>
               </button>
 
               <button
@@ -550,19 +501,19 @@ export default function VivaModal({ isOpen, onClose, onOpenCramSheet }) {
           </div>
         ) : (
           <div className="viva-answer-panel">
-            {/* AI Recruiter Assessment Card (if evaluated with AI) */}
-            {aiEvaluation && (
-              <div className={`viva-ai-report-card ${aiEvaluation.verdictClass}`}>
+            {/* Rule-Based Concept & Keyword Evaluation Card */}
+            {evaluation && (
+              <div className={`viva-ai-report-card ${evaluation.verdictClass}`}>
                 <div className="viva-ai-card-top">
                   <div className="viva-ai-verdict-group">
                     <span className="viva-ai-chip">
-                      <Bot size={13} />
-                      AI Recruiter Verdict
+                      <Target size={13} />
+                      Keyword & Concept Evaluation
                     </span>
-                    <h4 className="viva-ai-verdict-title">{aiEvaluation.verdict}</h4>
+                    <h4 className="viva-ai-verdict-title">{evaluation.verdict}</h4>
                   </div>
                   <div className="viva-ai-score-pill">
-                    <span className="score-num">{aiEvaluation.score}</span>
+                    <span className="score-num">{evaluation.score}</span>
                     <span className="score-denom">/100</span>
                   </div>
                 </div>
@@ -571,11 +522,11 @@ export default function VivaModal({ isOpen, onClose, onOpenCramSheet }) {
                 <div className="viva-ai-concepts-grid">
                   <div className="viva-ai-concept-col">
                     <span className="concept-col-title covered">
-                      <CheckCircle2 size={13} /> Concepts Hit ({aiEvaluation.coveredKeywords.length})
+                      <CheckCircle2 size={13} /> Concepts Hit ({evaluation.coveredKeywords.length})
                     </span>
                     <div className="concept-chips-wrap">
-                      {aiEvaluation.coveredKeywords.length > 0 ? (
-                        aiEvaluation.coveredKeywords.map((kw, i) => (
+                      {evaluation.coveredKeywords.length > 0 ? (
+                        evaluation.coveredKeywords.map((kw, i) => (
                           <span key={i} className="concept-chip hit">{kw}</span>
                         ))
                       ) : (
@@ -586,11 +537,11 @@ export default function VivaModal({ isOpen, onClose, onOpenCramSheet }) {
 
                   <div className="viva-ai-concept-col">
                     <span className="concept-col-title missing">
-                      <AlertCircle size={13} /> Missed Placement Keywords ({aiEvaluation.missingKeywords.length})
+                      <AlertCircle size={13} /> Missed Placement Keywords ({evaluation.missingKeywords.length})
                     </span>
                     <div className="concept-chips-wrap">
-                      {aiEvaluation.missingKeywords.length > 0 ? (
-                        aiEvaluation.missingKeywords.map((kw, i) => (
+                      {evaluation.missingKeywords.length > 0 ? (
+                        evaluation.missingKeywords.map((kw, i) => (
                           <span key={i} className="concept-chip missed">{kw}</span>
                         ))
                       ) : (
@@ -601,21 +552,21 @@ export default function VivaModal({ isOpen, onClose, onOpenCramSheet }) {
                 </div>
 
                 {/* Trap Warning Alert if candidate fell into rookie mistake */}
-                {aiEvaluation.trapTriggered && (
+                {evaluation.trapTriggered && (
                   <div className="viva-ai-trap-alert">
                     <AlertTriangle size={14} />
                     <div>
-                      <strong>Rookie Trap Detected:</strong> {aiEvaluation.trapFeedback}
+                      <strong>Rookie Trap Detected:</strong> {evaluation.trapFeedback}
                     </div>
                   </div>
                 )}
 
-                {/* Recruiter Actionable Tips */}
-                {aiEvaluation.actionableTips?.length > 0 && (
+                {/* Key Improvement Suggestions */}
+                {evaluation.actionableTips?.length > 0 && (
                   <div className="viva-ai-tips-block">
-                    <span className="viva-ai-tips-title">💡 Actionable Recruiter Feedback:</span>
+                    <span className="viva-ai-tips-title">💡 Key Improvement Suggestions:</span>
                     <ul className="viva-ai-tips-list">
-                      {aiEvaluation.actionableTips.map((tip, i) => (
+                      {evaluation.actionableTips.map((tip, i) => (
                         <li key={i}>{tip}</li>
                       ))}
                     </ul>

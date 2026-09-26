@@ -1,12 +1,11 @@
 /**
- * AI Viva Voice Feedback Coach Engine — CommitDrive
+ * Technical Viva Answer Evaluator — CommitDrive
  * 
- * Provides automated placement-recruiter evaluations for verbal/typed viva answers:
- * - Real-time keyword & semantic coverage analysis
- * - Rookie trap detection (warns if candidate fell into the common placement pitfall)
- * - Calibrated scoring against company hiring tracks (TCS/Infosys vs Razorpay vs FAANG)
- * - Winning verbal delivery blueprint (how a senior engineer answers in 45s)
- * - Web Speech API voice dictation helper with live audio state
+ * Provides automated, rule-based evaluations for typed technical viva answers:
+ * - Deterministic keyword & concept coverage analysis
+ * - Rookie trap detection (identifies common placement misconceptions)
+ * - Calibrated scoring against company hiring tracks (Service vs FinTech vs FAANG)
+ * - Senior model answer comparison and actionable improvement suggestions
  */
 
 /**
@@ -171,77 +170,3 @@ export const evaluateCandidateAnswer = (candidateAnswer, question, trackId = 'al
     actionableTips
   };
 };
-
-/**
- * Speech Recognition Wrapper (Web Speech API)
- */
-export class SpeechDictationSession {
-  constructor(onTranscriptUpdate, onStateChange) {
-    this.onTranscriptUpdate = onTranscriptUpdate;
-    this.onStateChange = onStateChange;
-    this.recognition = null;
-    this.isListening = false;
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      this.recognition = new SpeechRecognition();
-      this.recognition.continuous = true;
-      this.recognition.interimResults = true;
-      this.recognition.lang = 'en-US';
-
-      this.recognition.onstart = () => {
-        this.isListening = true;
-        this.onStateChange?.(true);
-      };
-
-      this.recognition.onend = () => {
-        this.isListening = false;
-        this.onStateChange?.(false);
-      };
-
-      this.recognition.onerror = (e) => {
-        console.warn('Speech recognition error:', e.error);
-        this.isListening = false;
-        this.onStateChange?.(false);
-      };
-
-      this.recognition.onresult = (e) => {
-        let final = '';
-        for (let i = 0; i < e.results.length; i++) {
-          final += e.results[i][0].transcript + ' ';
-        }
-        this.onTranscriptUpdate?.(final.trim());
-      };
-    }
-  }
-
-  isSupported() {
-    return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
-  }
-
-  start() {
-    if (!this.recognition || this.isListening) return;
-    try {
-      this.recognition.start();
-    } catch (err) {
-      console.warn('Recognition start error:', err);
-    }
-  }
-
-  stop() {
-    if (!this.recognition || !this.isListening) return;
-    try {
-      this.recognition.stop();
-    } catch (err) {
-      console.warn('Recognition stop error:', err);
-    }
-  }
-
-  toggle() {
-    if (this.isListening) {
-      this.stop();
-    } else {
-      this.start();
-    }
-  }
-}
