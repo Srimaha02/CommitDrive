@@ -512,7 +512,7 @@ int main() {
     pthread_join(t2, NULL);
 
     pthread_mutex_destroy(&balance_lock);
-    printf("Final Balance: %ld (Exact expected: 2001000)\\n", account_balance);
+    printf("Final Balance: %ld (Exact expected: 1001000)\\n", account_balance);
     return 0;
 }`,
     exampleExplanation: [
@@ -520,7 +520,7 @@ int main() {
       'Line 11: `pthread_mutex_lock()` is called before touching `account_balance`. If another thread holds the lock, this thread enters sleep.',
       'Critical Section: Line 13 is guaranteed to execute with Mutual Exclusion—only one thread can update the balance at a time.',
       'Line 16: `pthread_mutex_unlock()` releases the lock, atomically waking up any queued sleeping thread waiting for access.',
-      'Atomicity: Regardless of CPU core count or context-switch timing, the final account balance is 100% deterministic and correct (2,001,000).',
+      'Atomicity: Regardless of CPU core count or context-switch timing, the final account balance is 100% deterministic and correct (1,001,000).',
       'Cleanup: Line 28 destroys the mutex to free allocated OS resources.'
     ],
     interviewQuestions: [
