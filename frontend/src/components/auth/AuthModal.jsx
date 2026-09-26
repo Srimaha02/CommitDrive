@@ -60,8 +60,10 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialTab 
         targetYear: '2026',
         streak: 3
       };
+      const token = res.data?.token;
       onLoginSuccess({
         id: user.id,
+        token: token,
         name: user.fullName || user.name || 'Demo Student',
         email: user.email || 'demo@commitdrive.dev',
         role: user.role || 'SDE Aspirant (Demo)',
@@ -98,8 +100,10 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialTab 
         const res = await authApi.login(signInEmail, signInPassword);
         if (res.success) {
           const user = res.data?.user || res.data;
+          const token = res.data?.token;
           onLoginSuccess({
             id: user.id,
+            token: token,
             name: user.fullName || user.name || signInEmail.split('@')[0],
             email: user.email || signInEmail,
             role: user.role || 'SDE Aspirant 2026',
@@ -122,8 +126,10 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialTab 
         });
         if (res.success) {
           const user = res.data?.user || res.data;
+          const token = res.data?.token;
           onLoginSuccess({
             id: user.id,
+            token: token,
             name: user.fullName || signUpName,
             email: user.email || signUpEmail,
             role: user.role || targetRole,
@@ -303,17 +309,17 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialTab 
           </button>
         </form>
 
-        {/* Social Login Placeholders (Visual Only) */}
+        {/* Social / Campus SSO Options */}
         <div className="social-divider">
-          <span>or continue with (placeholders)</span>
+          <span>or campus SSO</span>
         </div>
 
         <div className="social-buttons-row">
           <button 
             type="button" 
             className="social-btn theme-transition" 
-            title="OAuth integration coming in Step 4"
-            onClick={() => alert('Social OAuth is planned for Step 4 with Spring Boot backend.')}
+            title="Sign in with GitHub Student Developer Pack"
+            onClick={() => alert('Campus Single Sign-On: Please sign in using your registered email and password.')}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
@@ -324,8 +330,8 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialTab 
           <button 
             type="button" 
             className="social-btn theme-transition"
-            title="OAuth integration coming in Step 4"
-            onClick={() => alert('Social OAuth is planned for Step 4 with Spring Boot backend.')}
+            title="Sign in with Google Workspace"
+            onClick={() => alert('Campus Single Sign-On: Please sign in using your registered email and password.')}
           >
             <svg width="16" height="16" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>

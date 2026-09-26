@@ -2,9 +2,11 @@ package com.commitdrive.controller;
 
 import com.commitdrive.dto.ProgressDtos.DashboardStatsResponse;
 import com.commitdrive.dto.ProgressDtos.LeaderboardEntryDto;
+import com.commitdrive.security.SecurityUtils;
 import com.commitdrive.service.DashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,9 +21,10 @@ public class DashboardController {
 
     @GetMapping("/stats")
     public ResponseEntity<DashboardStatsResponse> getStats(
-            @RequestHeader(value = "X-User-Id", required = false) UUID userId
+            @AuthenticationPrincipal UUID userId
     ) {
-        return ResponseEntity.ok(dashboardService.getDashboardStats(userId));
+        UUID effectiveUserId = userId != null ? userId : SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(dashboardService.getDashboardStats(effectiveUserId));
     }
 
     @GetMapping("/leaderboard")

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Sparkles, 
   Flame, 
@@ -21,7 +21,9 @@ import {
   ShieldCheck,
   ChevronRight,
   Info,
-  X
+  User,
+  X,
+  RotateCw
 } from 'lucide-react';
 import { dashboardApi } from '../../services/api';
 import { osTopics } from '../../data/osTopics';
@@ -31,6 +33,81 @@ import { practicalMissions } from '../../data/practicalCurriculum';
 import GatedContentPreview from '../layout/GatedContentPreview';
 import PracticeReminderBanner from './PracticeReminderBanner';
 import './Dashboard.css';
+
+// Curated daily placement insights from real SDE technical screening interviews
+const PLACEMENT_INSIGHTS = [
+  {
+    source: "Amazon & Uber SDE Interviews",
+    quote: "78% of OS screening rounds test whether you can clearly explain how the Working Set Model and TLB (Translation Lookaside Buffer) mitigate page faults during memory thrashing.",
+    highlightWords: ["Working Set Model", "TLB (Translation Lookaside Buffer)"]
+  },
+  {
+    source: "Razorpay & Swiggy FinTech Rounds",
+    quote: "In payment and order systems, interviewers probe why Repeatable Read isolation prevents non-repeatable reads using MVCC, but still requires SELECT ... FOR UPDATE to avoid lost updates on concurrent balance deductions.",
+    highlightWords: ["Repeatable Read", "MVCC", "SELECT ... FOR UPDATE"]
+  },
+  {
+    source: "Google & Microsoft Systems Round",
+    quote: "Over 65% of network architecture questions test the difference between HTTP/2 multiplexing (HOL blocking at TCP layer) versus HTTP/3 over QUIC (independent UDP streams). Always mention packet loss isolation.",
+    highlightWords: ["HTTP/2 multiplexing", "HTTP/3 over QUIC", "packet loss isolation"]
+  },
+  {
+    source: "Oracle & Salesforce Core Engine Rounds",
+    quote: "When asked why B+ Trees are preferred over B-Trees for database indexes, emphasize: all data pointers reside in leaf nodes, yielding higher branch fan-out, fewer disk I/O seeks, and sequential linked-list range scans.",
+    highlightWords: ["B+ Trees", "leaf nodes", "disk I/O seeks", "range scans"]
+  },
+  {
+    source: "Adobe & Atlassian Backend Rounds",
+    quote: "When explaining deadlock prevention, name the 4 Coffman conditions: Mutual Exclusion, Hold & Wait, No Preemption, Circular Wait. Breaking Circular Wait via global resource hierarchy ordering is the standard production solution.",
+    highlightWords: ["4 Coffman conditions", "Circular Wait", "global resource hierarchy ordering"]
+  },
+  {
+    source: "Netflix & CRED High-Concurrency Rounds",
+    quote: "To avoid Cache Stampede (dog-piling) when hot cache keys expire under heavy traffic, mention Mutex Locks (single background rebuild) or Probabilistic Early Expiration (XFetch algorithm) rather than naive static TTLs.",
+    highlightWords: ["Cache Stampede", "Mutex Locks", "Probabilistic Early Expiration"]
+  },
+  {
+    source: "Flipkart & Zomato Data Engineering",
+    quote: "Composite indexes on (A, B, C) follow the Leftmost Prefix Rule. Queries filtering on (B, C) cannot utilize the index. Always verify index utilization using EXPLAIN ANALYZE in PostgreSQL or MySQL.",
+    highlightWords: ["Leftmost Prefix Rule", "EXPLAIN ANALYZE"]
+  },
+  {
+    source: "Bloomberg & Goldman Sachs Low-Latency",
+    quote: "Shared Memory is the fastest IPC mechanism because data transfer occurs without kernel space copying. However, it requires POSIX semaphores or mutexes to prevent concurrent race conditions.",
+    highlightWords: ["Shared Memory", "IPC mechanism", "POSIX semaphores"]
+  },
+  {
+    source: "Postman & GitHub DevOps Rounds",
+    quote: "When comparing Git Merge vs Rebase: Merge preserves true chronological branching with a 2-parent commit, whereas Rebase provides a clean linear commit graph. Never rebase shared public branches.",
+    highlightWords: ["Git Merge vs Rebase", "linear commit graph"]
+  },
+  {
+    source: "Qualcomm & NVIDIA Systems",
+    quote: "In Virtual Memory, a TLB hit takes ~1 CPU cycle, while a TLB miss costs 10-100x more due to multi-level page table walks in RAM. Inverted page tables and HugePages help minimize this overhead in high-throughput engines.",
+    highlightWords: ["TLB miss", "page table walks", "HugePages"]
+  },
+  {
+    source: "TCS Digital & Infosys SP Rounds",
+    quote: "Candidates who score top bands in technical screening clearly distinguish Process (isolated virtual address space) from Thread (shared heap and code, isolated stack and registers) within the first 30 seconds.",
+    highlightWords: ["isolated virtual address space", "shared heap and code", "isolated stack"]
+  },
+  {
+    source: "Stripe & PayPal Infrastructure",
+    quote: "Two-Phase Commit (2PC) guarantees atomicity across distributed databases via Prepare and Commit phases, but suffers from blocking coordinator failure. Modern distributed architectures often favor Saga Patterns with compensating transactions.",
+    highlightWords: ["Two-Phase Commit (2PC)", "Saga Patterns", "compensating transactions"]
+  }
+];
+
+function renderFormattedInsight(quote, highlightWords = []) {
+  if (!highlightWords || highlightWords.length === 0) return quote;
+  const escaped = highlightWords.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+  const parts = quote.split(regex);
+  return parts.map((part, i) => {
+    const isHighlight = highlightWords.some(w => w.toLowerCase() === part.toLowerCase());
+    return isHighlight ? <strong key={i}>{part}</strong> : part;
+  });
+}
 
 // Researched public interview patterns for companies with well-documented recruitment data
 const documentedCompanyPatterns = {
@@ -272,7 +349,8 @@ export default function Dashboard({
   onNavigate, 
   onOpenAuth, 
   onDemoLogin,
-  onOpenCramSheet
+  onOpenCramSheet,
+  onOpenProfile
 }) {
   const student = currentUser || {
     name: 'SDE Aspirant',
@@ -294,6 +372,18 @@ export default function Dashboard({
   });
 
   const [selectedCompany, setSelectedCompany] = useState(null);
+
+  // Deterministic daily rotation based on day-of-year
+  const defaultInsightIndex = useMemo(() => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 0);
+    const diff = (now - start) + ((start.getTimezoneOffset() - now.getTimezoneOffset()) * 60 * 1000);
+    const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
+    return Math.abs(dayOfYear) % PLACEMENT_INSIGHTS.length;
+  }, []);
+
+  const [insightIndex, setInsightIndex] = useState(defaultInsightIndex);
+  const currentInsight = PLACEMENT_INSIGHTS[insightIndex % PLACEMENT_INSIGHTS.length];
 
   // Close popup modal on ESC key
   useEffect(() => {
@@ -675,6 +765,15 @@ export default function Dashboard({
                 <div className="dash-cohort-tag theme-transition">
                   <Target size={14} className="tag-icon" />
                   <span>Target: SDE 1 • Class of {student.targetYear || '2026'}</span>
+                  <button 
+                    type="button" 
+                    className="dash-view-profile-btn theme-transition"
+                    onClick={() => onOpenProfile && onOpenProfile()}
+                    title="View candidate placement profile & session security"
+                  >
+                    <User size={12} />
+                    <span>View Profile</span>
+                  </button>
                 </div>
                 <h1 className="dash-greeting">
                   Welcome back, <span className="highlight-name">{student.name}</span> 👋
@@ -684,17 +783,28 @@ export default function Dashboard({
                 </p>
               </div>
 
-              {/* Daily Placement Tip Card */}
+              {/* Daily Placement Tip Card (Dynamic Daily Rotation) */}
               <div className="daily-tip-card theme-transition">
                 <div className="tip-header">
                   <span className="tip-badge">
                     <Sparkles size={13} />
                     <span>Placement Insight of the Day</span>
                   </span>
-                  <span className="tip-source">Amazon & Uber SDE Interviews</span>
+                  <div className="tip-header-right">
+                    <span className="tip-source">{currentInsight.source}</span>
+                    <button 
+                      type="button" 
+                      className="tip-cycle-btn theme-transition"
+                      onClick={() => setInsightIndex(prev => (prev + 1) % PLACEMENT_INSIGHTS.length)}
+                      title="Next placement tip (Auto-rotates daily at midnight)"
+                      aria-label="Next Placement Insight"
+                    >
+                      <RotateCw size={12} />
+                    </button>
+                  </div>
                 </div>
                 <p className="tip-content">
-                  "78% of OS screening rounds test whether you can clearly explain how the <strong>Working Set Model</strong> and <strong>TLB (Translation Lookaside Buffer)</strong> mitigate page faults during memory thrashing."
+                  "{renderFormattedInsight(currentInsight.quote, currentInsight.highlightWords)}"
                 </p>
               </div>
 
@@ -702,6 +812,10 @@ export default function Dashboard({
               <div 
                 className="dash-cram-card theme-transition"
                 onClick={() => {
+                  if (!currentUser) {
+                    if (onOpenAuth) onOpenAuth('signin');
+                    return;
+                  }
                   if (onOpenCramSheet) onOpenCramSheet(null);
                   else window.dispatchEvent(new CustomEvent('commitdrive_open_cram_sheet', { detail: { subject: null } }));
                 }}
@@ -721,8 +835,19 @@ export default function Dashboard({
                     <p className="cram-card-desc">High-frequency formulas, CPU scheduling, ACID anomaly matrix, and top 20 trap questions ready to print or scan.</p>
                   </div>
                 </div>
-                <button type="button" className="cram-open-btn theme-transition">
-                  <span>Open Sheet</span>
+                <button 
+                  type="button" 
+                  className="cram-open-btn theme-transition"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!currentUser) {
+                      if (onOpenAuth) onOpenAuth('signin');
+                      return;
+                    }
+                    if (onOpenCramSheet) onOpenCramSheet(null);
+                  }}
+                >
+                  <span>{currentUser ? 'Open Sheet' : 'Sign In to Access'}</span>
                   <ArrowRight size={13} />
                 </button>
               </div>

@@ -4,19 +4,39 @@
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
-// Helper to retrieve auth user token / user ID header
-const getAuthHeaders = () => {
-  const headers = { 'Content-Type': 'application/json' };
+// Helper to retrieve auth user token / Authorization header
+export const getAuthToken = () => {
   try {
+    const token = localStorage.getItem('commitdrive_token');
+    if (token) return token;
     const savedUser = localStorage.getItem('commitdrive_user');
     if (savedUser) {
       const parsed = JSON.parse(savedUser);
-      if (parsed.id) {
-        headers['X-User-Id'] = parsed.id;
-      }
+      if (parsed.token) return parsed.token;
     }
   } catch {
     // ignore
+  }
+  return null;
+};
+
+export const setAuthToken = (token) => {
+  try {
+    if (token) {
+      localStorage.setItem('commitdrive_token', token);
+    } else {
+      localStorage.removeItem('commitdrive_token');
+    }
+  } catch {
+    // ignore
+  }
+};
+
+const getAuthHeaders = () => {
+  const headers = { 'Content-Type': 'application/json' };
+  const token = getAuthToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
   return headers;
 };
@@ -43,7 +63,7 @@ async function requestWithFallback(endpoint, options = {}, fallbackFn = () => nu
     }
     // If backend responded with 4xx / 5xx error
     const errData = await res.json().catch(() => ({}));
-    return { success: false, error: errData.message || 'Request failed', isOffline: false };
+    return { success: false, error: errData.message || 'Request failed', status: res.status, isOffline: false };
   } catch (err) {
     // Network failure / connection refused / timeout -> graceful local fallback
     const fallbackData = fallbackFn();
@@ -57,7 +77,7 @@ async function requestWithFallback(endpoint, options = {}, fallbackFn = () => nu
 export const authApi = {
   // Login with email and password
   async login(email, password) {
-    return requestWithFallback(
+    const res = await requestWithFallback(
       '/auth/login',
       {
         method: 'POST',
@@ -76,11 +96,15 @@ export const authApi = {
         return { token: demoUser.id, user: demoUser, message: 'Offline session loaded' };
       }
     );
+    if (res.success && res.data?.token) {
+      setAuthToken(res.data.token);
+    }
+    return res;
   },
 
   // Register a new student account
   async register(userData) {
-    return requestWithFallback(
+    const res = await requestWithFallback(
       '/auth/register',
       {
         method: 'POST',
@@ -98,22 +122,42 @@ export const authApi = {
         return { token: newUser.id, user: newUser, message: 'Registered locally' };
       }
     );
+    if (res.success && res.data?.token) {
+      setAuthToken(res.data.token);
+    }
+    return res;
   },
 
   // Get Demo Student Profile
   async getDemoUser() {
-    return requestWithFallback(
+    const res = await requestWithFallback(
       '/auth/demo',
       { method: 'GET' },
       () => ({
-        id: 'a0000000-0000-0000-0000-000000000001',
-        email: 'cs.placement@prep.edu',
-        fullName: 'Mikro Student',
-        role: 'SDE Aspirant 2026',
-        targetYear: '2026',
-        streak: 3
+        token: 'a0000000-0000-0000-0000-000000000001',
+        user: {
+          id: 'a0000000-0000-0000-0000-000000000001',
+          email: 'cs.placement@prep.edu',
+          fullName: 'Mikro Student',
+          role: 'SDE Aspirant 2026',
+          targetYear: '2026',
+          streak: 3
+        }
       })
     );
+    if (res.success && res.data?.token) {
+      setAuthToken(res.data.token);
+    }
+    return res;
+  },
+
+  // Clear auth token and user session
+  logout() {
+    setAuthToken(null);
+    try {
+      localStorage.removeItem('commitdrive_user');
+      localStorage.removeItem('commitdrive_token');
+    } catch {}
   },
 
   // Server-side daily streak check-in

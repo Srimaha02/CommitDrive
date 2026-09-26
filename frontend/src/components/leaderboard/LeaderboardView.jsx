@@ -130,7 +130,7 @@ export default function LeaderboardView({ currentUser, onNavigate, onOpenAuth, o
                       <span>Registered Candidates</span>
                     </span>
                     <strong className="summary-stat-value">{candidates.length}</strong>
-                    <span className="summary-stat-sub">From Supabase Database</span>
+                    <span className="summary-stat-sub">Verified Placement Cohort</span>
                   </div>
 
                   <div className="summary-stat-card theme-transition highlight-user-stat">

@@ -38,7 +38,7 @@ import {
 } from '../../data/companyTracksData';
 import './CramSheetModal.css';
 
-export default function CramSheetModal({ isOpen, onClose, initialSubject = null, initialTrack = 'all', initialTopic = 'all' }) {
+export default function CramSheetModal({ isOpen, onClose, initialSubject = null, initialTrack = 'all', initialTopic = 'all', currentUser }) {
   // If initialSubject is provided, start directly on that subject; otherwise start on Subject Picker
   const [selectedSubject, setSelectedSubject] = useState(initialSubject);
   const [selectedTrack, setSelectedTrack] = useState(initialTrack || 'all');
@@ -527,6 +527,9 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
   const intermediateCount = trackFilteredQuestions.filter(q => q.level === 'intermediate').length;
   const advancedCount = trackFilteredQuestions.filter(q => q.level === 'advanced').length;
   const activeTrackObj = getCompanyTrack(selectedTrack);
+
+  // Guard: Must be open AND user must be authenticated
+  if (!isOpen || !currentUser) return null;
 
   return (
     <div className="cram-modal-overlay animate-fadeIn" onClick={onClose} role="dialog" aria-modal="true">

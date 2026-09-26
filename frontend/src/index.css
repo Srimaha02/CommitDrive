@@ -171,6 +171,9 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+  max-width: 100%;
+  width: 100%;
 }
 
 body {
@@ -180,6 +183,9 @@ body {
   font-family: var(--font-body);
   line-height: 1.6;
   overflow-x: hidden;
+  max-width: 100%;
+  width: 100%;
+  position: relative;
   transition: background-color 0.45s cubic-bezier(0.4, 0, 0.2, 1),
               color 0.45s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -275,6 +281,9 @@ button {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
+  max-width: 100%;
+  width: 100%;
 }
 
 .content-wrapper {

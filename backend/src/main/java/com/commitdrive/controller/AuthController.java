@@ -2,9 +2,12 @@ package com.commitdrive.controller;
 
 import com.commitdrive.dto.AuthDtos.*;
 import com.commitdrive.entity.User;
+import com.commitdrive.security.JwtService;
+import com.commitdrive.security.SecurityUtils;
 import com.commitdrive.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -15,6 +18,7 @@ import java.util.UUID;
 public class AuthController {
 
     private final AuthService authService;
+    private final JwtService jwtService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
@@ -28,16 +32,18 @@ public class AuthController {
 
     @PostMapping("/checkin")
     public ResponseEntity<StreakCheckInResponse> checkIn(
-            @RequestHeader(value = "X-User-Id", required = false) UUID userId
+            @AuthenticationPrincipal UUID userId
     ) {
-        return ResponseEntity.ok(authService.checkInUser(userId));
+        UUID effectiveUserId = userId != null ? userId : SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(authService.checkInUser(effectiveUserId));
     }
 
     @GetMapping("/demo")
     public ResponseEntity<AuthResponse> getDemoStudent() {
         User demo = authService.getOrCreateDemoUser();
+        String token = jwtService.generateToken(demo);
         AuthResponse response = AuthResponse.builder()
-                .token(demo.getId().toString())
+                .token(token)
                 .user(UserProfileDto.builder()
                         .id(demo.getId())
                         .email(demo.getEmail())
@@ -53,9 +59,10 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<UserProfileDto> getCurrentUser(
-            @RequestHeader(value = "X-User-Id", required = false) UUID userId
+            @AuthenticationPrincipal UUID userId
     ) {
-        User user = authService.getUserByIdOrDemo(userId);
+        UUID effectiveUserId = userId != null ? userId : SecurityUtils.getCurrentUserId();
+        User user = authService.getUserByIdOrDemo(effectiveUserId);
         return ResponseEntity.ok(UserProfileDto.builder()
                 .id(user.getId())
                 .email(user.getEmail())

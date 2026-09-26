@@ -1,0 +1,468 @@
+/* Student Profile Modal Styles */
+
+.profile-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: profileBackdropFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes profileBackdropFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.profile-modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background-color: var(--bg-surface-elevated, #ffffff);
+  border: 1px solid var(--border-strong, #e2e8f0);
+  border-radius: var(--radius-lg, 16px);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  animation: profileCardPop 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes profileCardPop {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.profile-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px 14px;
+  border-bottom: 1px solid var(--border-subtle, #e2e8f0);
+}
+
+.profile-header-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-header-icon {
+  color: var(--accent-primary, #e8604a);
+}
+
+.profile-modal-title {
+  font-family: var(--font-heading, serif);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary, #2b2420);
+  margin: 0;
+}
+
+.profile-modal-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #948479);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.profile-modal-close-btn:hover {
+  background: var(--bg-surface-subtle, #f7eee2);
+  color: var(--text-primary, #2b2420);
+}
+
+.profile-modal-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+/* ==========================================================================
+   1. User Details & Identity Card
+   ========================================================================== */
+.profile-identity-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, rgba(232, 96, 74, 0.08), rgba(245, 158, 11, 0.05));
+  border: 1px solid rgba(232, 96, 74, 0.2);
+  border-radius: 14px;
+}
+
+.profile-avatar-large {
+  position: relative;
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-primary, #e8604a), #f97316);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  box-shadow: 0 8px 20px -4px rgba(232, 96, 74, 0.4);
+  flex-shrink: 0;
+}
+
+.profile-avatar-large .online-dot {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background-color: #22c55e;
+  border: 2.5px solid var(--bg-surface-elevated, #ffffff);
+}
+
+.profile-identity-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  flex: 1;
+}
+
+.profile-identity-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.profile-user-name {
+  font-family: var(--font-heading, serif);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary, #2b2420);
+  margin: 0;
+}
+
+.profile-demo-tag {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(244, 162, 97, 0.2);
+  color: #ea580c;
+  border: 1px solid rgba(244, 162, 97, 0.4);
+}
+
+.profile-verified-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.profile-user-email {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.84rem;
+  color: var(--text-muted, #948479);
+}
+
+.profile-user-email .email-icon {
+  color: var(--accent-primary, #e8604a);
+  opacity: 0.85;
+}
+
+.profile-identity-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  flex-wrap: wrap;
+}
+
+.identity-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-subtle, #ede1d1);
+  color: var(--text-secondary, #66584f);
+}
+
+/* ==========================================================================
+   2. Motivational Quote Banner
+   ========================================================================== */
+.profile-quote-card {
+  position: relative;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(232, 96, 74, 0.05));
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quote-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.quote-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #d97706;
+}
+
+.quote-badge .sparkle-icon {
+  animation: floatGentle 2.5s infinite ease-in-out;
+}
+
+.quote-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.quote-marks-icon {
+  color: #f59e0b;
+  opacity: 0.6;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.quote-text {
+  font-family: var(--font-heading, serif);
+  font-size: 0.94rem;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--text-primary, #2b2420);
+  margin: 0;
+}
+
+/* ==========================================================================
+   3. Key Stats & Leaderboard Rank (2x2 Grid, Vertical Flow)
+   ========================================================================== */
+.profile-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 440px) {
+  .profile-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background-color: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-subtle, #ede1d1);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+  border-color: var(--border-strong, #ddcfbc);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.stat-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.rank-icon-wrapper {
+  background: rgba(234, 179, 8, 0.15);
+  color: #ca8a04;
+}
+
+.streak-icon-wrapper {
+  background: rgba(232, 96, 74, 0.14);
+  color: #e8604a;
+}
+
+.readiness-icon-wrapper {
+  background: rgba(34, 197, 94, 0.14);
+  color: #16a34a;
+}
+
+.xp-icon-wrapper {
+  background: rgba(99, 102, 241, 0.14);
+  color: #6366f1;
+}
+
+.stat-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.stat-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted, #948479);
+}
+
+.stat-value {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary, #2b2420);
+  line-height: 1.2;
+}
+
+.stat-value.rank-highlight {
+  color: #d97706;
+}
+
+.stat-subtext {
+  font-size: 0.68rem;
+  color: var(--text-muted, #948479);
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   4. Footer Actions
+   ========================================================================== */
+.profile-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-subtle, #ede1d1);
+  background-color: var(--bg-surface-subtle, #f7eee2);
+  border-bottom-left-radius: var(--radius-lg, 16px);
+  border-bottom-right-radius: var(--radius-lg, 16px);
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+}
+
+.footer-left-actions {
+  display: flex;
+  align-items: center;
+}
+
+.footer-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-leaderboard-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: var(--radius-pill, 9999px);
+  background: rgba(234, 179, 8, 0.12);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  color: #ca8a04;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.profile-leaderboard-link-btn:hover {
+  background: #ca8a04;
+  color: #ffffff;
+  border-color: #ca8a04;
+  transform: translateY(-1px);
+}
+
+.profile-signout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.profile-signout-btn:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.profile-done-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 18px;
+  border-radius: 8px;
+  border: none;
+  background-color: var(--accent-primary, #e8604a);
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.profile-done-btn:hover {
+  background-color: var(--accent-hover, #d34e38);
+  transform: translateY(-1px);
+}

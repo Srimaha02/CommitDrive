@@ -7,6 +7,7 @@ import LearningPathView from './components/learning/LearningPathView';
 import PracticalPathView from './components/practical/PracticalPathView';
 import AuthModal from './components/auth/AuthModal';
 import CramSheetModal from './components/common/CramSheetModal';
+import ProfileModal from './components/common/ProfileModal';
 import VivaModal from './components/viva/VivaModal';
 import CursorGlow from './components/common/CursorGlow';
 import { BookOpen, Terminal, LogIn } from 'lucide-react';
@@ -40,15 +41,32 @@ export default function App() {
   const handleOpenAuth = (tab = 'signin') => setAuthModalConfig({ isOpen: true, tab });
   const handleCloseAuth = () => setAuthModalConfig(prev => ({ ...prev, isOpen: false }));
 
-  // Emergency Cram Sheet Modal State
+  // Emergency Cram Sheet Modal State (Gated: requires authenticated student session)
   const [cramSheetConfig, setCramSheetConfig] = useState({ isOpen: false, subject: null, track: 'all', topic: 'all' });
-  const handleOpenCramSheet = (subject = null, track = 'all', topic = 'all') => setCramSheetConfig({ isOpen: true, subject, track: track || 'all', topic: topic || 'all' });
+  const handleOpenCramSheet = (subject = null, track = 'all', topic = 'all') => {
+    if (!currentUser) {
+      handleOpenAuth('signin');
+      return;
+    }
+    setCramSheetConfig({ isOpen: true, subject, track: track || 'all', topic: topic || 'all' });
+  };
   const handleCloseCramSheet = () => setCramSheetConfig(prev => ({ ...prev, isOpen: false }));
 
-  // Diagnostic Mock Viva Modal State
+  // Diagnostic Mock Viva Modal State (Gated: requires authenticated student session)
   const [vivaIsOpen, setVivaIsOpen] = useState(false);
-  const handleOpenViva  = () => setVivaIsOpen(true);
+  const handleOpenViva  = () => {
+    if (!currentUser) {
+      handleOpenAuth('signin');
+      return;
+    }
+    setVivaIsOpen(true);
+  };
   const handleCloseViva = () => setVivaIsOpen(false);
+
+  // Student Profile Modal State
+  const [profileIsOpen, setProfileIsOpen] = useState(false);
+  const handleOpenProfile  = () => setProfileIsOpen(true);
+  const handleCloseProfile = () => setProfileIsOpen(false);
 
   // Global listener for opening Cram Sheet from any child component or event
   useEffect(() => {
@@ -56,11 +74,15 @@ export default function App() {
       const subject = e.detail?.subject !== undefined ? e.detail.subject : null;
       const track = e.detail?.track || 'all';
       const topic = e.detail?.topic || 'all';
+      if (!currentUser) {
+        handleOpenAuth('signin');
+        return;
+      }
       handleOpenCramSheet(subject, track, topic);
     };
     window.addEventListener('commitdrive_open_cram_sheet', handleCramEvent);
     return () => window.removeEventListener('commitdrive_open_cram_sheet', handleCramEvent);
-  }, []);
+  }, [currentUser]);
 
   // Quick 1-Click Demo Login for reviewing and testing
   const handleQuickDemoLogin = () => {
@@ -128,6 +150,9 @@ export default function App() {
   const handleLoginSuccess = (userData) => {
     setCurrentUser(userData);
     try {
+      if (userData?.token) {
+        localStorage.setItem('commitdrive_token', userData.token);
+      }
       localStorage.setItem('commitdrive_user', JSON.stringify(userData));
       localStorage.removeItem('commitdrive_completed_topics');
       localStorage.removeItem('commitdrive_completed_missions');
@@ -143,6 +168,7 @@ export default function App() {
   const handleLogout = () => {
     setCurrentUser(null);
     try {
+      localStorage.removeItem('commitdrive_token');
       localStorage.removeItem('commitdrive_user');
       localStorage.removeItem('commitdrive_completed_topics');
       localStorage.removeItem('commitdrive_completed_missions');
@@ -166,6 +192,7 @@ export default function App() {
         onOpenViva={handleOpenViva}
         themeMode={themeMode}
         onToggleTheme={handleToggleTheme}
+        onOpenProfile={handleOpenProfile}
       />
 
       {/* Main View Router */}
@@ -176,6 +203,7 @@ export default function App() {
           onOpenAuth={handleOpenAuth}
           onDemoLogin={handleQuickDemoLogin}
           onOpenCramSheet={handleOpenCramSheet}
+          onOpenProfile={handleOpenProfile}
         />
       ) : currentView === 'leaderboard' ? (
         <LeaderboardView 
@@ -210,9 +238,20 @@ export default function App() {
         onLoginSuccess={handleLoginSuccess}
       />
 
+      {/* Student Profile Modal */}
+      <ProfileModal 
+        isOpen={profileIsOpen}
+        onClose={handleCloseProfile}
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        onOpenAuth={handleOpenAuth}
+        onNavigate={setCurrentView}
+      />
+
       {/* Emergency Cram Sheet Modal */}
       <CramSheetModal 
         isOpen={cramSheetConfig.isOpen}
+        currentUser={currentUser}
         initialSubject={cramSheetConfig.subject}
         initialTrack={cramSheetConfig.track || 'all'}
         initialTopic={cramSheetConfig.topic || 'all'}
@@ -222,6 +261,7 @@ export default function App() {
       {/* Diagnostic Interview Viva Modal */}
       <VivaModal
         isOpen={vivaIsOpen}
+        currentUser={currentUser}
         onClose={handleCloseViva}
         onOpenCramSheet={handleOpenCramSheet}
       />

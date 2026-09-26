@@ -3,6 +3,7 @@ package com.commitdrive.service;
 import com.commitdrive.dto.AuthDtos.*;
 import com.commitdrive.entity.User;
 import com.commitdrive.repository.UserRepository;
+import com.commitdrive.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -35,9 +37,10 @@ public class AuthService {
                 .build();
 
         User savedUser = userRepository.save(user);
+        String token = jwtService.generateToken(savedUser);
 
         return AuthResponse.builder()
-                .token(savedUser.getId().toString())
+                .token(token)
                 .user(mapToProfile(savedUser))
                 .message("Account created successfully")
                 .build();
@@ -64,8 +67,10 @@ public class AuthService {
         user.setLastActiveDate(today);
         userRepository.save(user);
 
+        String token = jwtService.generateToken(user);
+
         return AuthResponse.builder()
-                .token(user.getId().toString())
+                .token(token)
                 .user(mapToProfile(user))
                 .message("Logged in successfully")
                 .build();

@@ -1,9 +1,11 @@
 package com.commitdrive.controller;
 
 import com.commitdrive.dto.ProgressDtos.*;
+import com.commitdrive.security.SecurityUtils;
 import com.commitdrive.service.LearningProgressService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,34 +20,38 @@ public class LearningController {
 
     @GetMapping("/topics")
     public ResponseEntity<List<TopicProgressResponse>> getTopics(
-            @RequestHeader(value = "X-User-Id", required = false) UUID userId,
+            @AuthenticationPrincipal UUID userId,
             @RequestParam(value = "subject", required = false) String subject
     ) {
-        return ResponseEntity.ok(learningService.getUserTopics(userId, subject));
+        UUID effectiveUserId = userId != null ? userId : SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(learningService.getUserTopics(effectiveUserId, subject));
     }
 
     @PostMapping("/topic/toggle")
     public ResponseEntity<TopicProgressResponse> toggleTopic(
-            @RequestHeader(value = "X-User-Id", required = false) UUID userId,
+            @AuthenticationPrincipal UUID userId,
             @RequestBody TopicToggleRequest request
     ) {
-        return ResponseEntity.ok(learningService.toggleTopicCompletion(userId, request));
+        UUID effectiveUserId = userId != null ? userId : SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(learningService.toggleTopicCompletion(effectiveUserId, request));
     }
 
     @GetMapping("/flashcards")
     public ResponseEntity<List<FlashcardReviewResponse>> getFlashcards(
-            @RequestHeader(value = "X-User-Id", required = false) UUID userId,
+            @AuthenticationPrincipal UUID userId,
             @RequestParam("subject") String subject,
             @RequestParam("topicId") String topicId
     ) {
-        return ResponseEntity.ok(learningService.getUserFlashcards(userId, subject, topicId));
+        UUID effectiveUserId = userId != null ? userId : SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(learningService.getUserFlashcards(effectiveUserId, subject, topicId));
     }
 
     @PostMapping("/flashcard/review")
     public ResponseEntity<FlashcardReviewResponse> reviewFlashcard(
-            @RequestHeader(value = "X-User-Id", required = false) UUID userId,
+            @AuthenticationPrincipal UUID userId,
             @RequestBody FlashcardReviewRequest request
     ) {
-        return ResponseEntity.ok(learningService.saveFlashcardReview(userId, request));
+        UUID effectiveUserId = userId != null ? userId : SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(learningService.saveFlashcardReview(effectiveUserId, request));
     }
 }

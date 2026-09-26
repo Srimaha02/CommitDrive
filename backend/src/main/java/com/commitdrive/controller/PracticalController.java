@@ -1,9 +1,11 @@
 package com.commitdrive.controller;
 
 import com.commitdrive.dto.ProgressDtos.*;
+import com.commitdrive.security.SecurityUtils;
 import com.commitdrive.service.PracticalProgressService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,33 +20,37 @@ public class PracticalController {
 
     @GetMapping("/missions")
     public ResponseEntity<List<MissionProgressResponse>> getMissions(
-            @RequestHeader(value = "X-User-Id", required = false) UUID userId,
+            @AuthenticationPrincipal UUID userId,
             @RequestParam(value = "moduleId", required = false) String moduleId
     ) {
-        return ResponseEntity.ok(practicalService.getUserMissions(userId, moduleId));
+        UUID effectiveUserId = userId != null ? userId : SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(practicalService.getUserMissions(effectiveUserId, moduleId));
     }
 
     @PostMapping("/mission/complete")
     public ResponseEntity<MissionProgressResponse> completeMission(
-            @RequestHeader(value = "X-User-Id", required = false) UUID userId,
+            @AuthenticationPrincipal UUID userId,
             @RequestBody MissionCompleteRequest request
     ) {
-        return ResponseEntity.ok(practicalService.completeMission(userId, request));
+        UUID effectiveUserId = userId != null ? userId : SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(practicalService.completeMission(effectiveUserId, request));
     }
 
     @PostMapping("/mock-test/submit")
     public ResponseEntity<MockTestAttemptResponse> submitMockTest(
-            @RequestHeader(value = "X-User-Id", required = false) UUID userId,
+            @AuthenticationPrincipal UUID userId,
             @RequestBody MockTestSubmissionRequest request
     ) {
-        return ResponseEntity.ok(practicalService.submitMockTest(userId, request));
+        UUID effectiveUserId = userId != null ? userId : SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(practicalService.submitMockTest(effectiveUserId, request));
     }
 
     @GetMapping("/mock-test/history")
     public ResponseEntity<List<MockTestAttemptResponse>> getMockTestHistory(
-            @RequestHeader(value = "X-User-Id", required = false) UUID userId,
+            @AuthenticationPrincipal UUID userId,
             @RequestParam(value = "moduleId", required = false) String moduleId
     ) {
-        return ResponseEntity.ok(practicalService.getMockTestHistory(userId, moduleId));
+        UUID effectiveUserId = userId != null ? userId : SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(practicalService.getMockTestHistory(effectiveUserId, moduleId));
     }
 }

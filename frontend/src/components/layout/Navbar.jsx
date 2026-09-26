@@ -31,7 +31,8 @@ export default function Navbar({
   onOpenCramSheet,
   onOpenViva,
   themeMode = 'light',
-  onToggleTheme
+  onToggleTheme,
+  onOpenProfile
 }) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [readinessPct, setReadinessPct] = useState(0);
@@ -77,7 +78,7 @@ export default function Navbar({
 
   return (
     <header className="shared-navbar theme-transition">
-      <div className="content-wrapper nav-container">
+      <div className="nav-container">
         
         {/* Left: Brand Identity */}
         <div className="brand-group" onClick={() => onNavigate('dashboard')}>
@@ -153,8 +154,7 @@ export default function Navbar({
               onClick={() => onNavigate('learning')}
             >
               <BookOpen size={15} className="switcher-icon" />
-              <span className="switcher-text">Learning Path</span>
-              <span className="switcher-badge learning-pill">Theory</span>
+              <span className="switcher-text">Theory</span>
             </button>
 
             {/* Practical Path Tab */}
@@ -166,8 +166,7 @@ export default function Navbar({
               onClick={() => onNavigate('practical')}
             >
               <Terminal size={15} className="switcher-icon" />
-              <span className="switcher-text">Practical Path</span>
-              <span className="switcher-badge practical-pill">Terminal</span>
+              <span className="switcher-text">Practical</span>
             </button>
 
           </div>
@@ -179,7 +178,7 @@ export default function Navbar({
           {/* Daily Streak Indicator */}
           {currentUser && (
             <div className="streak-pill theme-transition" title="Daily Practice Streak">
-              <Flame size={16} className="streak-icon" />
+              <Flame size={15} className="streak-icon" />
               <span className="streak-count">{currentUser.streak || 3}</span>
               <span className="streak-label">Days</span>
             </div>
@@ -190,13 +189,17 @@ export default function Navbar({
             type="button" 
             className="nav-cram-btn theme-transition"
             onClick={() => {
+              if (!currentUser) {
+                if (onOpenAuth) onOpenAuth('signin');
+                return;
+              }
               if (onOpenCramSheet) {
                 onOpenCramSheet(null);
               } else {
                 window.dispatchEvent(new CustomEvent('commitdrive_open_cram_sheet', { detail: { subject: null } }));
               }
             }}
-            title="Open Night-Before Interview Emergency Cram Sheet (Choose Subject)"
+            title={currentUser ? "Open Night-Before Interview Emergency Cram Sheet" : "Sign in to access Emergency Cram Sheet"}
           >
             <Zap size={13} className="nav-cram-icon" />
             <span className="nav-cram-text">Cram Sheet</span>
@@ -206,8 +209,14 @@ export default function Navbar({
           <button
             type="button"
             className="nav-viva-btn theme-transition"
-            onClick={() => onOpenViva && onOpenViva()}
-            title="Open Diagnostic Interview Viva — Company-track aware self-assessment"
+            onClick={() => {
+              if (!currentUser) {
+                if (onOpenAuth) onOpenAuth('signin');
+                return;
+              }
+              if (onOpenViva) onOpenViva();
+            }}
+            title={currentUser ? "Open Diagnostic Interview Viva" : "Sign in to access Mock Viva"}
           >
             <Target size={13} className="nav-viva-icon" />
             <span className="nav-viva-text">Mock Viva</span>
@@ -215,8 +224,9 @@ export default function Navbar({
 
           {/* Quick Progress Metric */}
           <div className="metric-pill theme-transition" title="Placement Readiness">
-            <CheckCircle2 size={16} className="metric-icon" />
-            <span className="metric-count">{readinessPct}% Ready</span>
+            <CheckCircle2 size={14} className="metric-icon" />
+            <span className="metric-count">{readinessPct}%</span>
+            <span className="metric-ready-text">&nbsp;Ready</span>
           </div>
 
           {/* Theme Mode Toggle (Light / Dark) */}
@@ -239,21 +249,30 @@ export default function Navbar({
             <div className="profile-wrapper" ref={menuRef}>
               <button 
                 id="user-profile-btn"
-                className={`profile-avatar-btn ${showProfileMenu ? 'menu-open' : ''} theme-transition`}
-                onClick={() => setShowProfileMenu(!showProfileMenu)}
-                aria-label="User profile menu"
-                aria-expanded={showProfileMenu}
+                className="profile-avatar-btn theme-transition"
+                onClick={() => {
+                  if (onOpenProfile) {
+                    onOpenProfile();
+                  } else {
+                    setShowProfileMenu(!showProfileMenu);
+                  }
+                }}
+                aria-label="User profile"
+                title={`${currentUser.name || 'Student'} (${currentUser.role || 'SDE Aspirant'}) — Click to view profile`}
               >
                 <div className="avatar-frame theme-transition">
                   <span className="avatar-initials">
-                    {currentUser.name ? currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2) : 'MS'}
+                    {currentUser.name ? currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2) : 'DS'}
                   </span>
                   <span className="online-beacon" />
                 </div>
-                {currentUser.isDemo && (
-                  <span className="nav-demo-badge">Demo</span>
-                )}
-                <ChevronDown size={14} className={`chevron-indicator ${showProfileMenu ? 'rotated' : ''}`} />
+                <div className="nav-profile-labels">
+                  <span className="nav-profile-name">{currentUser.name ? currentUser.name.split(' ')[0] : 'Profile'}</span>
+                  {currentUser.isDemo && (
+                    <span className="nav-demo-badge">Demo</span>
+                  )}
+                </div>
+                <ChevronDown size={14} className="chevron-indicator" />
               </button>
 
               {/* Dropdown Menu */}
@@ -261,7 +280,7 @@ export default function Navbar({
                 <div className="profile-dropdown theme-transition" role="menu">
                   <div className="dropdown-user-header">
                     <div className="dropdown-avatar">
-                      {currentUser.name ? currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2) : 'MS'}
+                      {currentUser.name ? currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2) : 'DS'}
                     </div>
                     <div className="dropdown-user-info">
                       <p className="dropdown-name">{currentUser.name}</p>
@@ -272,6 +291,22 @@ export default function Navbar({
                       </div>
                     </div>
                   </div>
+
+                  <div className="dropdown-divider" />
+
+                  {/* View Full Student Profile CTA */}
+                  <button 
+                    type="button"
+                    className="dropdown-item profile-open-full-item theme-transition" 
+                    role="menuitem"
+                    onClick={() => {
+                      setShowProfileMenu(false);
+                      if (onOpenProfile) onOpenProfile();
+                    }}
+                  >
+                    <User size={15} className="dropdown-profile-icon" />
+                    <span className="dropdown-profile-text">View Full Student Profile</span>
+                  </button>
 
                   <div className="dropdown-divider" />
 
