@@ -135,6 +135,7 @@ public class ProgressDtos {
         private Integer overallReadinessPct;
         private Integer totalTopicsMastered;
         private Integer totalMissionsPassed;
+        private Integer totalTasksSolved;
         private Integer totalXp;
     }
 }

@@ -15,27 +15,32 @@ export const osTopics = [
     why: 'Without hardware-enforced protection boundaries, early operating systems were fragile: any application with an accidental infinite loop, a null-pointer dereference, or wild memory write could corrupt the OS itself, wipe the entire disk, or freeze the entire computer, requiring a hard power reset.\n\nDual-mode execution guarantees system stability and isolation. If a user application crashes or attempts an illegal memory access, the CPU hardware catches the violation immediately and traps into the kernel. The kernel simply terminates the offending process with a clean diagnostic error (such as a Segmentation Fault) while the rest of your system, background services, and other open apps continue running unaffected.\n\nFurthermore, system calls provide hardware abstraction. As a software developer, you do not need to write custom assembly code for Western Digital hard drives, Samsung NVMe SSDs, or Kingston USB thumb drives. You simply issue a uniform `read()` or `write()` system call, and the operating system\'s device drivers handle the physical hardware idiosyncrasies behind the scenes.',
     useCase: 'Every single everyday computing action relies heavily on system calls. When you click "Save" in Microsoft Word or VS Code, the editor does not touch the physical flash storage chips directly. Instead, it issues a `write()` system call to the Linux or Windows kernel, which updates the file system metadata, flushes disk caches, and instructs the storage controller to commit the bytes.\n\nSimilarly, when your web browser loads an image from a website, it invokes a series of socket system calls—`socket()`, `connect()`, `send()`, and `recv()`. The OS kernel handles the complex TCP/IP packet processing, network interface card (NIC) interrupts, and memory copying before handing the clean image bytes back to the browser in User Mode.\n\nIn containerization platforms like Docker, dual-mode isolation and system call filtering (via Linux `seccomp`) are the foundational pillars that allow hundreds of isolated lightweight container environments to securely share a single host OS kernel without stepping on each other.',
     example: `// Example: How a simple user program safely requests the OS to write text
+// <stdio.h> = Standard Input/Output: C's built-in toolbox for printing to screen
 #include <stdio.h>
+// <unistd.h> = Unix Standard definitions: provides direct access to POSIX operating system calls
 #include <unistd.h>
 
 int main() {
-    // 1. High-level C library call in User Mode
-    // Under the hood, printf() formats the string and invokes write()
+    // 1. High-level C standard library call (printf) running in User Mode
+    // "Buffered I/O" means printf saves text in temporary memory first, then sends it in batches
     printf("Hello, CommitDrive!\\n");
     
-    // 2. Direct POSIX system call example:
-    // Parameters: File Descriptor 1 (stdout), string buffer, byte count (14)
+    // 2. Direct POSIX System Call (syscall) example:
+    // "POSIX" is the universal rulebook all Unix/Linux systems follow
+    // Parameters: File Descriptor 1 (the number identifying stdout/screen), text buffer, byte count (15)
     write(1, "Direct Syscall\\n", 15);
     
     return 0;
 }`,
     exampleExplanation: [
-      'Line 1-2: We include `<stdio.h>` for high-level buffered I/O and `<unistd.h>` for standard POSIX operating system API definitions.',
-      'Line 7: `printf()` is executed entirely in User Mode. It formats the string into a temporary memory buffer provided by the C standard library (libc).',
-      'Behind the scenes: When the buffer flushes, `printf()` issues an x86-64 `syscall` instruction with register `%rax` set to 1 (the system call number for `sys_write`).',
-      'Mode Switch: The CPU hardware automatically switches the privilege mode bit from 1 (User) to 0 (Kernel) and jumps to the kernel system call dispatch table.',
-      'Line 11: We demonstrate calling `write(1, "Direct Syscall\\n", 15)` directly, illustrating how standard libraries are just thin convenience wrappers over raw system calls.',
-      'Return to User Mode: The kernel driver writes the characters to the terminal framebuffer, switches the CPU mode bit back to 1 (User), and returns control to our program.'
+      'Lines 1-2 (<stdio.h> & <unistd.h>): `<stdio.h>` stands for Standard Input/Output (C\'s standard toolbox for screen output and input). `<unistd.h>` stands for Unix Standard (a library that lets C programs interact directly with the operating system kernel).',
+      'What is "Buffered I/O"?: `printf()` uses buffered I/O, which means it collects characters in a temporary memory holding area (buffer) in user RAM first, instead of bothering the slow physical hardware for every single letter.',
+      'What is "POSIX"?: POSIX (Portable Operating System Interface) is the international standard rulebook that Unix and Linux systems follow, ensuring this C code runs identically on Ubuntu Linux, macOS, or Raspberry Pi without rewriting.',
+      'What is a "System Call" (syscall)?: A system call is the secure official doorway (like an intercom or doorbell) that user programs ring when they need the OS kernel to perform a hardware task (like displaying text on screen or reading a file). Normal code cannot touch hardware directly.',
+      'Line 7 (printf in User Mode): `printf()` formats the text inside user space memory provided by libc (the C standard library). When its buffer flushes, it issues an x86-64 `syscall` machine instruction with register `%rax` set to 1 (the system call ID for `sys_write`).',
+      'Hardware Mode Flip: The CPU hardware catches the syscall instruction and flips its hardware mode bit from 1 (restricted User Mode) to 0 (unrestricted Kernel Mode), safely vectoring into the kernel\'s protected dispatch table.',
+      'Line 11 (File Descriptors & write): In `write(1, "Direct Syscall\\n", 15)`, the number `1` is a "file descriptor"—a simple numeric ticket the OS uses to identify open streams (0 = keyboard input, 1 = screen output, 2 = error output). Notice how `printf()` is just a friendly wrapper around raw system calls like `write()`!',
+      'Safe Return to User Mode: The kernel device driver outputs the bytes to your terminal screen, flips the CPU mode bit back from 0 to 1 (User Mode), and hands control back to your code. If your program had a bug or tried to access forbidden memory, the CPU would stop it instantly without crashing the computer.'
     ],
     interviewQuestions: [
       {
@@ -120,40 +125,44 @@ int main() {
     why: 'If an operating system allowed only one program to run at a time, your computer would completely freeze whenever an application waited for a file to read or a key to be pressed. CPU cores operate in nanoseconds, while disk and network operations take milliseconds—thousands of times slower.\n\nBy representing executing programs as processes with PCBs, the operating system can perform Context Switching: when a running process pauses to wait for disk I/O, the kernel saves its CPU registers into its PCB, switches the CPU to another ready process, and resumes the original process later without missing a beat. This creates the illusion of smooth, simultaneous multitasking.',
     useCase: 'Whenever you open your operating system\'s Task Manager (Windows) or Activity Monitor (macOS), every single listed application and background daemon is an active Process. The manager displays data directly extracted from each process\'s PCB: its numerical PID, current CPU consumption percentage, resident memory footprint, and thread count.\n\nIn Unix-like systems, process creation follows the classic `fork()` and `exec()` model. When you type a command like `ls` into your terminal shell, the shell process calls `fork()` to clone itself into a child process, and then the child calls `execvp("ls", ...)` to replace its memory with the `ls` executable. The parent shell waits with `waitpid()` until the child completes.',
     example: `// Example: Creating and managing a child process in C using fork()
-#include <stdio.h>
-#include <unistd.h>
-#include <sys/wait.h>
+#include <stdio.h>      // Standard Input/Output library for printing
+#include <unistd.h>     // Unix Standard library for fork(), getpid(), and sleep()
+#include <sys/wait.h>   // System header containing wait() for process synchronization
 
 int main() {
+    // getpid() = "Get Process ID" (the unique identification number assigned by the OS)
     printf("Parent process started. PID: %d\\n", getpid());
 
-    // fork() creates an exact clone of the calling process
+    // pid_t = "Process ID Type", a specialized integer data type used in C for process IDs
+    // fork() = system call that creates an exact clone (copy) of this running process
     pid_t pid = fork();
 
     if (pid < 0) {
+        // perror() prints a human-readable description of why an OS operation failed
         perror("Fork failed");
         return 1;
     } else if (pid == 0) {
-        // Child branch: fork() returns 0 to the child process
+        // Child branch: fork() returns 0 to the newly created child process
+        // getppid() = "Get Parent Process ID" (the PID of the process that spawned this child)
         printf("[Child] Running! My PID is %d (Parent is %d)\\n", getpid(), getppid());
-        sleep(1); // Simulating work
+        sleep(1); // sleep(1) pauses execution for 1 second, simulating real work
         printf("[Child] Work done. Exiting.\\n");
     } else {
-        // Parent branch: fork() returns child's PID to parent
+        // Parent branch: fork() returns the newly spawned child's PID to the parent
         printf("[Parent] Created child process with PID: %d\\n", pid);
-        // Wait for child to prevent creating a Zombie process
+        // wait(NULL) makes the parent pause until the child finishes, preventing a "Zombie" process
         wait(NULL);
         printf("[Parent] Child process terminated cleanly. Parent exiting.\\n");
     }
     return 0;
 }`,
     exampleExplanation: [
-      'Line 9: `fork()` is called. At this exact moment, the OS kernel creates a copy of the parent process address space and initializes a new PCB.',
-      'Return Value: `fork()` returns twice! It returns 0 to the newly created child process, and returns the child\'s PID to the parent process.',
-      'Line 14-19: The child process checks `if (pid == 0)` and executes its dedicated code branch, printing its own PID and parent PID using `getppid()`.',
-      'Line 20-25: The parent process executes the `else` branch. It knows the child\'s PID and calls `wait(NULL)`.',
-      'Synchronization: `wait(NULL)` blocks the parent process in the Waiting state until the child finishes, reading its exit code.',
-      'Zombie Prevention: If the parent didn\'t call `wait()`, the finished child would remain in the process table as a "Zombie" holding an uncollected exit status.'
+      'What is a "Process"?: A process is an active, executing instance of a program loaded in RAM with its own dedicated memory space, registers, and resources (unlike a static program sitting asleep on a hard drive).',
+      'What is `pid_t` & PIDs?: Every running program in Linux has a unique numerical tag called a Process ID (PID). In C, `pid_t` is a specialized integer type created specifically to store these process IDs.',
+      'Line 9 (`fork()` System Call): `fork()` is the classic Unix system call that clones the calling process. The OS kernel allocates a new Process Control Block (PCB) and duplicates the parent\'s address space. Both the parent and child resume execution from the very next line of code!',
+      'The Magic of `fork()` Returning Twice: `fork()` returns two different values in the two running processes! To the new child, it returns 0. To the parent, it returns the child\'s new PID number. This allows a single `if/else` block to give different instructions to parent and child.',
+      'Line 14-19 (Child Execution & `getppid()`): The child sees `pid == 0` and runs the child branch. It calls `getpid()` to see its own identity and `getppid()` (Get Parent Process ID) to see who created it. `sleep(1)` tells the OS scheduler to put this process in the Sleeping/Waiting state for 1 second.',
+      'Line 20-25 (`wait(NULL)` & Zombie Prevention): The parent calls `wait(NULL)`, which tells the OS to put the parent in a blocked state until the child finishes. Crucially, `wait()` reads the child\'s exit status so the kernel can safely remove the child from the process table. Without `wait()`, a finished child becomes a "Zombie" (a dead process whose PCB slot remains stuck in kernel memory).'
     ],
     interviewQuestions: [
       {
@@ -238,42 +247,56 @@ int main() {
     why: 'Creating a new process is a heavy, resource-intensive operation: the OS kernel must duplicate page tables, initialize descriptor tables, and allocate fresh memory buffers. Furthermore, because processes have isolated address spaces, exchanging data between them requires slow Inter-Process Communication (IPC) mechanisms like pipes, message queues, or shared memory segments.\n\nThreads solve this performance bottleneck. Creating a thread is up to 10–100 times faster than creating a process because memory is shared rather than copied. Context switching between threads of the same process is significantly faster because the OS does not need to flush the processor\'s Translation Lookaside Buffer (TLB) or reload memory page tables.',
     useCase: 'Modern web browsers are prime examples of hybrid multi-process and multithreaded architecture. Google Chrome runs each browser tab in a separate Process to prevent a crash on one tab from closing the entire browser. However, inside each tab process, multiple Threads handle user typing, execute JavaScript, parse CSS styles, and decode streaming video frames concurrently.\n\nHigh-throughput backend servers (like Spring Boot, Tomcat, and Node.js worker pools) use thread pools to handle thousands of incoming HTTP requests. Instead of creating a brand-new process for each visitor, an idle worker thread from the pool picks up the request, queries the database, and returns the response immediately.',
     example: `// Example: Creating POSIX threads (pthreads) in C sharing global memory
+// Beginner Glossary:
+// - POSIX (Portable Operating System Interface): An international standard defining how C programs talk to Unix/Linux operating systems.
+// - <pthread.h>: The C header file containing pthreads (POSIX Threads), the standard multithreading library in Unix/Linux.
+// - Thread: A lightweight execution stream inside a program. Unlike a full Process, all threads of a program share the exact same memory!
+// - void*: A generic C pointer that can point to any type of memory (required by pthreads so any data type can be passed).
+
 #include <stdio.h>
 #include <pthread.h>
 
-// Shared global variable in the data segment
+// Shared global variable: stored in the process's data segment, accessible by all threads
 long shared_counter = 0;
 
+// Worker function that will run inside each background thread
 void* count_task(void* arg) {
     for (int i = 0; i < 100000; i++) {
         // Shared memory access without synchronization!
+        // Incrementing looks like 1 line of C, but the CPU executes 3 separate steps:
+        // 1. Read 'shared_counter' from RAM into CPU register
+        // 2. Add 1 to register
+        // 3. Write register back to RAM
         shared_counter++;
     }
     return NULL;
 }
 
 int main() {
+    // pthread_t: A thread handle/ID variable (like a tracking ticket) for each thread
     pthread_t thread1, thread2;
 
-    // Launch two threads executing count_task simultaneously
+    // pthread_create() asks the OS kernel: "Spawn a new thread running count_task()"
+    // Arguments: (&threadHandle, defaultSettings, functionToRun, argumentPassedToFunction)
     pthread_create(&thread1, NULL, count_task, NULL);
     pthread_create(&thread2, NULL, count_task, NULL);
 
-    // Wait for both threads to finish
+    // pthread_join(): Tells the main thread: "Pause here and WAIT until this worker thread finishes!"
+    // Without pthread_join, main() would exit immediately, terminating the worker threads midway!
     pthread_join(thread1, NULL);
     pthread_join(thread2, NULL);
 
-    printf("Final Counter: %ld (Expected: 200000)\\n", shared_counter);
+    printf("Final Counter: %ld (Expected: 200000)\n", shared_counter);
     return 0;
 }`,
     exampleExplanation: [
-      'Line 5: `shared_counter` is declared globally in the process data segment, making it accessible to all threads.',
-      'Line 17-18: `pthread_create()` tells the OS kernel to spawn two new threads sharing this process address space.',
-      'Execution: Both threads run `count_task()` concurrently on separate CPU cores, reading and modifying `shared_counter`.',
-      'The Race Condition Trap: Running this code often produces an output less than 200,000 (e.g. 142,850)!',
-      'Why?: `shared_counter++` decomposes into 3 assembly instructions: READ memory into register, INCREMENT register, WRITE register back to memory.',
-      'Lesson: Because threads share memory, concurrent writes without mutex synchronization cause lost updates.',
-      'Line 21-22: `pthread_join()` ensures the main thread waits until both worker threads terminate before printing the final result.'
+      'What is POSIX & pthreads?: POSIX (Portable Operating System Interface) is the standard Unix API. <pthread.h> provides the "pthreads" library—the foundational tool used in C to create concurrent threads within a single process.',
+      'Line 13: `shared_counter` is declared globally. Because all threads share the process heap and data segment, both threads write to this exact same memory location.',
+      'Line 28-29: `pthread_create()` makes a system call requesting the OS kernel to spawn two new threads. We pass `&thread1` (where the OS writes the thread handle) and `count_task` (the worker function).',
+      'Line 33-34: `pthread_join()` behaves like `wait()` for processes: it pauses the main program until each worker finishes, preventing the program from terminating while work is ongoing.',
+      'The Race Condition Trap: When you run this code, the final answer is almost NEVER 200,000! You often get ~142,850 or ~168,000. Why?',
+      'Why it Fails: `shared_counter++` is NOT atomic (indivisible). The CPU performs 3 distinct machine operations: READ from RAM into a CPU register, INCREMENT the register, and WRITE back to RAM. If Thread 1 is interrupted between reading and writing, Thread 2 overwrites its value with stale data—a classic Race Condition!',
+      'Beginner Takeaway: Because threads share the same memory space, concurrent writes to shared data without Mutual Exclusion (a lock/mutex) lead to corrupted or lost data.'
     ],
     interviewQuestions: [
       {
@@ -358,31 +381,39 @@ int main() {
     why: 'Without sophisticated CPU scheduling, interactive user experience would collapse. A single heavy computational script (like rendering a 4K video or mining crypto) would monopolize the entire CPU, freezing user mouse clicks, keyboard keystrokes, and audio output.\n\nPreemptive time-slicing and MLFQ balance conflicting engineering goals: providing instantaneous sub-millisecond response times for interactive user interfaces while simultaneously maintaining high throughput and fairness for long-running computational background services.',
     useCase: 'The Linux Completely Fair Scheduler (CFS), the default scheduler for Linux servers and Android smartphones, models an "ideal multi-tasking CPU". It tracks the virtual runtime (`vruntime`) of each task using a red-black self-balancing tree. Tasks with the lowest accumulated `vruntime` are always scheduled next, naturally rewarding I/O-bound interactive apps without starving long-running server background processes.\n\nIn cloud computing environments like AWS EC2 and Google Cloud, hypervisors use CPU schedulers to multiplex hundreds of virtual machine vCPUs onto physical hardware cores, ensuring noisy neighbors cannot hijack shared processing bandwidth.',
     example: `// Example: Simulating Round Robin (RR) Scheduling with a Time Quantum of 2 ms
+// Beginner Glossary:
+// - struct: A custom C container grouping related variables together (process ID, burst time, remaining time).
+// - CPU Burst Time: The amount of time a process needs to spend actively computing on the CPU.
+// - Time Quantum (Time Slice): The maximum continuous slice of CPU time given to a process before the OS forcibly pauses it.
+// - Preemption: The OS interrupting a running task to let another task take a turn, preventing CPU monopolization.
+
 #include <stdio.h>
 
 struct Process {
-    int id;
-    int burst_time;
-    int remaining_time;
+    int id;             // Unique identifier for the process (P1, P2, P3)
+    int burst_time;     // Total CPU time this process needs (in milliseconds)
+    int remaining_time; // Remaining CPU time still needed before it finishes
 };
 
 int main() {
+    // 3 simulated processes: P1 needs 5ms, P2 needs 3ms, P3 needs 1ms
     struct Process p[3] = { {1, 5, 5}, {2, 3, 3}, {3, 1, 1} };
-    int time_quantum = 2;
+    int time_quantum = 2; // Each process gets at most 2ms per turn
     int current_time = 0;
     int completed = 0;
 
-    printf("--- Round Robin Execution Timeline (Quantum = 2ms) ---\\n");
+    printf("--- Round Robin Execution Timeline (Quantum = 2ms) ---\n");
     while (completed < 3) {
         for (int i = 0; i < 3; i++) {
             if (p[i].remaining_time > 0) {
+                // If remaining time is bigger than quantum, run for 2ms; otherwise run only what is left
                 int slice = (p[i].remaining_time > time_quantum) ? time_quantum : p[i].remaining_time;
-                printf("Time %d-%d ms: Process P%d runs\\n", current_time, current_time + slice, p[i].id);
+                printf("Time %d-%d ms: Process P%d runs\n", current_time, current_time + slice, p[i].id);
                 current_time += slice;
                 p[i].remaining_time -= slice;
                 if (p[i].remaining_time == 0) {
                     completed++;
-                    printf(">> Process P%d COMPLETED at time %d ms\\n", p[i].id, current_time);
+                    printf(">> Process P%d COMPLETED at time %d ms\n", p[i].id, current_time);
                 }
             }
         }
@@ -390,14 +421,15 @@ int main() {
     return 0;
 }`,
     exampleExplanation: [
-      'Line 9: We initialize 3 processes with CPU bursts: P1 needs 5ms, P2 needs 3ms, and P3 needs 1ms.',
-      'Line 10: The Time Quantum is configured to 2ms—the maximum continuous time any process can occupy the CPU before preemption.',
-      'Time 0-2 ms: P1 runs for its 2ms quantum (remaining: 3ms) and is preempted to the back of the queue.',
-      'Time 2-4 ms: P2 runs for 2ms (remaining: 1ms) and is preempted.',
-      'Time 4-5 ms: P3 needs only 1ms. It completes early at 5ms and releases the CPU without waiting for the full quantum!',
-      'Time 5-7 ms: P1 runs again for 2ms (remaining: 1ms).',
-      'Time 7-8 ms: P2 runs for its final 1ms and completes at 8ms.',
-      'Time 8-9 ms: P1 finishes its last 1ms and completes at 9ms. Notice how short jobs (P3) finish rapidly without being blocked behind P1!'
+      'What is Round Robin & Time Quantum?: Round Robin is like dealing cards in a circle. Every process gets a small fixed slice of CPU time called a "Time Quantum" (here 2ms). If a process hasn\'t finished when its time is up, the OS preempts (pauses) it and moves to the next process.',
+      'Line 10-14: We define a `struct Process` in C. A `struct` is a beginner C pattern that packages multiple related properties (ID, burst time, remaining time) into one convenient record.',
+      'Time 0-2 ms: P1 runs for its 2ms quantum (has 3ms left). The OS timer expires, and P1 is paused and placed at the back of the queue.',
+      'Time 2-4 ms: P2 runs for 2ms (has 1ms left) and is preempted.',
+      'Time 4-5 ms: P3 needs only 1ms! It runs for 1ms, finishes completely at 5ms, and voluntarily relinquishes the CPU early without waiting for the full 2ms.',
+      'Time 5-7 ms: P1 gets its second turn for 2ms (1ms left).',
+      'Time 7-8 ms: P2 finishes its remaining 1ms and completes at 8ms.',
+      'Time 8-9 ms: P1 finishes its final 1ms at 9ms.',
+      'Beginner Takeaway: Under First-Come First-Served (FCFS), P3 would have waited 8 whole milliseconds behind P1 and P2! Round Robin gives P3 its result in just 5ms, giving interactive systems a snappy, responsive feel.'
     ],
     interviewQuestions: [
       {
@@ -482,46 +514,63 @@ int main() {
     why: 'Without synchronization primitives, multithreaded and multiprocessor programs suffer from race conditions and data corruption. When two threads concurrently execute an operation like appending an item to a shared linked list or updating a financial account balance, instruction interleaving can orphan allocated memory nodes, corrupt internal pointer structures, or duplicate debit transactions.\n\nHardware atomicity primitives guarantee that critical checks and updates occur as single, indivisible hardware operations that cannot be interrupted by context switches or other CPU cores.',
     useCase: 'In production web servers and database engines, connection pools use Counting Semaphores to throttle client concurrency. If a PostgreSQL database allows a maximum of 50 simultaneous connections, the connection pool initializes a semaphore with a count of 50. Each incoming HTTP thread calls `acquire()`. The 51st request automatically blocks until an existing connection finishes and calls `release()`, protecting the database from out-of-memory crashes.\n\nIn operating system kernels, read-copy-update (RCU) and spinlocks protect internal routing tables and process scheduling queues across multiple physical CPU cores.',
     example: `// Example: Protecting a shared bank balance using a POSIX Mutex
+// Beginner Glossary:
+// - Mutex (Mutual Exclusion Lock): A digital padlock. Only one thread can hold the key at any time.
+// - Critical Section: The dangerous lines of code where shared memory is modified. Only one thread should be allowed inside!
+// - pthread_mutex_t: The data type representing a mutex lock in the POSIX C library.
+// - Atomicity: An operation that finishes as one indivisible step without being interrupted halfway through.
+
 #include <stdio.h>
 #include <pthread.h>
 
-long account_balance = 1000;
-pthread_mutex_t balance_lock; // Mutex lock
+long account_balance = 1000;  // Shared bank account starting at $1,000
+pthread_mutex_t balance_lock; // Mutex lock variable guarding account_balance
 
 void* deposit_salary(void* arg) {
     for (int i = 0; i < 50000; i++) {
-        // Enter Critical Section
+        // 1. Enter Critical Section: Grab the lock key.
+        // If another thread currently holds the lock, this thread goes to sleep automatically!
         pthread_mutex_lock(&balance_lock);
         
-        account_balance += 10; // Thread-safe update!
+        // --- CRITICAL SECTION START ---
+        account_balance += 10; // Guaranteed thread-safe: only ONE thread is here
+        // --- CRITICAL SECTION END ---
         
-        // Exit Critical Section
+        // 2. Exit Critical Section: Return the lock key, waking up any sleeping waiting thread.
         pthread_mutex_unlock(&balance_lock);
     }
     return NULL;
 }
 
 int main() {
-    pthread_t t1, t2;
+    pthread_t t1, t2; // Two worker thread handles
+
+    // Initialize the mutex lock with default attributes before any thread uses it
     pthread_mutex_init(&balance_lock, NULL);
 
+    // Launch two parallel threads each depositing $10 fifty thousand times
     pthread_create(&t1, NULL, deposit_salary, NULL);
     pthread_create(&t2, NULL, deposit_salary, NULL);
 
+    // Wait for both worker threads to complete their 50,000 deposits
     pthread_join(t1, NULL);
     pthread_join(t2, NULL);
 
+    // Destroy the mutex to cleanly free operating system resources
     pthread_mutex_destroy(&balance_lock);
-    printf("Final Balance: %ld (Exact expected: 1001000)\\n", account_balance);
+
+    // Starting 1,000 + (2 threads * 50,000 deposits * $10) = 1,001,000
+    printf("Final Balance: %ld (Exact expected: 1001000)\n", account_balance);
     return 0;
 }`,
     exampleExplanation: [
-      'Line 5: `balance_lock` is declared as a `pthread_mutex_t` synchronization primitive.',
-      'Line 11: `pthread_mutex_lock()` is called before touching `account_balance`. If another thread holds the lock, this thread enters sleep.',
-      'Critical Section: Line 13 is guaranteed to execute with Mutual Exclusion—only one thread can update the balance at a time.',
-      'Line 16: `pthread_mutex_unlock()` releases the lock, atomically waking up any queued sleeping thread waiting for access.',
-      'Atomicity: Regardless of CPU core count or context-switch timing, the final account balance is 100% deterministic and correct (1,001,000).',
-      'Cleanup: Line 28 destroys the mutex to free allocated OS resources.'
+      'What is a Mutex?: "Mutex" stands for Mutual Exclusion. Think of a single bathroom with a key: when Thread 1 takes the key and locks the door, Thread 2 must wait in the hallway. Only when Thread 1 unlocks and leaves can Thread 2 enter.',
+      'Line 12: `pthread_mutex_t balance_lock` declares the lock. It coordinates access to `account_balance` across all threads.',
+      'Line 20: `pthread_mutex_lock()` checks if the lock is free. If yes, it claims it instantly. If another thread already holds it, the OS kernel pauses this thread until the lock is released.',
+      'Line 23: The Critical Section (`account_balance += 10`). Because only one thread can hold the lock at any instant, no two CPU cores can ever interleave their read/increment/write steps!',
+      'Line 27: `pthread_mutex_unlock()` releases the lock and signals the operating system kernel to wake up the next waiting thread in the queue.',
+      'Line 35 & 46: `pthread_mutex_init()` sets up the lock data structure in memory; `pthread_mutex_destroy()` deallocates its underlying OS resources once work is done.',
+      'Beginner Takeaway: The output is now ALWAYS exactly 1,001,000. Mutex locks eliminate race conditions and make multithreaded shared updates 100% reliable and deterministic.'
     ],
     interviewQuestions: [
       {
@@ -606,43 +655,53 @@ int main() {
     why: 'Deadlocks are catastrophic in production systems because they cause silent, permanent freezing. Unlike software crashes that generate stack traces and trigger automated restarts, a deadlocked service consumes memory, holds open database connections, and silently stops processing requests until all worker threads are exhausted, leading to complete service outages.\n\nUnderstanding deadlock mechanics allows engineers to design robust distributed systems and multithreaded architectures that are provably deadlock-free by design.',
     useCase: 'In relational databases like PostgreSQL and MySQL InnoDB, transactions frequently update multiple rows. If Transaction A locks Row 1 and attempts to update Row 2, while Transaction B locks Row 2 and attempts to update Row 1, a classic database deadlock occurs. Database engines run background Deadlock Detection threads that construct a Waits-For Graph every few milliseconds. When a cycle is detected, the engine automatically rolls back the cheaper transaction with a "Deadlock detected" error, allowing the other transaction to succeed.\n\nIn concurrent software engineering, preventing deadlocks is achieved by establishing a strict global Lock Acquisition Hierarchy: if all threads always acquire `Lock A` before `Lock B`, a circular wait can never physically materialize.',
     example: `// Example: Creating a Deadlock via inconsistent lock acquisition ordering
+// Beginner Glossary:
+// - Deadlock: A frozen state where Thread 1 holds Resource A and waits for Resource B, while Thread 2 holds Resource B and waits for Resource A. Neither can ever continue!
+// - PTHREAD_MUTEX_INITIALIZER: A standard C macro that initializes a mutex lock to its unlocked state at compile time.
+// - sleep(1): A POSIX system call (from <unistd.h>) pausing execution for 1 second to simulate real work and guarantee a thread context switch.
+
 #include <stdio.h>
 #include <pthread.h>
 #include <unistd.h>
 
+// Two separate mutex locks guarding two different resources
 pthread_mutex_t lockA = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t lockB = PTHREAD_MUTEX_INITIALIZER;
 
 void* thread1_work(void* arg) {
+    // Thread 1 acquires Lock A FIRST, then requests Lock B
     pthread_mutex_lock(&lockA);
-    printf("Thread 1: Acquired Lock A, waiting for Lock B...\\n");
-    sleep(1); // Force thread switch
-    pthread_mutex_lock(&lockB); // Blocks if Thread 2 holds Lock B!
+    printf("Thread 1: Acquired Lock A, now waiting for Lock B...\n");
+    sleep(1); // Simulates work; gives Thread 2 time to acquire Lock B!
     
-    printf("Thread 1: Success!\\n");
+    pthread_mutex_lock(&lockB); // BLOCKS here because Thread 2 already holds Lock B!
+    
+    printf("Thread 1: Got both locks!\n");
     pthread_mutex_unlock(&lockB);
     pthread_mutex_unlock(&lockA);
     return NULL;
 }
 
 void* thread2_work(void* arg) {
-    // BUG: Inconsistent lock order! Acquires B then A
+    // BUG: Inconsistent lock ordering! Thread 2 acquires Lock B FIRST, then requests Lock A
     pthread_mutex_lock(&lockB);
-    printf("Thread 2: Acquired Lock B, waiting for Lock A...\\n");
+    printf("Thread 2: Acquired Lock B, now waiting for Lock A...\n");
     sleep(1);
-    pthread_mutex_lock(&lockA); // Blocks because Thread 1 holds Lock A!
     
-    printf("Thread 2: Success!\\n");
+    pthread_mutex_lock(&lockA); // BLOCKS here because Thread 1 already holds Lock A!
+    
+    printf("Thread 2: Got both locks!\n");
     pthread_mutex_unlock(&lockA);
     pthread_mutex_unlock(&lockB);
     return NULL;
 }`,
     exampleExplanation: [
-      'Line 10: Thread 1 acquires `lockA` first and pauses for 1 second.',
-      'Line 22: Concurrently, Thread 2 acquires `lockB` first and pauses.',
-      'Circular Wait Formed: Thread 1 attempts to acquire `lockB` (held by Thread 2), while Thread 2 attempts to acquire `lockA` (held by Thread 1).',
-      'Deadlock: Both threads sleep indefinitely; neither can ever execute its unlock statements.',
-      'How to Fix: Enforce a strict lock ordering policy across all threads—both threads must acquire `lockA` first, then `lockB`. Thread 2 would wait cleanly before acquiring any locks.'
+      'What is a Deadlock?: Imagine two people meeting on a narrow single-plank bridge. Person 1 is on the left plank waiting for Person 2 to step back; Person 2 is on the right plank waiting for Person 1 to step back. Neither can move forward, and neither will back up. That is a Deadlock.',
+      'Line 16-19: Thread 1 successfully acquires `lockA`, prints its message, and calls `sleep(1)` (a POSIX system call pausing for 1 second).',
+      'Line 28-31: Meanwhile, Thread 2 runs concurrently, successfully acquires `lockB`, and also sleeps for 1 second.',
+      'The Circular Trap (Circular Wait): Thread 1 wakes up and calls `pthread_mutex_lock(&lockB)`, which blocks because Thread 2 holds it. Simultaneously, Thread 2 wakes up and calls `pthread_mutex_lock(&lockA)`, which blocks because Thread 1 holds it!',
+      'Frozen Forever: Neither thread can ever proceed to its unlock line. The entire program freezes silently with 0% CPU usage.',
+      'How to Fix — Enforce Strict Lock Hierarchy: The rule is simple: ALWAYS acquire locks in the exact same alphabetical or numerical order! If Thread 2 also acquired `lockA` first, it would have politely waited for Thread 1 to finish before touching either lock, completely eliminating the circular wait.'
     ],
     interviewQuestions: [
       {
@@ -727,39 +786,53 @@ void* thread2_work(void* arg) {
     why: 'Early computing relied on contiguous memory allocation, which suffered from severe External Fragmentation: as programs were loaded and terminated, free memory was chopped into small scattered holes. Even if total free RAM was 1 GB, a program needing 500 MB contiguous space could not start if no single hole was large enough.\n\nPaging completely eliminates external fragmentation because any free physical frame anywhere in RAM can be allocated to any page of any process. Furthermore, paging provides hardware-enforced memory protection: each page table entry contains permission bits (Read, Write, Execute). If a program attempts to write to a read-only code page or execute data on the stack, the MMU triggers a hardware trap, preventing buffer-overflow exploits.',
     useCase: 'Modern operating systems use Multi-Level Paging (such as 4-level or 5-level paging on 64-bit x86-64 processors) to prevent page tables from consuming all physical RAM. A 64-bit address space is so astronomically vast that a single flat page table would require petabytes of storage! By organizing page tables hierarchically into trees, the kernel allocates page table pages only for the memory regions a process actually uses.\n\nPaging also enables Shared Memory and Shared Libraries (`libc.so`, `kernel32.dll`). When 50 processes all use the C standard library, the operating system maps all 50 virtual page table entries to the exact same physical RAM frames containing the library\'s read-only code, saving hundreds of megabytes of physical RAM.',
     example: `// Example: Calculating Physical Address from Logical Address in C
+// Beginner Glossary:
+// - Logical (Virtual) Address: The imaginary memory address your code sees (starts from 0 up to gigabytes).
+// - Physical Address: The real, physical memory pin location on the RAM chip plugged into the computer motherboard.
+// - Page: A standardized fixed-size chunk of virtual memory (almost always 4,096 bytes = 4 KB).
+// - Frame: A matching 4 KB physical storage slot in physical RAM.
+// - Page Table: The OS phonebook mapping virtual Page Numbers to physical Frame Numbers.
+// - Offset: The exact byte position inside a 4 KB page (0 to 4095).
+
 #include <stdio.h>
 
-#define PAGE_SIZE 4096 // 4 KB page size (offset = 12 bits)
+#define PAGE_SIZE 4096 // 4 KB page size (4096 is 2^12, so 12 bits are used for offset)
 
 int main() {
-    // Simulated Page Table: Index = Page Number, Value = Physical Frame Number
+    // Simulated Page Table: Index = Page Number, Value = Physical Frame Number in RAM
+    // Page 0 is at Frame 7, Page 1 is at Frame 2, Page 2 is at Frame 9, Page 3 is at Frame 1
     int page_table[4] = { 7, 2, 9, 1 };
 
-    // Let's translate Logical Address: 9000
+    // Suppose our program tries to read variable at Logical Address: 9000
     unsigned int logical_address = 9000;
 
-    // 1. Calculate Page Number (p) and Offset (d)
-    unsigned int page_number = logical_address / PAGE_SIZE; // 9000 / 4096 = 2
-    unsigned int offset = logical_address % PAGE_SIZE;      // 9000 % 4096 = 808
+    // Step 1: Split 9000 into Page Number and Offset
+    // Integer division gives the Page Number: 9000 / 4096 = 2
+    unsigned int page_number = logical_address / PAGE_SIZE; 
+    // Modulo gives the exact byte offset inside that page: 9000 % 4096 = 808
+    unsigned int offset = logical_address % PAGE_SIZE;      
 
-    // 2. Lookup Frame Number in Page Table
-    int frame_number = page_table[page_number];             // page_table[2] = 9
+    // Step 2: Look up Frame Number in the Page Table
+    // The MMU (Memory Management Unit hardware chip) checks index 2 -> finds Frame 9
+    int frame_number = page_table[page_number];             
 
-    // 3. Calculate Physical Address = (Frame * Page Size) + Offset
+    // Step 3: Compute Physical RAM Address = (Physical Frame * Page Size) + Offset
+    // (9 * 4096) + 808 = 36864 + 808 = 37672
     unsigned int physical_address = (frame_number * PAGE_SIZE) + offset;
 
-    printf("Logical Address:  %u (Page: %u, Offset: %u)\\n", logical_address, page_number, offset);
-    printf("Page Table maps Page %u -> Frame %d\\n", page_number, frame_number);
-    printf("Physical Address: %u\\n", physical_address);
+    printf("Logical Address:  %u (Page: %u, Offset: %u)\n", logical_address, page_number, offset);
+    printf("Page Table lookup: Page %u -> Physical Frame %d\n", page_number, frame_number);
+    printf("Physical Address: %u on RAM hardware\n", physical_address);
     return 0;
 }`,
     exampleExplanation: [
-      'Line 4: `PAGE_SIZE` is defined as 4096 bytes ($2^{12}$ bytes), meaning the low 12 bits of any address represent the offset.',
-      'Line 8: We define a simple 4-entry Page Table mapping Page 0 -> Frame 7, Page 1 -> Frame 2, Page 2 -> Frame 9, Page 3 -> Frame 1.',
-      'Line 14-15: For logical address 9000, integer division yields Page Number 2 and modulo yields Offset 808.',
-      'Line 18: The MMU looks up index 2 in the page table, discovering that Page 2 is physically loaded in Frame 9.',
-      'Line 21: The physical address is computed: $(9 \\times 4096) + 808 = 37672$.',
-      'Hardware Bitwise Speed: In real hardware, division and modulo are replaced by instant bitwise shifts and bitmasks (`address >> 12` and `address & 0xFFF`).'
+      'Why Virtual Memory?: Programs don\'t touch real RAM directly. If every program touched physical RAM addresses, two programs would overwrite each other\'s data! Virtual memory gives every program the illusion of having its own private memory.',
+      'Line 11: `PAGE_SIZE` is 4096 bytes (4 KB). Why 4096? Because $4096 = 2^{12}$. In binary, the last 12 bits of any address give the exact byte inside the page without needing any math!',
+      'Line 15: The Page Table is an array maintained by the OS kernel. Here, Page 2 lives in Frame 9 of physical RAM.',
+      'Line 22-24: Calculating Page Number and Offset. For address 9000, 9000 / 4096 = 2 (Page 2), and the remainder is 808 (Offset 808).',
+      'Line 27: The CPU\'s MMU (Memory Management Unit) looks up index 2 in the page table, retrieving Frame 9.',
+      'Line 31: Physical Address calculation: Frame 9 starts at byte $9 \times 4096 = 36864$. Adding the offset of 808 gives physical byte 37672.',
+      'Hardware Speed Note: In real CPU silicon, the hardware does NOT do slow division. It simply grabs the upper bits as the page index and the lower 12 bits as the offset (`address >> 12` and `address & 0xFFF`) in a single clock cycle!'
     ],
     interviewQuestions: [
       {
@@ -844,60 +917,69 @@ int main() {
     why: 'Without virtual memory, computers would be strictly bounded by physical RAM chips. A laptop with 8 GB of RAM could never run modern game engines or heavy development IDEs that demand 16+ GB virtual address spaces, nor could it run dozens of apps concurrently.\n\nDemand paging accelerates program startup times: an executable file of 2 GB can begin executing in 5 milliseconds because the OS loads only the entry-point code page into RAM, pulling additional pages from disk on-demand only as users click specific features.',
     useCase: 'Production Linux servers monitor swap activity using tools like `vmstat` and `sar`. If a server suffers from Thrashing—where physical RAM is overcommitted and processes spend more time servicing page faults than executing instructions—the CPU utilization drops to near zero while disk I/O saturates at 100%. Linux uses the Out-Of-Memory (OOM) Killer daemon, which calculates an `oom_score` based on memory usage and terminates the worst offending process to restore system equilibrium.\n\nVirtual memory also powers memory-mapped files via the `mmap()` system call. High-performance databases like MongoDB and LMDB map massive multi-gigabyte data files directly into their virtual memory space, letting the kernel\'s demand paging engine handle disk-to-RAM caching transparently.',
     example: `// Example: Simulating the Clock (Second-Chance) Page Replacement Algorithm
+// Beginner Glossary:
+// - Demand Paging: Loading memory pages into RAM only when the program actually tries to read them.
+// - Page Fault: A hardware alert saying "The page this program wants is not in RAM; load it from disk!"
+// - Reference Bit: A 1-bit hardware flag (0 or 1). The CPU sets it to 1 whenever that page is accessed.
+// - Eviction: Kicking an old page out of RAM to make room for a new page when memory is full.
+
 #include <stdio.h>
 
-#define FRAMES 3
+#define FRAMES 3 // Physical RAM can only fit 3 pages at a time
 
 struct Frame {
-    int page_id;
-    int reference_bit;
+    int page_id;       // Which virtual page lives here (-1 = empty)
+    int reference_bit; // 1 = accessed recently; 0 = hasn't been accessed recently
 };
 
 int main() {
+    // RAM starts with 3 empty frames
     struct Frame memory[FRAMES] = { {-1, 0}, {-1, 0}, {-1, 0} };
-    int page_stream[8] = { 2, 3, 2, 1, 5, 2, 4, 5 };
-    int clock_hand = 0;
+    int page_stream[8] = { 2, 3, 2, 1, 5, 2, 4, 5 }; // Pages requested by the program
+    int clock_hand = 0; // Circular pointer sweeping through frames
     int page_faults = 0;
 
-    printf("--- Clock (Second-Chance) Algorithm Simulation ---\\n");
+    printf("--- Clock (Second-Chance) Algorithm Simulation ---\n");
     for (int i = 0; i < 8; i++) {
         int page = page_stream[i];
         int hit = 0;
 
-        // Check for Page Hit
+        // Check if the requested page is already sitting in RAM (Page Hit)
         for (int f = 0; f < FRAMES; f++) {
             if (memory[f].page_id == page) {
-                memory[f].reference_bit = 1; // Give second chance
+                memory[f].reference_bit = 1; // Mark bit=1: give this page a second chance!
                 hit = 1;
-                printf("Page %d: HIT (Frame %d bit set to 1)\\n", page, f);
+                printf("Page %d: HIT (Frame %d bit set to 1)\n", page, f);
                 break;
             }
         }
 
+        // If not in RAM, a Page Fault occurs!
         if (!hit) {
             page_faults++;
-            // Clock hand sweeps looking for reference_bit == 0
+            // Clock hand sweeps looking for a frame with reference_bit == 0
             while (memory[clock_hand].reference_bit == 1) {
-                memory[clock_hand].reference_bit = 0; // Clear bit
-                clock_hand = (clock_hand + 1) % FRAMES;
+                memory[clock_hand].reference_bit = 0; // Clear bit to 0 (used its second chance)
+                clock_hand = (clock_hand + 1) % FRAMES; // Advance hand
             }
-            // Replace victim
-            printf("Page %d: FAULT -> Evicted %d in Frame %d\\n", page, memory[clock_hand].page_id, clock_hand);
+            // Evict victim frame and load the new page into RAM
+            printf("Page %d: FAULT -> Evicted %d in Frame %d\n", page, memory[clock_hand].page_id, clock_hand);
             memory[clock_hand].page_id = page;
             memory[clock_hand].reference_bit = 1;
             clock_hand = (clock_hand + 1) % FRAMES;
         }
     }
-    printf("Total Page Faults: %d\\n", page_faults);
+    printf("Total Page Faults: %d\n", page_faults);
     return 0;
 }`,
     exampleExplanation: [
-      'Line 6: We model physical RAM as an array of 3 frames, each with a `page_id` and a hardware `reference_bit`.',
-      'Clock Hand: A circular pointer points to the next frame to inspect for eviction.',
-      'Page Hit: If a referenced page is already in RAM, the CPU hardware sets its `reference_bit` to 1.',
-      'Page Fault Handling: If the page is not in RAM, the clock hand advances. If it sees bit 1, it clears it to 0 (granting a second chance) and advances.',
-      'Eviction: The first frame encountered with bit 0 is selected as the victim, swapped out, and replaced with the new page.',
-      'Practical Efficiency: The Clock algorithm delivers near-LRU performance without requiring expensive linked-list timestamp updates on every memory access.'
+      'What is Page Replacement?: Your computer might have 8 GB of RAM, but running programs need 16 GB! When physical RAM fills up, the OS must pick an old page to "evict" (kick out to disk) so new pages can enter.',
+      'Line 11-14: We define `struct Frame` representing physical memory slots. Each frame tracks its `page_id` and a 1-bit `reference_bit`.',
+      'The Clock Hand: `clock_hand` acts like a spinning hand on a clock face, continuously cycling through frames 0, 1, 2, 0, 1, 2...',
+      'Page Hit (Line 29): If the page is already loaded in RAM, no disk I/O is needed! The CPU hardware simply flips the frame\'s `reference_bit` to 1.',
+      'The "Second Chance" Mechanism (Line 41): When a Page Fault occurs, the clock hand examines frames. If it sees `reference_bit == 1`, it says: "You were used recently, so I\'ll spare you this time," resets the bit to 0, and checks the next frame.',
+      'Eviction (Line 46): The first frame found with `reference_bit == 0` is chosen as the victim, swapped out, and overwritten with the newly requested page.',
+      'Beginner Takeaway: Pure LRU (Least Recently Used) is too expensive for CPU hardware to track on billions of memory reads per second. The Clock Algorithm delivers 99% of LRU\'s efficiency using just one single hardware bit per frame!'
     ],
     interviewQuestions: [
       {
@@ -982,22 +1064,31 @@ int main() {
     why: 'Without journaling and transactional metadata commits, an unexpected power loss during a file write leaves the file system in an inconsistent state: a block could be allocated to a file according to its inode, but still marked as free in the allocation bitmap, leading to catastrophic double-allocation and silent data corruption upon reboot.\n\nSeparating inodes from file names allows multiple directory paths to reference the same underlying storage without data duplication, and enables atomic file replacements: a compiler or editor can write to a temporary file and atomically rename it over the old file without breaking open file handles held by running programs.',
     useCase: 'High-performance database servers (like PostgreSQL, MySQL, and Kafka) depend heavily on file system journaling modes. In Linux `ext4`, engineers configure journal modes based on durability requirements: `data=journal` (both metadata and user data are journaled, highest durability, lowest throughput), `data=ordered` (default, user data is flushed to disk before metadata commits to journal), or `data=writeback` (metadata journaled, data written asynchronously, highest throughput).\n\nContainer runtimes like Docker and Kubernetes leverage copy-on-write overlay file systems (OverlayFS) built upon underlying inode layers, allowing thousands of containers to share base operating system image layers without duplicating gigabytes of disk space.',
     example: `// Example: Inspecting Inode Metadata in C using stat()
+// Beginner Glossary:
+// - Inode (Index Node): A small record on disk storing all file properties (size, permissions, timestamps, block pointers).
+// - File Name vs Inode: Crucially, inodes DO NOT store file names! A folder/directory is simply a lookup table of "File Name -> Inode Number".
+// - stat(): A standard POSIX system call that asks the OS kernel to read an inode from disk into a C struct.
+// - <sys/stat.h>: The C header file defining the 'struct stat' metadata format.
+// - Hard Link: Another file name pointing to the exact same inode. The file is only deleted from disk when link count reaches 0.
+
 #include <stdio.h>
-#include <sys/stat.h>
-#include <time.h>
+#include <sys/stat.h> // Provides struct stat and the stat() system call
+#include <time.h>     // For ctime() to format timestamps into readable English
 
 int main() {
+    // struct stat: A predefined C structure that holds all inode properties
     struct stat file_info;
 
-    // Retrieve file status metadata into stat buffer
+    // stat() asks the Linux kernel: "Fetch all inode metadata for /etc/hosts into file_info"
+    // Returns 0 on success, -1 on failure
     if (stat("/etc/hosts", &file_info) == 0) {
-        printf("--- Inode Metadata for /etc/hosts ---\\n");
-        printf("Inode Number:    %lu\\n", (unsigned long)file_info.st_ino);
-        printf("File Size:       %ld bytes\\n", file_info.st_size);
-        printf("Hard Link Count: %lu\\n", (unsigned long)file_info.st_nlink);
-        printf("Permissions:     %o (octal)\\n", file_info.st_mode & 0777);
-        printf("Block Size:      %ld bytes\\n", file_info.st_blksize);
-        printf("Blocks Allocated:%ld (512-byte blocks)\\n", file_info.st_blocks);
+        printf("--- Inode Metadata for /etc/hosts ---\n");
+        printf("Inode Number:    %lu\n", (unsigned long)file_info.st_ino);
+        printf("File Size:       %ld bytes\n", file_info.st_size);
+        printf("Hard Link Count: %lu\n", (unsigned long)file_info.st_nlink);
+        printf("Permissions:     %o (octal)\n", file_info.st_mode & 0777);
+        printf("Block Size:      %ld bytes\n", file_info.st_blksize);
+        printf("Blocks Allocated:%ld (512-byte blocks)\n", file_info.st_blocks);
         printf("Last Modified:   %s", ctime(&file_info.st_mtime));
     } else {
         perror("stat failed");
@@ -1005,12 +1096,13 @@ int main() {
     return 0;
 }`,
     exampleExplanation: [
-      'Line 9: `stat()` is a POSIX system call that reads an existing file\'s inode metadata directly from the filesystem driver.',
-      'Line 11: `st_ino` returns the unique numerical Inode Number identifying this file on the disk partition.',
-      'Line 13: `st_nlink` reveals the number of hard links pointing to this inode. A file is only deleted from disk when this count drops to 0.',
-      'Line 14: `st_mode` bitmask reveals POSIX permissions (read, write, execute for user, group, and others).',
-      'Line 16: `st_blocks` shows actual physical disk blocks allocated, allowing detection of sparse files (where file size exceeds allocated blocks).',
-      'Key Insight: Notice that `struct stat` contains zero fields for the file name—the name exists solely inside the parent directory table.'
+      'What is an Inode?: In Unix/Linux, every file on your disk is represented by a unique integer called an Inode Number. The inode contains everything about the file: how big it is, who owns it, when it was modified, and where its actual data blocks sit on the physical SSD.',
+      'The Big Surprise — Where is the File Name?: Look carefully at `struct stat`—there is NO field for the file name! In Unix, file names do not belong to files. They belong to directories. A folder is just a simple phonebook mapping names like "photo.png" to Inode 10425.',
+      'Line 17: `stat()` is a POSIX system call that asks the OS kernel to look up `/etc/hosts` in its directory tree and copy its underlying inode into our program\'s memory.',
+      'Line 19: `st_ino` is the unique Inode ID number on that disk partition.',
+      'Line 21: `st_nlink` is the Hard Link Count. If this file has 2 hard links, it means two different paths point to this same inode. The OS will NOT delete the actual data from disk until this counter reaches 0!',
+      'Line 22: `st_mode` contains the file type and POSIX permission bits (rwx for owner, group, and others).',
+      'Beginner Takeaway: Inodes separate what a file IS (its content and size) from what it is CALLED (directory entries), allowing hard links, atomic file renames, and crash-resilient file systems.'
     ],
     interviewQuestions: [
       {
@@ -1095,38 +1187,49 @@ int main() {
     why: 'At high network speeds (10 Gbps to 100 Gbps), the CPU becomes a severe bottleneck if it must copy every payload byte between memory buffers. A 100 Gbps network stream copying data four times saturates memory bandwidth, burns CPU cores on memory duplication, and thrashes CPU L1/L2 caches with transient payload bytes.\n\nZero-copy architecture reduces CPU utilization to near zero for bulk data delivery, bypasses user-space context switches, and allows web servers and streaming platforms to deliver line-rate network throughput with minimal hardware power consumption.',
     useCase: 'High-throughput distributed systems like Apache Kafka and streaming giants like Netflix rely on Linux Zero-Copy `sendfile()`. When Kafka delivers millions of messages from disk partitions to network consumers, it does not read bytes into Java user-space memory. It issues `sendfile(socket_fd, file_fd, offset, count)`. The Linux kernel copies file blocks directly from storage into the network buffer via DMA scatter-gather operations, allowing a single server to saturate 40 Gbps fiber links with less than 15% CPU utilization.\n\nSimilarly, high-performance database engines like ScyllaDB and web servers like Nginx enable zero-copy sendfile by default in their configuration to serve static media assets at maximum physical hardware capacity.',
     example: `// Example: Traditional read/write I/O vs Modern Zero-Copy sendfile() in Linux
+// Beginner Glossary:
+// - File Descriptor (FD): A simple integer ID (0, 1, 2, 3...) given to your program by the OS representing an open file or network socket.
+// - DMA (Direct Memory Access): A specialized hardware chip that copies data directly between storage/network cards and RAM without burning CPU cycles!
+// - Zero-Copy: An OS performance technique that avoids copying data into user-space application memory when moving data from disk to network.
+// - sendfile(): A Linux-specific system call that transfers data from one file descriptor directly to another inside kernel space.
+
 #include <stdio.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/sendfile.h>
-#include <sys/stat.h>
+#include <fcntl.h>        // open() flags like O_RDONLY
+#include <unistd.h>       // close() system call
+#include <sys/sendfile.h> // Linux sendfile() zero-copy system call
+#include <sys/stat.h>     // fstat() to determine file size
 
 int main() {
+    // open() is a POSIX system call opening files; returns an integer File Descriptor (FD)
     int source_fd = open("large_video.mp4", O_RDONLY);
     int dest_socket_fd = open("output_stream.bin", O_WRONLY | O_CREAT, 0644);
 
+    // Read the file's size using fstat() so we know how many bytes to transfer
     struct stat stat_buf;
     fstat(source_fd, &stat_buf);
 
     // ZERO-COPY SYSTEM CALL:
-    // Transmits bytes directly from source file descriptor to socket
-    // without copying data into user-space memory buffers!
+    // In traditional code, you'd read() bytes from disk into your program's RAM,
+    // and then write() them back to the network socket (4 expensive data copies!).
+    // sendfile() tells the kernel: "Stream this directly across DMA hardware!"
     off_t offset = 0;
     ssize_t bytes_sent = sendfile(dest_socket_fd, source_fd, &offset, stat_buf.st_size);
 
-    printf("Zero-Copy Transfer Complete: %zd bytes streamed via DMA!\\n", bytes_sent);
+    printf("Zero-Copy Transfer Complete: %zd bytes streamed via DMA!\n", bytes_sent);
 
+    // Always close file descriptors to release OS file table resources
     close(source_fd);
     close(dest_socket_fd);
     return 0;
 }`,
     exampleExplanation: [
-      'Line 8-9: We open the source file on disk and the destination network socket descriptor.',
-      'Traditional Way: Would require allocating a `char buffer[8192]`, running a `while(read(source, buffer))` loop, copying to user space, and running `write(dest, buffer)`.',
-      'Line 18: `sendfile()` issues a single system call to the Linux kernel.',
-      'DMA In Action: The kernel instructs the storage DMA engine to read the file into the kernel page cache, and the NIC DMA engine to transmit directly to the network wire.',
-      'Efficiency: Zero CPU copies occur in user space, 2 context switches occur instead of thousands, and CPU L1/L2 cache remains uncluttered.',
-      'Line 20: Returns the exact byte count transferred seamlessly.'
+      'The Traditional Streaming Bottleneck: To stream a movie file to a user over the web, old programs ran a loop: `read(file, buffer)` followed by `write(socket, buffer)`. This forced data to be copied 4 separate times: Disk -> Kernel Cache -> User App Memory -> Socket Buffer -> Network Card! It burned CPU time and wasted gigabytes of memory bandwidth.',
+      'What is DMA (Direct Memory Access)?: Instead of the CPU personally reading every single byte from disk and writing it to the network, a DMA chip acts as a hardware helper. The CPU tells the DMA controller: "Copy 500 MB from Disk to Network Card, and wake me up when you are done."',
+      'Line 16-17: `open()` is a low-level POSIX system call that returns a File Descriptor (FD)—an integer index into the operating system\'s open file table.',
+      'Line 27: `sendfile()` executes a single Linux system call that transfers bytes directly between the storage cache and the network interface card via DMA hardware.',
+      'Zero User Copies: Notice that our user-space C application NEVER allocated a memory buffer and never touched the file payload! The transfer happened 100% inside kernel space.',
+      'Line 33-34: `close()` releases the file descriptors so the OS kernel can recycle them.',
+      'Beginner Takeaway: High-performance servers like Netflix, Kafka, and Nginx use Zero-Copy architecture to serve gigabits of video and message traffic with almost 0% CPU overhead.'
     ],
     interviewQuestions: [
       {

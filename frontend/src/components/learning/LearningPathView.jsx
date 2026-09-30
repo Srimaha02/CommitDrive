@@ -3,7 +3,6 @@ import {
   Cpu, 
   Database, 
   Network, 
-  Search, 
   CheckCircle2, 
   Circle, 
   Clock, 
@@ -11,6 +10,7 @@ import {
   RotateCw, 
   ChevronRight, 
   ChevronDown, 
+  ChevronUp,
   ChevronLeft,
   BookOpen, 
   FileQuestion, 
@@ -25,7 +25,6 @@ import {
   ArrowRight,
   ArrowLeft,
   FileCheck2,
-  AlertCircle,
   X,
   Zap,
   Trophy,
@@ -41,11 +40,9 @@ import {
   subjects, 
   curriculumData, 
   getSubjectTopics, 
-  calculateSubjectProgress,
-  CURRICULUM_TIERS
+  calculateSubjectProgress
 } from '../../data/learningCurriculum';
 import { learningApi } from '../../services/api';
-import { getTopicInterviewData } from '../../data/interviewEnrichment';
 import { getFurtherReadingForTopic } from '../../data/furtherReadingData';
 import GatedContentPreview from '../layout/GatedContentPreview';
 import './LearningPathView.css';
@@ -89,14 +86,21 @@ export default function LearningPathView({
   // State: Reader Tab ('concept' | 'qa' | 'flashcards')
   const [activeReaderTab, setActiveReaderTab] = useState('concept');
 
-  // State: Topic Search Query
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // State: Placement Tier Filter ('all' | 'L100' | 'L200' | 'L300')
-  const [selectedTierFilter, setSelectedTierFilter] = useState('all');
-
   // State: 60-Second Interview Pitch Copied Toast
   const [isPitchCopied, setIsPitchCopied] = useState(false);
+
+  // State: Formal Definition Collapsible Expanded
+  const [isFormalDefExpanded, setIsFormalDefExpanded] = useState(false);
+
+  // State: OS Code Example Collapsible (collapsed by default for beginners)
+  const [isOsCodeExpanded, setIsOsCodeExpanded] = useState(false);
+
+  // Helper to extract a 2-line concise summary from activeTopic.what
+  const getShortSummary = (text) => {
+    if (!text) return '';
+    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+    return sentences.slice(0, 2).join(' ').trim();
+  };
 
   // State: Expanded Traps in Q&A Vault
   const [expandedTraps, setExpandedTraps] = useState({});
@@ -127,7 +131,7 @@ export default function LearningPathView({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [celebrationTopic]);
 
-  // Sync active subject & topic to localStorage
+  // Sync active subject & topic to localStorage & reset collapsible sections
   useEffect(() => {
     try {
       localStorage.setItem('commitdrive_active_subject', activeSubjectId);
@@ -135,6 +139,8 @@ export default function LearningPathView({
     } catch {
       // storage unavailable
     }
+    setIsFormalDefExpanded(false);
+    setIsOsCodeExpanded(false);
   }, [activeSubjectId, activeTopicId]);
 
   // Load topics from backend / fallback on mount
@@ -171,22 +177,21 @@ export default function LearningPathView({
   const activeSubject = subjects.find(s => s.id === activeSubjectId) || subjects[0];
   const currentTopics = getSubjectTopics(activeSubjectId);
 
-  // Filtered topics based on search query AND placement tier
-  const filteredTopics = currentTopics.filter(topic => {
-    const matchesSearch = !searchQuery.trim() || 
-      topic.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      topic.what?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesTier = selectedTierFilter === 'all' || topic.tier === selectedTierFilter;
-    return matchesSearch && matchesTier;
-  });
+  // Topics are static and ordered
+  const filteredTopics = currentTopics;
 
   // Active Topic
   const activeTopic = currentTopics.find(t => t.id === activeTopicId) || currentTopics[0] || {};
 
   // Pitch Copy Action
   const handleCopyPitch = () => {
-    if (activeTopic.interviewScript60s?.script) {
-      navigator.clipboard.writeText(activeTopic.interviewScript60s.script);
+    if (!activeTopic?.interviewScript60s) return;
+    const points = activeTopic.interviewScript60s.points || [];
+    const textToCopy = points.length > 0 
+      ? points.map((pt, i) => `${i + 1}. ${pt}`).join('\n')
+      : activeTopic.interviewScript60s.script;
+    if (textToCopy) {
+      navigator.clipboard.writeText(textToCopy);
       setIsPitchCopied(true);
       setTimeout(() => setIsPitchCopied(false), 2000);
     }
@@ -333,9 +338,6 @@ export default function LearningPathView({
 
             <div className="resource-meta-footer">
               <span className="resource-source-label">Source: {article?.source || 'GeeksforGeeks / GATE Overflow'}</span>
-              {!article?.url && (
-                <span className="resource-pending-note">Editorial review candidate</span>
-              )}
             </div>
           </div>
 
@@ -346,7 +348,7 @@ export default function LearningPathView({
                 <Video size={13} />
                 <span>YouTube Video Walkthrough</span>
               </div>
-              {video?.url ? (
+              {video?.url && (
                 <a 
                   href={video.url} 
                   target="_blank" 
@@ -357,11 +359,6 @@ export default function LearningPathView({
                   <span>Watch Video</span>
                   <ExternalLink size={13} />
                 </a>
-              ) : (
-                <span className="resource-placeholder-pill" title="URL being vetted during editorial fact-checking">
-                  <Clock size={12} />
-                  <span>Links coming soon</span>
-                </span>
               )}
             </div>
 
@@ -374,9 +371,6 @@ export default function LearningPathView({
 
             <div className="resource-meta-footer">
               <span className="resource-source-label">Source: {video?.source || 'YouTube Lecture'}</span>
-              {!video?.url && (
-                <span className="resource-pending-note">Editorial review candidate</span>
-              )}
             </div>
           </div>
 
@@ -387,7 +381,7 @@ export default function LearningPathView({
                 <BookOpen size={13} />
                 <span>Documentation & Standard Specs</span>
               </div>
-              {docs?.url ? (
+              {docs?.url && (
                 <a 
                   href={docs.url} 
                   target="_blank" 
@@ -398,11 +392,6 @@ export default function LearningPathView({
                   <span>View Specs</span>
                   <ExternalLink size={13} />
                 </a>
-              ) : (
-                <span className="resource-placeholder-pill" title="URL being vetted during editorial fact-checking">
-                  <Clock size={12} />
-                  <span>Links coming soon</span>
-                </span>
               )}
             </div>
 
@@ -415,9 +404,6 @@ export default function LearningPathView({
 
             <div className="resource-meta-footer">
               <span className="resource-source-label">Source: {docs?.source || 'Official Manual / RFC'}</span>
-              {!docs?.url && (
-                <span className="resource-pending-note">Editorial review candidate</span>
-              )}
             </div>
           </div>
         </div>
@@ -498,35 +484,6 @@ export default function LearningPathView({
               </div>
               <span className="sidebar-topic-count">10 Topics Ordered Basic to Advanced</span>
 
-              {/* Placement Tier Selector Filter */}
-              <div className="sidebar-tier-selector">
-                <span className="sidebar-tier-label">Placement Tier:</span>
-                <div className="tier-pills-row">
-                  {CURRICULUM_TIERS.map(tier => (
-                    <button
-                      key={tier.id}
-                      type="button"
-                      className={`tier-pill-btn ${selectedTierFilter === tier.id ? 'active' : ''} theme-transition`}
-                      onClick={() => setSelectedTierFilter(tier.id)}
-                      title={tier.badge || tier.label}
-                    >
-                      <span>{tier.shortLabel}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Quick Search */}
-              <div className="sidebar-search-box">
-                <Search size={14} className="search-icon" />
-                <input 
-                  type="text" 
-                  placeholder="Filter topics or concepts..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="sidebar-search-input"
-                />
-              </div>
             </div>
 
             {/* Topic List */}
@@ -558,9 +515,6 @@ export default function LearningPathView({
                         <span className={`diff-pill ${topic.difficulty.toLowerCase()}`}>
                           {topic.difficulty}
                         </span>
-                        <span className={`tier-badge-micro tier-${topic.tier ? topic.tier.toLowerCase() : 'l200'}`}>
-                          {topic.tier || 'L200'}
-                        </span>
                         <span className="read-time-label">
                           <Clock size={11} />
                           <span>{topic.readTime}</span>
@@ -576,14 +530,6 @@ export default function LearningPathView({
                 );
               })}
 
-              {filteredTopics.length === 0 && (
-                <div className="no-topics-found">
-                  <p>No topics match criteria</p>
-                  <button onClick={() => { setSearchQuery(''); setSelectedTierFilter('all'); }} className="clear-search-btn">
-                    Reset filters
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* Sidebar Footer Stats */}
@@ -655,9 +601,6 @@ export default function LearningPathView({
 
               {/* Topic Metadata Badges */}
               <div className="reader-meta-row">
-                <span className={`tier-badge-pill tier-${activeTopic.tier ? activeTopic.tier.toLowerCase() : 'l200'}`}>
-                  {activeTopic.tier || 'L200'} • {activeTopic.tierName || 'Placement Core'}
-                </span>
                 <span className={`diff-pill ${activeTopic.difficulty ? activeTopic.difficulty.toLowerCase() : 'intermediate'}`}>
                   {activeTopic.difficulty}
                 </span>
@@ -671,10 +614,6 @@ export default function LearningPathView({
                     <span>{activeTopic.frequency}</span>
                   </span>
                 )}
-                <span className="draft-review-badge" title="Subject to personal review and fact-checking before production release">
-                  <AlertCircle size={13} />
-                  <span>{activeTopic.draftStatus || 'Draft v1.0 — Review candidate'}</span>
-                </span>
               </div>
 
               {/* Reader Tabs (Concept, Q&A, Flashcards) */}
@@ -727,21 +666,6 @@ export default function LearningPathView({
                 >
                   <BookMarked size={15} />
                   <span>Further reading</span>
-                </button>
-
-                <button 
-                  className={`reader-tab-btn interview-mode-tab ${activeReaderTab === 'interview' ? 'active' : ''} theme-transition`}
-                  onClick={() => {
-                    if (!currentUser) {
-                      if (onOpenAuth) onOpenAuth('signup');
-                      return;
-                    }
-                    setActiveReaderTab('interview');
-                  }}
-                >
-                  <Mic size={15} />
-                  <span>Interview Mode</span>
-                  <span className="tab-interview-badge">New</span>
                 </button>
               </div>
             </div>
@@ -829,12 +753,32 @@ export default function LearningPathView({
                       </div>
                     </div>
 
-                    {/* Spoken Script Container */}
-                    <div className="pitch-script-box theme-transition">
-                      <blockquote className="pitch-spoken-quote">
-                        "{activeTopic.interviewScript60s.script}"
-                      </blockquote>
-                    </div>
+                    {/* Short Punchy Bullet Points / Chip-style Phrases */}
+                    {(() => {
+                      const pitchPoints = activeTopic.interviewScript60s.points?.length > 0
+                        ? activeTopic.interviewScript60s.points
+                        : (activeTopic.interviewScript60s.script
+                            ? activeTopic.interviewScript60s.script.split(/(?<=[.!?])\s+/).filter(Boolean)
+                            : []);
+                      return (
+                        <div className="pitch-points-container theme-transition">
+                          {pitchPoints.map((point, ptIdx) => {
+                            const colonIdx = point.indexOf(':');
+                            const prefix = colonIdx !== -1 ? point.slice(0, colonIdx) : null;
+                            const body = colonIdx !== -1 ? point.slice(colonIdx + 1).trim() : point;
+                            return (
+                              <div key={ptIdx} className="pitch-point-item theme-transition">
+                                <div className="pitch-point-num-pill">{ptIdx + 1}</div>
+                                <div className="pitch-point-body">
+                                  {prefix && <span className="pitch-point-tag">{prefix}</span>}
+                                  <span className="pitch-point-text">{body}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
 
                     {/* Non-negotiable Keywords */}
                     {activeTopic.interviewScript60s.keywords?.length > 0 && (
@@ -876,12 +820,60 @@ export default function LearningPathView({
                     </div>
                   )}
 
-                  {/* Multi-paragraph What */}
-                  <div className="concept-body-paragraphs">
-                    {activeTopic.what?.split('\n\n').map((paragraph, pIdx) => (
-                      <p key={pIdx} className="concept-body-text">{paragraph}</p>
-                    ))}
-                  </div>
+                  {/* Formal Definition: 2-Line Summary + Collapsible Full Breakdown */}
+                  {(() => {
+                    const paragraphs = activeTopic.what?.split('\n\n') || [];
+                    const shortSummary = getShortSummary(activeTopic.what);
+                    return (
+                      <div className="formal-definition-wrapper">
+                        {/* 2-Line Executive Summary Box */}
+                        <div className="formal-def-summary-box theme-transition">
+                          <div className="formal-def-summary-header">
+                            <span className="formal-def-summary-tag">Core Takeaway</span>
+                            <span className="formal-def-summary-hint">2-line fast overview</span>
+                          </div>
+                          <p className="formal-def-summary-text">
+                            {shortSummary}
+                          </p>
+                          <button
+                            type="button"
+                            className="formal-def-toggle-btn theme-transition"
+                            onClick={() => setIsFormalDefExpanded(prev => !prev)}
+                            aria-expanded={isFormalDefExpanded}
+                          >
+                            {isFormalDefExpanded ? (
+                              <>
+                                <span>Collapse detailed explanation</span>
+                                <ChevronUp size={14} />
+                              </>
+                            ) : (
+                              <>
+                                <span>Read full formal explanation ({paragraphs.length} sections)</span>
+                                <ChevronDown size={14} />
+                              </>
+                            )}
+                          </button>
+                        </div>
+
+                        {/* Collapsible detailed explanation with mini sub-headings */}
+                        {isFormalDefExpanded && (
+                          <div className="concept-body-paragraphs expanded-definition-wrap animate-fadeIn">
+                            {paragraphs.map((paragraph, pIdx) => (
+                              <div key={pIdx} className="formal-def-paragraph-group">
+                                <h4 className="formal-def-subheading">
+                                  {pIdx === 0 ? "1. Foundational Architecture & Core Mechanics" : 
+                                   pIdx === 1 ? "2. Technical Standards & Variations" : 
+                                   pIdx === 2 ? "3. Execution Flow & Lifecycle" : 
+                                   `${pIdx + 1}. Production System Dynamics`}
+                                </h4>
+                                <p className="concept-body-text">{paragraph}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </section>
 
                 <GatedContentPreview
@@ -950,46 +942,85 @@ export default function LearningPathView({
                           {activeSubjectId === 'cn' ? 'Protocol packet structure & sequence flow' : 'Technical walkthrough & code example'}
                         </h3>
                       </div>
-                      <button 
-                        className="copy-code-btn theme-transition"
-                        onClick={() => handleCopyCode(activeTopic.example)}
-                      >
-                        {isCopied ? (
-                          <>
-                            <Check size={13} className="copy-check" />
-                            <span>Copied</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy size={13} />
-                            <span>{activeSubjectId === 'cn' ? 'Copy diagram' : 'Copy'}</span>
-                          </>
+                      <div className="code-header-actions">
+                        {activeSubjectId === 'os' && (
+                          <button 
+                            type="button"
+                            className="btn-code-toggle-pill theme-transition"
+                            onClick={() => setIsOsCodeExpanded(prev => !prev)}
+                            aria-expanded={isOsCodeExpanded}
+                          >
+                            <Code2 size={13} />
+                            <span>{isOsCodeExpanded ? 'Hide code example' : 'Show code example'}</span>
+                            {isOsCodeExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                          </button>
                         )}
-                      </button>
-                    </div>
-
-                    <div className="code-block-wrapper">
-                      <pre className="code-pre">
-                        <code>{activeTopic.example}</code>
-                      </pre>
-                    </div>
-
-                    {/* Step-by-step ordered plain-language walkthrough */}
-                    {activeTopic.exampleExplanation && activeTopic.exampleExplanation.length > 0 && (
-                      <div className="example-walkthrough-container theme-transition">
-                        <div className="walkthrough-header">
-                          <FileCheck2 size={16} className="walkthrough-header-icon" />
-                          <h4 className="walkthrough-heading">Step-by-step walkthrough</h4>
-                        </div>
-                        <ol className="walkthrough-steps-list">
-                          {activeTopic.exampleExplanation.map((step, sIdx) => (
-                            <li key={sIdx} className="walkthrough-step-item">
-                              <span className="walkthrough-step-badge">Step {sIdx + 1}</span>
-                              <span className="walkthrough-step-text">{step}</span>
-                            </li>
-                          ))}
-                        </ol>
+                        {(activeSubjectId !== 'os' || isOsCodeExpanded) && (
+                          <button 
+                            className="copy-code-btn theme-transition"
+                            onClick={() => handleCopyCode(activeTopic.example)}
+                          >
+                            {isCopied ? (
+                              <>
+                                <Check size={13} className="copy-check" />
+                                <span>Copied</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy size={13} />
+                                <span>{activeSubjectId === 'cn' ? 'Copy diagram' : 'Copy'}</span>
+                              </>
+                            )}
+                          </button>
+                        )}
                       </div>
+                    </div>
+
+                    {/* For OS topics: optional & collapsed by default for zero-background beginners */}
+                    {activeSubjectId === 'os' && !isOsCodeExpanded ? (
+                      <div className="code-collapsed-placeholder theme-transition">
+                        <div className="code-collapsed-text-block">
+                          <p className="code-collapsed-title">Optional Code & Step-by-Step Walkthrough</p>
+                          <p className="code-collapsed-hint">
+                            Beginners can focus on the core concept explanation and analogy above without getting overwhelmed by code. Click below to inspect the low-level C implementation and memory walkthrough when ready.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn-show-code-action theme-transition"
+                          onClick={() => setIsOsCodeExpanded(true)}
+                        >
+                          <Code2 size={14} />
+                          <span>Show code example</span>
+                          <ChevronDown size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="code-block-wrapper animate-fadeIn">
+                          <pre className="code-pre">
+                            <code>{activeTopic.example}</code>
+                          </pre>
+                        </div>
+
+                        {/* Step-by-step ordered plain-language walkthrough */}
+                        {activeTopic.exampleExplanation && activeTopic.exampleExplanation.length > 0 && (
+                          <div className="example-walkthrough-container theme-transition animate-fadeIn">
+                            <div className="walkthrough-header">
+                              <FileCheck2 size={16} className="walkthrough-header-icon" />
+                              <h4 className="walkthrough-heading">Step-by-step walkthrough</h4>
+                            </div>
+                            <ol className="walkthrough-steps-list">
+                              {activeTopic.exampleExplanation.map((step, sIdx) => (
+                                <li key={sIdx} className="walkthrough-step-item">
+                                  <span className="walkthrough-step-badge">Step {sIdx + 1}</span>
+                                  <span className="walkthrough-step-text">{step}</span>
+                                </li>
+                              ))}
+                            </ol>
+                          </div>
+                        )}
+                      </>
                     )}
                   </section>
                 </GatedContentPreview>
@@ -1235,265 +1266,13 @@ export default function LearningPathView({
             )}
 
             {/* =============================================================
-                Tab 4: Further Reading Vault (Standalone View)
+                Tab 4: Further Reading Vault (Dedicated Tab View)
                 ============================================================= */}
             {activeReaderTab === 'reading' && (
               <div className="reader-content-body reading-body animate-fadeIn">
                 {renderFurtherReadingSection()}
               </div>
             )}
-
-            {/* =============================================================
-                Tab 5: Interview Mode — 60s Pitch + Keywords + Trap Qs
-                ============================================================= */}
-            {activeReaderTab === 'interview' && (() => {
-              const iData = getTopicInterviewData(activeTopicId);
-              return (
-                <div className="reader-content-body interview-mode-body animate-fadeIn">
-                  {iData ? (
-                    <>
-                      {/* -- Readiness header -- */}
-                      <div className="im-readiness-header theme-transition">
-                        <div className="im-readiness-badge-row">
-                          <span className="im-tier-badge">{iData.tierName}</span>
-                          <span className="im-frequency-badge">
-                            <Zap size={11} />
-                            {iData.frequency}
-                          </span>
-                        </div>
-                        <div className="im-target-prompt">
-                          <TargetIcon size={14} className="im-target-icon" />
-                          {iData.targetPrompt}
-                        </div>
-                      </div>
-
-                      {/* -- 60-Second Pitch Drill -- */}
-                      <section className="im-pitch-section theme-transition">
-                        <div className="im-section-header">
-                          <div className="im-section-icon-box pitch-icon">
-                            <Mic size={15} />
-                          </div>
-                          <div>
-                            <h4 className="im-section-title">60-Second Elevator Pitch</h4>
-                            <p className="im-section-sub">Practice speaking this aloud. Hide the script and use the timer to simulate a real answer.</p>
-                          </div>
-                          <div className="im-pitch-actions">
-                            <button
-                              className="im-action-btn theme-transition"
-                              onClick={() => setIsPitchHidden(prev => !prev)}
-                              title={isPitchHidden ? 'Show script' : 'Hide script (practice mode)'}
-                            >
-                              {isPitchHidden ? <>
-                                <Check size={13} /><span>Reveal</span>
-                              </> : <>
-                                <X size={13} /><span>Hide</span>
-                              </>}
-                            </button>
-                            <button
-                              className="im-action-btn timer-btn theme-transition"
-                              onClick={() => {
-                                if (isPitchTimerRunning) {
-                                  setIsPitchTimerRunning(false);
-                                  setPitchTimerSeconds(60);
-                                } else {
-                                  setPitchTimerSeconds(60);
-                                  setIsPitchTimerRunning(true);
-                                }
-                              }}
-                            >
-                              <Clock size={13} />
-                              <span className={`im-timer-display ${isPitchTimerRunning && pitchTimerSeconds <= 10 ? 'warning' : ''}`}>
-                                {isPitchTimerRunning ? `${pitchTimerSeconds}s` : '60s'}
-                              </span>
-                            </button>
-                            <button
-                              className="im-action-btn theme-transition"
-                              onClick={() => {
-                                navigator.clipboard.writeText(iData.script);
-                                setIsPitchCopied(true);
-                                setTimeout(() => setIsPitchCopied(false), 2000);
-                              }}
-                            >
-                              {isPitchCopied ? <Check size={13} /> : <Copy size={13} />}
-                            </button>
-                          </div>
-                        </div>
-                        <div className={`im-pitch-script theme-transition ${isPitchHidden ? 'blurred' : ''}`}>
-                          {iData.script}
-                        </div>
-                      </section>
-
-                      {/* -- Must-mention keywords -- */}
-                      <section className="im-keywords-section theme-transition">
-                        <div className="im-section-header">
-                          <div className="im-section-icon-box keywords-icon">
-                            <Zap size={15} />
-                          </div>
-                          <div>
-                            <h4 className="im-section-title">Must-Mention Keywords</h4>
-                            <p className="im-section-sub">These terms signal technical depth. An interviewer will mentally tick these off as you speak.</p>
-                          </div>
-                        </div>
-                        <div className="im-keywords-grid">
-                          {iData.keywords.map((kw, i) => (
-                            <span key={i} className="im-keyword-chip theme-transition">
-                              <Check size={11} />
-                              {kw}
-                            </span>
-                          ))}
-                        </div>
-                      </section>
-
-                      {/* -- Topic Core Placement Interview Questions Bank (Comprehensive Coverage) -- */}
-                      {activeTopic.interviewQuestions && activeTopic.interviewQuestions.length > 0 && (
-                        <section className="im-core-questions-section theme-transition">
-                          <div className="im-section-header">
-                            <div className="im-section-icon-box core-icon">
-                              <HelpCircle size={15} />
-                            </div>
-                            <div className="im-section-title-wrap">
-                              <div className="im-title-row-flex">
-                                <h4 className="im-section-title">Topic Interview Q&A Bank ({activeTopic.interviewQuestions.length} Placement Questions)</h4>
-                                <span className="im-comprehensive-pill">High Yield</span>
-                              </div>
-                              <p className="im-section-sub">Top frequently asked technical round questions for this topic with winning answers and company tags.</p>
-                            </div>
-                          </div>
-
-                          <div className="im-core-questions-list">
-                            {activeTopic.interviewQuestions.map((qa, qIdx) => {
-                              const qId = qa.id || `qa-${qIdx}`;
-                              const isExp = expandedTraps[qId] !== false;
-                              return (
-                                <div key={qId} className="im-core-q-card theme-transition">
-                                  <div 
-                                    className="im-core-q-header"
-                                    onClick={() => setExpandedTraps(prev => ({ ...prev, [qId]: !isExp }))}
-                                  >
-                                    <div className="im-core-q-left">
-                                      <span className="im-q-num-badge">Q{qIdx + 1}</span>
-                                      <span className="im-core-q-text">{qa.question}</span>
-                                    </div>
-                                    <div className="im-core-q-meta">
-                                      {qa.companyTags?.map((ct, ci) => (
-                                        <span key={ci} className="im-trap-company-tag">{ct}</span>
-                                      ))}
-                                      {qa.frequency && (
-                                        <span className="im-freq-chip">{qa.frequency}</span>
-                                      )}
-                                      <ChevronDown size={14} className={`im-trap-chevron ${isExp ? 'open' : ''}`} />
-                                    </div>
-                                  </div>
-
-                                  {isExp && (
-                                    <div className="im-core-q-body animate-fadeIn">
-                                      <div className="im-core-answer-box">
-                                        <div className="im-core-answer-header">
-                                          <Check size={13} className="text-success" />
-                                          <span>Winning Model Answer:</span>
-                                        </div>
-                                        <div className="im-core-answer-content">
-                                          {qa.answer.split('\n').map((line, lIdx) => (
-                                            <p key={lIdx}>{line}</p>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </section>
-                      )}
-
-                      {/* -- Trap questions -- */}
-                      {iData.trapQuestions && iData.trapQuestions.length > 0 && (
-                        <section className="im-traps-section theme-transition">
-                          <div className="im-section-header">
-                            <div className="im-section-icon-box traps-icon">
-                              <AlertCircle size={15} />
-                            </div>
-                            <div>
-                              <h4 className="im-section-title">Interviewer Trap Questions ({iData.trapQuestions.length} Traps)</h4>
-                              <p className="im-section-sub">Deceptive follow-ups designed to catch candidates who memorised without understanding.</p>
-                            </div>
-                          </div>
-
-                          <div className="im-traps-list">
-                            {iData.trapQuestions.map((trap) => (
-                              <div key={trap.id} className="im-trap-item theme-transition">
-                                <button
-                                  className="im-trap-toggle"
-                                  onClick={() => setExpandedTraps(prev => ({ ...prev, [trap.id]: !prev[trap.id] }))}
-                                >
-                                  <div className="im-trap-q">
-                                    <AlertCircle size={13} className="im-trap-icon" />
-                                    <span>{trap.question}</span>
-                                  </div>
-                                  <div className="im-trap-meta">
-                                    {trap.companyTags?.map((c, ci) => (
-                                      <span key={ci} className="im-trap-company-tag">{c}</span>
-                                    ))}
-                                    <ChevronDown
-                                      size={14}
-                                      className={`im-trap-chevron ${expandedTraps[trap.id] ? 'open' : ''}`}
-                                    />
-                                  </div>
-                                </button>
-
-                                {expandedTraps[trap.id] && (
-                                  <div className="im-trap-body animate-fadeIn">
-                                    <div className="im-trap-mistake">
-                                      <div className="im-trap-mistake-label">
-                                        <X size={11} /> Common Mistake
-                                      </div>
-                                      <div className="im-trap-mistake-text">{trap.commonMistake}</div>
-                                    </div>
-                                    <div className="im-trap-winning">
-                                      <div className="im-trap-winning-label">
-                                        <Check size={11} /> Winning Answer
-                                      </div>
-                                      <div className="im-trap-winning-text">{trap.winningAnswer}</div>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </section>
-                      )}
-
-                      {/* -- Cram Sheet shortcut (Linked directly to this Topic) -- */}
-                      <div className="im-cram-shortcut theme-transition">
-                        <Zap size={14} className="im-cram-icon" />
-                        <span>Want the complete revision guide for <strong>{activeTopic.title}</strong>?</span>
-                        <button
-                          className="im-cram-btn theme-transition"
-                          onClick={() => {
-                            if (onOpenCramSheet) onOpenCramSheet(activeTopic.subjectId || activeSubjectId, 'all', activeTopic.title);
-                            else window.dispatchEvent(new CustomEvent('commitdrive_open_cram_sheet', { detail: { subject: activeTopic.subjectId || activeSubjectId, topic: activeTopic.title } }));
-                          }}
-                        >
-                          Open Topic Cram Sheet →
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="im-no-data theme-transition">
-                      <Mic size={28} className="im-no-data-icon" />
-                      <h4>Interview Mode Coming Soon</h4>
-                      <p>Interview pitch scripts and trap questions for this topic are being prepared. Check back soon!</p>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-
-            {/* =============================================================
-                Bottom of Topic Page: Further Reading Section
-                ============================================================= */}
-            {activeReaderTab !== 'reading' && activeReaderTab !== 'interview' && renderFurtherReadingSection()}
 
             {/* =============================================================
                 Topic Reader Footer (Previous / Next Topic Controls)

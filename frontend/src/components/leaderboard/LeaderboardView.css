@@ -499,7 +499,7 @@
 
 .table-header-row {
   display: grid;
-  grid-template-columns: 80px 2.2fr 1.6fr 100px 1.4fr 120px;
+  grid-template-columns: 75px 2.1fr 1.6fr 125px 85px 1.3fr;
   padding: 0.85rem 1.5rem;
   background: var(--bg-surface-subtle, rgba(0, 0, 0, 0.02));
   border-bottom: 1px solid var(--border-card, #e2e8f0);
@@ -522,7 +522,7 @@
 
 .table-row {
   display: grid;
-  grid-template-columns: 80px 2.2fr 1.6fr 100px 1.4fr 120px;
+  grid-template-columns: 75px 2.1fr 1.6fr 125px 85px 1.3fr;
   padding: 1.1rem 1.5rem;
   align-items: center;
   border-bottom: 1px solid var(--border-card, #f1f5f9);
@@ -711,26 +711,33 @@
   text-align: right;
 }
 
-.col-xp {
+.col-xp,
+.col-tasks {
   display: flex;
   align-items: center;
 }
 
-.xp-badge {
+.xp-badge,
+.tasks-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.35rem;
   padding: 0.3rem 0.65rem;
-  background: rgba(245, 158, 11, 0.1);
-  color: #d97706;
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
   border-radius: 8px;
   font-weight: 800;
   font-size: 0.85rem;
 }
 
-[data-theme="practical"] .xp-badge {
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
+[data-theme="practical"] .xp-badge,
+[data-theme="practical"] .tasks-badge {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+}
+
+.stat-val.tasks-val {
+  color: #10b981;
 }
 
 .table-loading-state,

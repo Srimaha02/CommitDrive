@@ -462,9 +462,8 @@ export const dashboardApi = {
           const overallPct = Math.round((osPct + dbmsPct + cnPct + gitPct + linuxPct + sqlPct) / 6);
           const totalTopics = osCount + dbmsCount + cnCount;
           const totalMissions = gitCount + linuxCount + sqlCount;
-          const total = totalTopics + totalMissions;
+          const totalTasksSolved = total;
           const streak = savedUser.streak || (total > 0 ? 1 : 0);
-          const totalXp = Math.round(totalTopics * 100 + totalMissions * 125 + streak * 50);
 
           return [
             {
@@ -477,7 +476,8 @@ export const dashboardApi = {
               overallReadinessPct: overallPct,
               totalTopicsMastered: totalTopics,
               totalMissionsPassed: totalMissions,
-              totalXp
+              totalTasksSolved,
+              totalXp: totalTasksSolved
             }
           ];
         } catch {

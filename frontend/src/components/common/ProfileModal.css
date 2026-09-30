@@ -340,9 +340,10 @@
   color: #16a34a;
 }
 
-.xp-icon-wrapper {
-  background: rgba(99, 102, 241, 0.14);
-  color: #6366f1;
+.xp-icon-wrapper,
+.tasks-icon-wrapper {
+  background: rgba(16, 185, 129, 0.14);
+  color: #059669;
 }
 
 .stat-details {

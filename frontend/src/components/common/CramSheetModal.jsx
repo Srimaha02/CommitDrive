@@ -15,33 +15,20 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
-  Layers,
   HelpCircle,
-  Award,
   BookOpen,
-  ExternalLink,
   BookMarked,
-  Download,
-  Briefcase,
-  Building2,
-  CheckCircle2
+  Download
 } from 'lucide-react';
 import { topicWiseCramData } from '../../data/cramSheetsData';
 import { osTopics } from '../../data/osTopics';
 import { dbmsTopics } from '../../data/dbmsTopics';
 import { cnTopics } from '../../data/cnTopics';
-import { 
-  COMPANY_TRACKS, 
-  getCompanyTrack, 
-  filterQuestionsByTrack, 
-  getQuestionTrackRubric 
-} from '../../data/companyTracksData';
 import './CramSheetModal.css';
 
-export default function CramSheetModal({ isOpen, onClose, initialSubject = null, initialTrack = 'all', initialTopic = 'all', currentUser }) {
+export default function CramSheetModal({ isOpen, onClose, initialSubject = null, initialTopic = 'all', currentUser }) {
   // If initialSubject is provided, start directly on that subject; otherwise start on Subject Picker
   const [selectedSubject, setSelectedSubject] = useState(initialSubject);
-  const [selectedTrack, setSelectedTrack] = useState(initialTrack || 'all');
   const [levelFilter, setLevelFilter] = useState('all'); // 'all' | 'basic' | 'intermediate' | 'advanced'
   const [activeTopicFilter, setActiveTopicFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,11 +38,10 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
   // Track collapsed questions (all questions are OPEN/EXPANDED by default so answers are immediately visible)
   const [collapsedMap, setCollapsedMap] = useState({});
 
-  // Sync initialSubject, initialTrack & initialTopic when modal opens
+  // Sync initialSubject & initialTopic when modal opens
   useEffect(() => {
     if (isOpen) {
       setSelectedSubject(initialSubject);
-      setSelectedTrack(initialTrack || 'all');
       setLevelFilter('all');
 
       // Auto-focus on specific topic if provided
@@ -75,10 +61,9 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
       setCollapsedMap({});
       setIsDownloading(false);
     }
-  }, [isOpen, initialSubject, initialTrack, initialTopic]);
+  }, [isOpen, initialSubject, initialTopic]);
 
-  // Filter questions for active subject: combine flagship cram questions with placement interview questions
-  // NOTE: Must run unconditionally BEFORE 'if (!isOpen) return null' to strictly adhere to React's Rules of Hooks!
+  // Combine flagship cram questions with placement interview questions
   const allSubjectQuestions = useMemo(() => {
     if (!selectedSubject || !topicWiseCramData[selectedSubject]) return [];
     const flagshipQuestions = topicWiseCramData[selectedSubject].questions || [];
@@ -96,9 +81,9 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
           id: `${selectedSubject}-extra-${topicObj.id}-${iqIdx}`,
           topic: cramTopicName,
           level: iqIdx === 0 ? 'basic' : iqIdx === 1 ? 'intermediate' : 'advanced',
-          levelLabel: iqIdx === 0 ? 'Basic (Freshers / L100)' : iqIdx === 1 ? 'Intermediate (Core / L200)' : 'Advanced (FAANG / L300)',
+          levelLabel: iqIdx === 0 ? 'Basic' : iqIdx === 1 ? 'Core' : 'Advanced',
           question: iq.question,
-          frequency: iq.frequency ? `${iq.frequency} Frequency in Technical Rounds` : 'Frequently tested in SDE-1 interviews',
+          frequency: iq.frequency ? `${iq.frequency} Frequency in Technical Rounds` : 'Frequently tested in technical interviews',
           companyTags: iq.companyTags || ['Product Companies', 'Tier-1'],
           reference: {
             source: `CommitDrive ${selectedSubject ? selectedSubject.toUpperCase() : ''} Verified Bank`,
@@ -127,10 +112,8 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
 
   const currentSubjectData = selectedSubject ? topicWiseCramData[selectedSubject] : null;
 
-  // Shared, robust printable HTML generator (A4 styled, verified badges, models, tables & traps)
-  const generatePrintableHtml = (subject, questionsToPrint, trackId = 'all') => {
-    const trackObj = getCompanyTrack(trackId);
-
+  // Shared printable HTML generator
+  const generatePrintableHtml = (subject, questionsToPrint) => {
     const formatCode = (text) => {
       if (!text) return '';
       return String(text)
@@ -150,23 +133,6 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
         advanced: { bg: '#f3e8ff', text: '#7e22ce', border: '#e9d5ff', borderLeft: '#9333ea' }
       };
       const lc = levelColors[q.level] || levelColors.basic;
-
-      // Company hiring rubric
-      const rubric = getQuestionTrackRubric(q, trackId);
-      let rubricHtml = '';
-      if (rubric) {
-        const rItems = rubric.checklist.map(c => `<li style="margin-bottom:3px;">${formatCode(c)}</li>`).join('');
-        rubricHtml = `
-          <div style="background:#f8fafc;border:1px solid #cbd5e1;border-left:4px solid ${rubric.color};border-radius:5px;padding:8px 10px;margin-bottom:10px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-              <span style="font-weight:700;color:#0f172a;font-size:8.5pt;">📋 ${formatCode(rubric.title)}:</span>
-              <span style="font-size:7pt;font-weight:700;background:#f1f5f9;color:${rubric.color};padding:1px 6px;border-radius:3px;text-transform:uppercase;">${formatCode(rubric.badge)}</span>
-            </div>
-            <ul style="margin:2px 0 4px 18px;padding:0;font-size:8.5pt;color:#334155;">${rItems}</ul>
-            <div style="font-size:8pt;color:#b45309;margin-top:3px;"><strong>⚠️ Interviewer Watchout:</strong> ${formatCode(rubric.interviewerWatchout)}</div>
-          </div>
-        `;
-      }
 
       // Model answer table
       let tableHtml = '';
@@ -200,93 +166,68 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
       if (q.tackleStrategy?.verbalBlueprint?.length) {
         const steps = q.tackleStrategy.verbalBlueprint.map(s => `<li style="margin-bottom:3px;">${formatCode(s)}</li>`).join('');
         blueprintHtml = `
-          <div style="margin-top:6px;">
-            <span style="font-weight:700;font-size:8.5pt;color:#0369a1;display:block;margin-bottom:3px;">Verbal Answering Blueprint (60–90 Seconds):</span>
-            <ul style="margin:0;padding-left:18px;font-size:8.5pt;color:#0c4a6e;">${steps}</ul>
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:5px;padding:8px 10px;margin:8px 0;">
+            <div style="font-weight:700;color:#166534;font-size:8.5pt;margin-bottom:4px;">🎯 Verbal Answering Blueprint (60–90s):</div>
+            <ul style="margin:0;padding-left:18px;font-size:8.5pt;color:#15803d;">${steps}</ul>
           </div>
         `;
       }
 
-      // Company badges
-      const companyChips = (q.companyTags || []).map(c => `
-        <span style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;padding:1px 6px;border-radius:4px;font-size:7.5pt;font-weight:600;margin-right:4px;">${formatCode(c)}</span>
-      `).join('');
-
-      // Reference chip
-      const refChip = q.reference ? `
-        <span style="background:#faf5ff;color:#7e22ce;border:1px solid #e9d5ff;padding:1px 6px;border-radius:4px;font-size:7.5pt;font-weight:600;margin-right:4px;">
-          📚 ${formatCode(q.reference.source)} (${formatCode(q.reference.citation)})
-        </span>
-      ` : '';
-
-      // Dealbreaker trap warning
+      // Dealbreaker trap
       let trapHtml = '';
       if (q.trapWarning) {
         trapHtml = `
-          <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:8px 10px;margin-top:10px;">
-            <div style="font-weight:700;color:#b91c1c;font-size:8.5pt;margin-bottom:4px;">🚨 Dealbreaker Interview Trap:</div>
-            <div style="font-size:8.5pt;color:#991b1b;margin-bottom:3px;"><strong>Common Mistake:</strong> ${formatCode(q.trapWarning.rookieMistake)}</div>
-            <div style="font-size:8.5pt;color:#15803d;"><strong>Winning Answer:</strong> ${formatCode(q.trapWarning.winningAnswer)}</div>
+          <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:5px;padding:8px 10px;margin:8px 0;">
+            <div style="font-weight:700;color:#c2410c;font-size:8.5pt;margin-bottom:2px;">🚨 Dealbreaker Rookie Mistake:</div>
+            <div style="font-size:8.5pt;color:#9a3412;">❌ ${formatCode(q.trapWarning.rookieMistake)}</div>
+            <div style="font-size:8.5pt;color:#15803d;margin-top:3px;">✅ <strong>Winning Distinction:</strong> ${formatCode(q.trapWarning.winningAnswer)}</div>
           </div>
         `;
       }
 
-      // Must-mention keywords
+      // Keywords
       let kwHtml = '';
       if (q.mustMentionKeywords?.length) {
-        const kws = q.mustMentionKeywords.map(k => `
-          <span style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;padding:1px 5px;border-radius:3px;font-family:Consolas,monospace;font-size:7.5pt;margin-right:3px;">${formatCode(k)}</span>
-        `).join('');
-        kwHtml = `
-          <div style="margin-top:8px;font-size:8pt;color:#475569;">
-            <strong style="color:#0f172a;">Must-Mention Keywords:</strong> ${kws}
+        const chips = q.mustMentionKeywords.map(k => `<span style="background:#e0e7ff;color:#3730a3;padding:1px 6px;border-radius:3px;font-size:7.5pt;margin-right:4px;display:inline-block;margin-bottom:2px;font-weight:600;">✓ ${formatCode(k)}</span>`).join('');
+        kwHtml = `<div style="margin-top:8px;font-size:8pt;color:#475569;"><strong>Must-Mention Keywords:</strong> ${chips}</div>`;
+      }
+
+      // Reference footer
+      let refHtml = '';
+      if (q.reference) {
+        refHtml = `
+          <div style="margin-top:8px;padding-top:6px;border-top:1px dashed #cbd5e1;font-size:7.5pt;color:#64748b;display:flex;justify-content:space-between;">
+            <span>📚 <strong>Official Reference:</strong> ${formatCode(q.reference.source)}</span>
+            <span>${formatCode(q.reference.citation)}</span>
           </div>
         `;
       }
 
       return `
-        <div class="faq-card" style="page-break-inside:avoid;break-inside:avoid;border:1px solid #cbd5e1;border-left:5px solid ${lc.borderLeft};border-radius:6px;margin-bottom:16px;background:#ffffff;box-shadow:none;">
-          <!-- Card Header -->
-          <div style="background:#f8fafc;padding:10px 14px;border-bottom:1px solid #e2e8f0;">
-            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:6px;">
-              <span style="background:#0f172a;color:#ffffff;font-weight:700;font-size:8pt;padding:2px 6px;border-radius:3px;">Q${qNum}</span>
-              <span style="background:${lc.bg};color:${lc.text};border:1px solid ${lc.border};font-size:8pt;font-weight:700;padding:2px 6px;border-radius:3px;">${formatCode(q.levelLabel)}</span>
-              <span style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:8pt;padding:2px 6px;border-radius:3px;font-weight:600;">${formatCode(q.topic)}</span>
-              ${companyChips}
-              ${refChip}
+        <div class="faq-card" style="border:1px solid #cbd5e1;border-left:4px solid ${lc.borderLeft};border-radius:6px;padding:12px 14px;margin-bottom:14px;background:#ffffff;page-break-inside:avoid;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-weight:800;font-size:9pt;color:#0f172a;background:#f1f5f9;padding:2px 6px;border-radius:4px;">Q${qNum}</span>
+              <span style="font-size:7.5pt;font-weight:700;background:${lc.bg};color:${lc.text};padding:2px 7px;border-radius:4px;border:1px solid ${lc.border};">${formatCode(q.levelLabel || q.level)}</span>
+              <span style="font-size:8pt;color:#64748b;background:#f8fafc;padding:2px 6px;border-radius:4px;border:1px solid #e2e8f0;">${formatCode(q.topic)}</span>
             </div>
-            <h3 style="font-size:11.5pt;font-weight:700;color:#0f172a;margin:4px 0 2px 0;line-height:1.4;">${formatCode(q.question)}</h3>
-            ${q.frequency ? `<div style="font-size:8pt;color:#d97706;font-weight:600;margin-top:2px;">⚡ Frequency: ${formatCode(q.frequency)}</div>` : ''}
+            ${q.frequency ? `<span style="font-size:7.5pt;color:#0284c7;font-weight:600;">⚡ ${formatCode(q.frequency)}</span>` : ''}
           </div>
 
-          <!-- Card Body -->
-          <div style="padding:12px 14px;">
-            <!-- Target Company Rubric -->
-            ${rubricHtml}
+          <div style="font-weight:700;font-size:10.5pt;color:#0f172a;margin:6px 0 8px 0;line-height:1.4;">${formatCode(q.question)}</div>
 
-            <!-- Tackle Blueprint -->
-            ${q.tackleStrategy ? `
-              <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:5px;padding:8px 10px;margin-bottom:10px;">
-                <div style="font-weight:700;color:#0284c7;font-size:8.5pt;margin-bottom:3px;">🎯 How to Answer in Interview:</div>
-                <div style="font-size:8.5pt;color:#0369a1;margin-bottom:4px;"><strong>Interviewer Intent:</strong> ${formatCode(q.tackleStrategy.interviewerIntent)}</div>
-                ${blueprintHtml}
-              </div>
-            ` : ''}
+          ${blueprintHtml}
 
-            <!-- Model Answer -->
-            <div style="margin-bottom:8px;">
-              <div style="font-weight:700;color:#0f172a;font-size:9.5pt;margin-bottom:4px;">💡 Verified Technical Solution:</div>
-              <p style="font-size:9pt;color:#334155;margin:0 0 6px 0;line-height:1.5;">${formatCode(q.modelAnswer?.summary)}</p>
-              ${tableHtml}
-              ${detailsHtml}
-            </div>
-
-            <!-- Trap Box -->
-            ${trapHtml}
-
-            <!-- Keywords -->
-            ${kwHtml}
+          <div style="font-size:9pt;color:#1e293b;line-height:1.55;margin:8px 0;">
+            <strong style="color:#0f172a;display:block;margin-bottom:3px;">💡 Model Answer:</strong>
+            ${formatCode(q.modelAnswer?.summary)}
           </div>
+
+          ${tableHtml}
+          ${detailsHtml}
+          ${trapHtml}
+          ${kwHtml}
+          ${refHtml}
         </div>
       `;
     }).join('');
@@ -295,9 +236,8 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
       <!DOCTYPE html>
       <html lang="en">
       <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${formatCode(subject.name)} - ${formatCode(trackObj.shortLabel)} - CommitDrive</title>
+        <meta charset="utf-8"/>
+        <title>${formatCode(subject.name)} - Rapid Interview Revision Guide - CommitDrive</title>
         <style>
           @page {
             size: A4 portrait;
@@ -366,24 +306,15 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
         </style>
       </head>
       <body>
-        <div style="margin-bottom:16px;padding:12px 18px;background:${trackObj.id === 'all' ? '#f0fdf4' : trackObj.bg};border:1px solid ${trackObj.id === 'all' ? '#bbf7d0' : trackObj.border};border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-          <div>
-            <strong style="color:#0f172a;font-size:11pt;display:block;">⚡ ${formatCode(subject.name)} — ${formatCode(trackObj.label)} Offline Guide</strong>
-            <span style="font-size:8.5pt;color:#475569;">Targeting: ${formatCode(trackObj.companies.join(', '))} • Strategy: ${formatCode(trackObj.keyExpectation)}</span>
-          </div>
-          <span style="font-size:8pt;font-weight:700;color:#0f172a;background:#ffffff;padding:4px 10px;border-radius:4px;border:1px solid #cbd5e1;">${formatCode(trackObj.badge)}</span>
-        </div>
-
         <div class="doc-header">
           <div class="doc-header-left">
-            <h1>${formatCode(subject.name)} — ${formatCode(trackObj.shortLabel)} Solutions</h1>
+            <h1>${formatCode(subject.name)} — Rapid Interview Revision Guide</h1>
             <p><strong>Curriculum:</strong> ${formatCode(subject.tagline)}</p>
-            <p><strong>Target Companies:</strong> ${formatCode(trackObj.companies.join(', '))}</p>
-            <p><strong>Scope:</strong> ${questionsToPrint.length} Questions with Hiring Rubrics, Verbal Blueprints & Dealbreaker Traps</p>
+            <p><strong>Scope:</strong> ${questionsToPrint.length} Questions with Verified Model Solutions, Verbal Blueprints & Dealbreaker Traps</p>
           </div>
           <div class="doc-header-right">
             <div class="doc-brand">Commit<strong>Drive</strong></div>
-            <div>Company Hiring Suite</div>
+            <div>Engineering Study Suite</div>
             <div>Generated: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
           </div>
         </div>
@@ -396,12 +327,12 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
     `;
   };
 
-  // Direct offline HTML study guide download (Zero reliance on print spooler, 100% reliable instant file)
+  // Direct offline HTML study guide download
   const handleDownloadOffline = () => {
     if (!currentSubjectData) return;
     setIsDownloading(true);
     const questionsToPrint = displayedQuestions.length > 0 ? displayedQuestions : currentSubjectData.questions;
-    const fullDoc = generatePrintableHtml(currentSubjectData, questionsToPrint, selectedTrack);
+    const fullDoc = generatePrintableHtml(currentSubjectData, questionsToPrint);
 
     try {
       const blob = new Blob([fullDoc], { type: 'text/html;charset=utf-8' });
@@ -409,8 +340,7 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
       const a = document.createElement('a');
       a.href = url;
       const safeName = currentSubjectData.name.replace(/[^a-zA-Z0-9_-]/g, '_');
-      const trackPrefix = selectedTrack !== 'all' ? `_${selectedTrack.toUpperCase()}` : '';
-      a.download = `CommitDrive_${safeName}${trackPrefix}_Interview_Guide.html`;
+      a.download = `CommitDrive_${safeName}_Interview_Guide.html`;
       document.body.appendChild(a);
       a.click();
       setTimeout(() => {
@@ -450,7 +380,7 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
   const allCollapsed = currentSubjectData?.questions?.every(q => collapsedMap[q.id]);
 
   const handleCopyQuestion = (q) => {
-    let text = `Q: ${q.question} [${q.levelLabel}]\n\n`;
+    let text = `Q: ${q.question} [${q.levelLabel || q.level}]\n\n`;
     
     if (q.reference) {
       text += `📚 Official Reference: ${q.reference.source} — ${q.reference.citation}\n\n`;
@@ -501,10 +431,7 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
     return <Terminal size={size} />;
   };
 
-  // 1. Filter by Company Track first
-  const trackFilteredQuestions = filterQuestionsByTrack(allSubjectQuestions, selectedTrack);
-
-  const displayedQuestions = trackFilteredQuestions.filter(q => {
+  const displayedQuestions = allSubjectQuestions.filter(q => {
     // Level filter
     if (levelFilter !== 'all' && q.level !== levelFilter) return false;
     // Topic filter
@@ -522,11 +449,10 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
     return qMatch || topicMatch || companyMatch || keywordMatch || summaryMatch || trapMatch || refMatch;
   });
 
-  // Calculate difficulty counts for the current subject (calibrated to active track)
-  const basicCount = trackFilteredQuestions.filter(q => q.level === 'basic').length;
-  const intermediateCount = trackFilteredQuestions.filter(q => q.level === 'intermediate').length;
-  const advancedCount = trackFilteredQuestions.filter(q => q.level === 'advanced').length;
-  const activeTrackObj = getCompanyTrack(selectedTrack);
+  // Calculate difficulty counts for the current subject
+  const basicCount = allSubjectQuestions.filter(q => q.level === 'basic').length;
+  const intermediateCount = allSubjectQuestions.filter(q => q.level === 'intermediate').length;
+  const advancedCount = allSubjectQuestions.filter(q => q.level === 'advanced').length;
 
   // Guard: Must be open AND user must be authenticated
   if (!isOpen || !currentUser) return null;
@@ -536,7 +462,7 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
       <div className="cram-modal-container theme-override-dark" onClick={e => e.stopPropagation()}>
         
         {/* ===================================================================
-            VIEW 1: Subject Picker Screen ("Sub ethu nu kekanum")
+            VIEW 1: Subject Picker Screen
             =================================================================== */}
         {!selectedSubject ? (
           <div className="cram-picker-view">
@@ -548,7 +474,7 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
               </div>
               <h2 className="cram-picker-title">Which subject do you want to revise?</h2>
               <p className="cram-picker-sub">
-                Select a subject below to view verified <strong>Questions, Official References, Step-by-Step Answers & Interview Traps</strong> (sourced from GFG Top 50, Glassdoor, and Tier-1 recruitment drives).
+                Select a subject below to view verified <strong>Questions, Official References, Step-by-Step Answers & Interview Traps</strong>.
               </p>
               <button 
                 type="button" 
@@ -560,52 +486,12 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
               </button>
             </div>
 
-            {/* Target Company Gate Track Selector Bar */}
-            <div className="cram-track-selector-bar">
-              <div className="track-bar-label">
-                <Briefcase size={14} />
-                <span>Target Company Gate:</span>
-              </div>
-              <div className="track-pills-container">
-                {COMPANY_TRACKS.map(track => (
-                  <button
-                    key={track.id}
-                    type="button"
-                    className={`cram-track-pill ${selectedTrack === track.id ? 'active' : ''}`}
-                    style={{
-                      borderColor: selectedTrack === track.id ? track.color : undefined,
-                      backgroundColor: selectedTrack === track.id ? track.bg : undefined
-                    }}
-                    onClick={() => setSelectedTrack(track.id)}
-                  >
-                    <span className="track-pill-name">{track.shortLabel}</span>
-                    <span className="track-pill-badge" style={{ color: track.color }}>{track.badge}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* If a company track is active, show the track focus banner */}
-            {selectedTrack !== 'all' && (
-              <div className="cram-track-focus-banner" style={{ borderLeftColor: activeTrackObj.color, background: activeTrackObj.bg }}>
-                <div className="track-focus-top">
-                  <span className="track-focus-badge" style={{ background: activeTrackObj.color }}>{activeTrackObj.badge}</span>
-                  <span className="track-focus-companies">Targeting: {activeTrackObj.companies.join(', ')}</span>
-                </div>
-                <div className="track-focus-desc">{activeTrackObj.tagline}</div>
-                <div className="track-focus-expectation">
-                  <strong>Winning Strategy:</strong> {activeTrackObj.keyExpectation}
-                </div>
-              </div>
-            )}
-
             {/* 4 Subject Selection Cards Grid */}
             <div className="cram-subjects-grid">
               {Object.values(topicWiseCramData).map(subj => {
-                const trackSubjQuestions = filterQuestionsByTrack(subj.questions, selectedTrack);
-                const bCount = trackSubjQuestions.filter(q => q.level === 'basic').length;
-                const iCount = trackSubjQuestions.filter(q => q.level === 'intermediate').length;
-                const aCount = trackSubjQuestions.filter(q => q.level === 'advanced').length;
+                const bCount = subj.questions.filter(q => q.level === 'basic').length;
+                const iCount = subj.questions.filter(q => q.level === 'intermediate').length;
+                const aCount = subj.questions.filter(q => q.level === 'advanced').length;
 
                 return (
                   <div 
@@ -625,7 +511,7 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
                       <div className="choice-icon-box" style={{ background: subj.accentColor }}>
                         {getSubjectIcon(subj.iconName, 24)}
                       </div>
-                      <span className="choice-topic-count">{trackSubjQuestions.length} Solutions ({activeTrackObj.shortLabel})</span>
+                      <span className="choice-topic-count">{subj.questions.length} Solutions</span>
                     </div>
 
                     <h3 className="choice-subject-name">{subj.name}</h3>
@@ -633,9 +519,9 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
 
                     {/* Level Breakdown Chips */}
                     <div className="choice-level-breakdown">
-                      <span className="level-chip chip-basic">🟢 {bCount} Basic (L100)</span>
-                      <span className="level-chip chip-intermediate">🟡 {iCount} Core (L200)</span>
-                      <span className="level-chip chip-advanced">🔴 {aCount} FAANG (L300)</span>
+                      <span className="level-chip chip-basic">🟢 {bCount} Basic</span>
+                      <span className="level-chip chip-intermediate">🟡 {iCount} Core</span>
+                      <span className="level-chip chip-advanced">🔴 {aCount} Advanced</span>
                     </div>
 
                     {/* Topic preview pills */}
@@ -711,7 +597,7 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
                   className="cram-download-offline-btn" 
                   onClick={handleDownloadOffline}
                   disabled={isDownloading}
-                  title="Download Offline HTML Study Guide (Works 100% offline without internet)"
+                  title="Download Offline HTML Study Guide"
                 >
                   <Download size={15} />
                   <span>{isDownloading ? 'Downloading Guide...' : 'Download Offline Guide'}</span>
@@ -728,50 +614,9 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
               </div>
             </header>
 
-            {/* Filter & Controls Bar (Sleek & Compact to Maximize Content Reading Area) */}
+            {/* Filter & Controls Bar */}
             <div className="cram-filter-bar">
-              
-              {/* Target Company Track Selector Bar inside View 2 (Compact) */}
-              <div className="cram-track-selector-bar">
-                <div className="track-bar-label">
-                  <Briefcase size={13} />
-                  <span>Target Company Gate:</span>
-                </div>
-                <div className="track-pills-container">
-                  {COMPANY_TRACKS.map(track => (
-                    <button
-                      key={track.id}
-                      type="button"
-                      className={`cram-track-pill ${selectedTrack === track.id ? 'active' : ''}`}
-                      style={{
-                        borderColor: selectedTrack === track.id ? track.color : undefined,
-                        backgroundColor: selectedTrack === track.id ? track.bg : undefined
-                      }}
-                      onClick={() => {
-                        setSelectedTrack(track.id);
-                        setLevelFilter('all');
-                      }}
-                    >
-                      <span className="track-pill-name">{track.shortLabel}</span>
-                      <span className="track-pill-badge" style={{ color: track.color }}>{track.badge}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Company Track Focus Banner if active (Compact) */}
-              {selectedTrack !== 'all' && (
-                <div className="cram-track-focus-banner" style={{ borderLeftColor: activeTrackObj.color, background: activeTrackObj.bg }}>
-                  <span className="track-focus-badge" style={{ background: activeTrackObj.color }}>{activeTrackObj.badge}</span>
-                  <span className="track-focus-companies">Targeting: {activeTrackObj.companies.join(', ')}</span>
-                  <span className="track-focus-divider">•</span>
-                  <span className="track-focus-expectation">
-                    <strong>Strategy:</strong> {activeTrackObj.keyExpectation}
-                  </span>
-                </div>
-              )}
-
-              {/* Search Box & Level Filter Tabs (Combined in single row to save vertical space!) */}
+              {/* Search Box & Level Filter Tabs */}
               <div className="cram-search-and-levels-row">
                 <div className="cram-search-wrapper">
                   <Search size={14} className="cram-search-icon" />
@@ -795,7 +640,7 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
                     className={`level-tab-btn ${levelFilter === 'all' ? 'active' : ''}`}
                     onClick={() => setLevelFilter('all')}
                   >
-                    <span>All ({trackFilteredQuestions.length})</span>
+                    <span>All ({allSubjectQuestions.length})</span>
                   </button>
                   <button
                     type="button"
@@ -816,12 +661,12 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
                     className={`level-tab-btn tab-advanced ${levelFilter === 'advanced' ? 'active' : ''}`}
                     onClick={() => setLevelFilter('advanced')}
                   >
-                    <span>🔴 FAANG ({advancedCount})</span>
+                    <span>🔴 Advanced ({advancedCount})</span>
                   </button>
                 </div>
               </div>
 
-              {/* Topic Sub-filter Pills (Horizontal scrolling row) */}
+              {/* Topic Sub-filter Pills */}
               <div className="cram-topic-pills-row no-scrollbar">
                 <button
                   type="button"
@@ -831,7 +676,7 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
                   <span>All Topics ({allSubjectQuestions.length})</span>
                 </button>
                 {currentSubjectData.topics.map((t, idx) => {
-                  const topicQuestionsCount = trackFilteredQuestions.filter(q => q.topic === t).length;
+                  const topicQuestionsCount = allSubjectQuestions.filter(q => q.topic === t).length;
                   return (
                     <button
                       key={idx}
@@ -850,7 +695,7 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
               </div>
             </div>
 
-            {/* Questions List Body (Takes majority of modal height!) */}
+            {/* Questions List Body */}
             <div className="cram-cards-body print-area">
               {/* Active Topic Banner when a specific topic is selected */}
               {activeTopicFilter !== 'all' && (
@@ -858,22 +703,16 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
                   <div className="active-topic-banner-left">
                     <Zap size={15} className="active-topic-bolt" />
                     <span>Topic Cram Sheet: <strong>{activeTopicFilter}</strong></span>
-                    <span className="active-topic-badge">{displayedQuestions.length} Placement Questions</span>
                   </div>
                   <button 
                     type="button" 
-                    className="topic-banner-reset-btn"
+                    className="cram-reset-topic-btn"
                     onClick={() => setActiveTopicFilter('all')}
                   >
-                    ← View All Topics in {currentSubjectData.name}
+                    Show all topics
                   </button>
                 </div>
               )}
-
-              <div className="cram-printable-top">
-                <h1>{currentSubjectData.name} — Verified Interview Questions, Answers & Tackling Guide</h1>
-                <p>{currentSubjectData.tagline} • Sourced from GFG Top 50, Glassdoor & Striver SDE Sheet • CommitDrive</p>
-              </div>
 
               {displayedQuestions.length === 0 ? (
                 <div className="cram-no-results">
@@ -906,7 +745,7 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
                           <div className="faq-badges-left">
                             <span className="faq-index-tag">Q{qIndex + 1 < 10 ? `0${qIndex + 1}` : qIndex + 1}</span>
                             <span className={`faq-level-badge level-${q.level}`}>
-                              {q.levelLabel}
+                              {q.levelLabel || q.level}
                             </span>
                             <span className="faq-topic-tag">{q.topic}</span>
                           </div>
@@ -951,7 +790,7 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
                           </div>
                         </div>
 
-                        {/* Question Title (Full Width, Crisp Typography, Zero Clipping) */}
+                        {/* Question Title */}
                         <h4 className="faq-question-title">{q.question}</h4>
                         
                         {/* Frequency note & quick guide teaser */}
@@ -972,39 +811,10 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
                       {isOpen && (
                         <div className="faq-card-expanded-body animate-fadeIn">
                           
-                          {/* 0. TARGET COMPANY HIRING RUBRIC CHECKLIST */}
-                          {(() => {
-                            const rubric = getQuestionTrackRubric(q, selectedTrack);
-                            if (!rubric) return null;
-                            return (
-                              <div className="faq-rubric-card" style={{ borderLeftColor: rubric.color }}>
-                                <div className="faq-rubric-header">
-                                  <div className="rubric-header-left">
-                                    <Award size={15} style={{ color: rubric.color }} />
-                                    <span className="rubric-title">{rubric.title}</span>
-                                    <span className="rubric-badge" style={{ background: `${rubric.color}22`, color: rubric.color }}>{rubric.badge}</span>
-                                  </div>
-                                </div>
-                                <ul className="rubric-checklist">
-                                  {rubric.checklist.map((item, cIdx) => (
-                                    <li key={cIdx} className="rubric-item">
-                                      <CheckCircle2 size={13} style={{ color: rubric.color, marginTop: '2px', flexShrink: 0 }} />
-                                      <span>{item}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                                <div className="rubric-watchout">
-                                  <strong>⚠️ Interviewer Watchout:</strong> {rubric.interviewerWatchout}
-                                </div>
-                              </div>
-                            );
-                          })()}
-
-                          {/* 1. HOW TO ANSWER IN INTERVIEW (Step-by-Step Blueprint) */}
+                          {/* 1. HOW TO ANSWER IN INTERVIEW */}
                           {q.tackleStrategy && (
                             <div className="faq-tackle-strategy-box">
                               <div className="tackle-header">
-                                <Award size={16} className="tackle-icon" />
                                 <strong>🎯 How to Answer It in the Interview:</strong>
                               </div>
                               <p className="tackle-intent">
@@ -1134,7 +944,7 @@ export default function CramSheetModal({ isOpen, onClose, initialSubject = null,
             {/* Footer */}
             <footer className="cram-sheet-footer">
               <div className="footer-left-info">
-                <span>Showing <strong>{displayedQuestions.length}</strong> of {trackFilteredQuestions.length} verified {currentSubjectData.name} FAQs ({activeTrackObj.shortLabel})</span>
+                <span>Showing <strong>{displayedQuestions.length}</strong> of {allSubjectQuestions.length} verified {currentSubjectData.name} FAQs</span>
               </div>
               <div className="footer-right-buttons">
                 <button type="button" className="footer-switch-btn" onClick={() => setSelectedSubject(null)}>

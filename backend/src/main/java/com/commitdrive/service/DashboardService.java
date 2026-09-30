@@ -110,6 +110,7 @@ public class DashboardService {
                     ? 0
                     : (user.getStreak() != null ? user.getStreak() : 0);
 
+            int totalTasksSolved = (int) totalCompleted;
             int totalXp = (int) (totalTopics * 100 + totalMissions * 125 + streak * 50);
 
             entries.add(LeaderboardEntryDto.builder()
@@ -122,15 +123,22 @@ public class DashboardService {
                     .overallReadinessPct(overallPct)
                     .totalTopicsMastered((int) totalTopics)
                     .totalMissionsPassed((int) totalMissions)
+                    .totalTasksSolved(totalTasksSolved)
                     .totalXp(totalXp)
                     .build());
         }
 
-        // Sort by readiness percentage descending, then total XP descending
+        // Sort by readiness percentage descending, then total tasks solved descending, then streak descending
         entries.sort((a, b) -> {
             int cmp = Integer.compare(b.getOverallReadinessPct(), a.getOverallReadinessPct());
             if (cmp != 0) return cmp;
-            return Integer.compare(b.getTotalXp(), a.getTotalXp());
+            int aSolved = a.getTotalTasksSolved() != null ? a.getTotalTasksSolved() : 0;
+            int bSolved = b.getTotalTasksSolved() != null ? b.getTotalTasksSolved() : 0;
+            int tasksCmp = Integer.compare(bSolved, aSolved);
+            if (tasksCmp != 0) return tasksCmp;
+            int aStreak = a.getStreak() != null ? a.getStreak() : 0;
+            int bStreak = b.getStreak() != null ? b.getStreak() : 0;
+            return Integer.compare(bStreak, aStreak);
         });
 
         return entries;

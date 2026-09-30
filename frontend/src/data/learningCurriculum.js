@@ -74,6 +74,7 @@ function enrichTopicWithInterviewData(topic) {
       duration: '60s',
       targetPrompt: interview.targetPrompt,
       script: interview.script,
+      points: interview.scriptPoints || (typeof interview.script === 'string' ? interview.script.split('. ').map(s => s.trim().replace(/\.$/, '')).filter(Boolean) : []),
       keywords: interview.keywords || []
     } : null,
     trapQuestions: interview?.trapQuestions || []

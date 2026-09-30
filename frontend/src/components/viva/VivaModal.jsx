@@ -1,29 +1,21 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   X,
   Target,
-  ArrowLeft,
   ArrowRight,
   Clock,
   Cpu,
   Database,
   Network,
   Terminal,
-  ChevronRight,
   Check,
   Zap,
   BookOpen,
   AlertTriangle,
   RotateCw,
-  Trophy,
-  Sparkles,
   Flag,
   SkipForward,
-  Eye,
-  Tag,
-  Bot,
-  AlertCircle,
-  CheckCircle2
+  Eye
 } from 'lucide-react';
 import {
   VIVA_SUBJECTS,
@@ -35,10 +27,6 @@ import {
   calculateVivaResult,
   formatVivaTime,
 } from '../../data/vivaEngine';
-import {
-  evaluateCandidateAnswer
-} from '../../data/aiVivaCoachEngine';
-import { COMPANY_TRACKS } from '../../data/companyTracksData';
 import './VivaModal.css';
 
 // Icon resolver for subjects
@@ -49,11 +37,10 @@ function SubjectIcon({ iconName, size = 16 }) {
 }
 
 export default function VivaModal({ isOpen, onClose, onOpenCramSheet }) {
-  // -- Screen flow: 'track-select' | 'configure' | 'in-progress' | 'results'
-  const [screen, setScreen]                 = useState('track-select');
+  // -- Screen flow: 'configure' | 'in-progress' | 'results'
+  const [screen, setScreen]                 = useState('configure');
 
   // -- Setup state
-  const [selectedTrack, setSelectedTrack]   = useState('all');
   const [selectedSubjects, setSelectedSubjects] = useState(['os', 'dbms', 'cn', 'practical']);
   const [questionCount, setQuestionCount]   = useState(10);
   const [timerPreset, setTimerPreset]       = useState(0); // seconds, 0 = untimed
@@ -69,35 +56,6 @@ export default function VivaModal({ isOpen, onClose, onOpenCramSheet }) {
   // -- Results state
   const [result, setResult]                 = useState(null);
 
-  // -- Technical Answer Evaluation state
-  const [candidateAnswerText, setCandidateAnswerText] = useState('');
-  const [evaluation, setEvaluation]                   = useState(null);
-  const [isEvaluating, setIsEvaluating]               = useState(false);
-
-  // Reset per question when index or screen changes
-  useEffect(() => {
-    setCandidateAnswerText('');
-    setEvaluation(null);
-    setIsEvaluating(false);
-  }, [currentIndex, screen]);
-
-  // Run keyword and pattern evaluation
-  const handleEvaluateAnswer = () => {
-    setIsEvaluating(true);
-    const evalReport = evaluateCandidateAnswer(candidateAnswerText, currentQ, selectedTrack);
-    setEvaluation(evalReport);
-    setIsEvaluating(false);
-    setIsRevealed(true);
-
-    // Pre-select rating based on evaluation verdict if not already rated
-    if (evalReport.verdictClass && currentQ) {
-      setRatings(prev => ({
-        ...prev,
-        [currentQ.id]: evalReport.verdictClass
-      }));
-    }
-  };
-
   // -- ESC key handler
   useEffect(() => {
     if (!isOpen) return;
@@ -109,8 +67,7 @@ export default function VivaModal({ isOpen, onClose, onOpenCramSheet }) {
   // -- Reset on open
   useEffect(() => {
     if (isOpen) {
-      setScreen('track-select');
-      setSelectedTrack('all');
+      setScreen('configure');
       setSelectedSubjects(['os', 'dbms', 'cn', 'practical']);
       setQuestionCount(10);
       setTimerPreset(0);
@@ -150,7 +107,7 @@ export default function VivaModal({ isOpen, onClose, onOpenCramSheet }) {
   // -- Start viva session
   const handleStartViva = () => {
     if (selectedSubjects.length === 0) return;
-    const questions = buildVivaSession(selectedTrack, selectedSubjects, questionCount);
+    const questions = buildVivaSession('all', selectedSubjects, questionCount);
     if (questions.length === 0) return;
     setVivaQuestions(questions);
     setCurrentIndex(0);
@@ -189,7 +146,7 @@ export default function VivaModal({ isOpen, onClose, onOpenCramSheet }) {
   // -- Retry weak questions
   const handleRetry = () => {
     if (!result) return;
-    const retryQs = buildRetrySession(result.questionResults, selectedTrack);
+    const retryQs = buildRetrySession(result.questionResults, 'all');
     if (retryQs.length === 0) return;
     setVivaQuestions(retryQs);
     setCurrentIndex(0);
@@ -203,7 +160,6 @@ export default function VivaModal({ isOpen, onClose, onOpenCramSheet }) {
 
   if (!isOpen) return null;
 
-  const activeTrackData    = COMPANY_TRACKS.find(t => t.id === selectedTrack) || COMPANY_TRACKS[0];
   const currentQ           = vivaQuestions[currentIndex];
   const progressPct        = vivaQuestions.length > 0 ? Math.round((currentIndex / vivaQuestions.length) * 100) : 0;
   const isTimerWarning     = timerPreset > 0 && timeLeft <= 60 && timeLeft > 0;
@@ -214,62 +170,16 @@ export default function VivaModal({ isOpen, onClose, onOpenCramSheet }) {
   // RENDER HELPERS
   // =====================================================================
 
-  const renderTrackSelect = () => (
-    <>
-      <div className="viva-screen-header">
-        <span className="viva-screen-header-icon">🎯</span>
-        <h2 className="viva-screen-title">Diagnostic Interview Viva</h2>
-        <p className="viva-screen-sub">
-          Simulate a real technical interview. Select your target company gate to calibrate
-          question difficulty and scoring criteria to your specific hiring bar.
-        </p>
-      </div>
-
-      <div className="viva-track-grid">
-        {COMPANY_TRACKS.map(track => (
-          <button
-            key={track.id}
-            className="viva-track-card"
-            style={{
-              '--track-color':  track.color,
-              '--track-bg':     track.bg,
-              '--track-border': track.border,
-            }}
-            onClick={() => { setSelectedTrack(track.id); setScreen('configure'); }}
-          >
-            <div className="viva-track-card-badge">
-              <Zap size={10} />
-              {track.badge}
-            </div>
-            <div className="viva-track-card-title">{track.label}</div>
-            <div className="viva-track-card-companies">
-              {track.companies.slice(0, 3).join(' · ')}
-              {track.companies.length > 3 && ` +${track.companies.length - 3} more`}
-            </div>
-            <div className="viva-track-card-desc">{track.tagline}</div>
-            <ChevronRight size={16} className="viva-track-card-arrow" />
-          </button>
-        ))}
-      </div>
-    </>
-  );
-
   const renderConfigure = () => (
     <div className="viva-configure-screen">
-      <button className="viva-back-btn" onClick={() => setScreen('track-select')}>
-        <ArrowLeft size={13} /> Back to track selection
-      </button>
-
-      {/* Active track summary */}
-      <div className="viva-active-track-bar">
-        <div className="viva-active-track-dot" style={{ background: activeTrackData.color }} />
-        <div className="viva-active-track-info">
-          <div className="viva-active-track-name">{activeTrackData.label}</div>
-          <div className="viva-active-track-hint">{activeTrackData.keyExpectation}</div>
-        </div>
-        <button className="viva-active-track-change" onClick={() => setScreen('track-select')}>
-          Change
-        </button>
+      <div className="viva-config-header">
+        <span className="viva-config-tag">
+          <Target size={14} /> Core CS Diagnostic Practice
+        </span>
+        <h3 className="viva-config-title">Diagnostic Interview Viva</h3>
+        <p className="viva-config-sub">
+          Test your core CS fundamentals under realistic screening conditions with authoritative model answers.
+        </p>
       </div>
 
       {/* Subject multi-select */}
@@ -371,49 +281,34 @@ export default function VivaModal({ isOpen, onClose, onOpenCramSheet }) {
     const subjectMeta = VIVA_SUBJECTS.find(s => s.id === currentQ.subjectId) || VIVA_SUBJECTS[0];
 
     return (
-      <div className="viva-progress-view">
-        {/* Header strip */}
-        <div className="viva-progress-header">
-          <div
-            className="viva-progress-track-badge"
-            style={{
-              color: activeTrackData.color,
-              background: activeTrackData.bg,
-              borderColor: activeTrackData.border,
-            }}
-          >
-            <Target size={11} />
-            {activeTrackData.shortLabel || activeTrackData.label}
-          </div>
-
+      <div className="viva-in-progress-screen">
+        {/* Top meta row */}
+        <div className="viva-meta-bar">
           {timerPreset > 0 && (
             <div className={`viva-timer-display ${isTimerWarning ? 'warning' : ''}`}>
               <Clock size={13} />
-              {formatVivaTime(timeLeft)}
+              <span>{formatVivaTime(timeLeft)}</span>
             </div>
           )}
 
           <div className="viva-progress-counter">
-            <strong>{currentIndex + 1}</strong> / {vivaQuestions.length}
+            Question <strong>{currentIndex + 1}</strong> of {vivaQuestions.length}
           </div>
         </div>
 
         {/* Progress bar */}
         <div className="viva-progress-bar-track">
-          <div
-            className="viva-progress-bar-fill"
-            style={{ width: `${progressPct}%` }}
-          />
+          <div className="viva-progress-bar-fill" style={{ width: `${progressPct}%` }} />
         </div>
 
         {/* Question card */}
         <div className="viva-question-card">
           <div className="viva-question-meta">
             <div
-              className="viva-question-subject-badge"
+              className="viva-subject-pill"
               style={{
-                color: subjectMeta.color,
-                background: subjectMeta.bg,
+                background:  subjectMeta.bg,
+                color:       subjectMeta.color,
                 borderColor: subjectMeta.border,
               }}
             >
@@ -440,142 +335,22 @@ export default function VivaModal({ isOpen, onClose, onOpenCramSheet }) {
           <div className="viva-question-text">{currentQ.question}</div>
         </div>
 
-        {/* Technical Answer Studio (Before Reveal) */}
+        {/* Reveal zone / Model answer panel */}
         {!isRevealed ? (
-          <div className="viva-pitch-studio">
-            <div className="viva-pitch-header">
-              <div className="viva-pitch-title">
-                <Target size={15} className="viva-ai-bot-icon" />
-                <span>Technical Answer Studio</span>
-                <span className="viva-pitch-pill">Gate: {activeTrackData.label}</span>
-              </div>
-              <div className="viva-pitch-timing">
-                <Clock size={12} />
-                <span>Target: 30–60s concise explanation</span>
-              </div>
-            </div>
-
-            {/* Answer Text Area */}
-            <div className="viva-pitch-input-box">
-              <textarea
-                className="viva-pitch-textarea"
-                rows={4}
-                value={candidateAnswerText}
-                onChange={(e) => setCandidateAnswerText(e.target.value)}
-                placeholder="Type your technical answer or key bullet points here... The evaluator will check your concept depth, keywords, and trap avoidance."
-              />
-            </div>
-
-            {/* Controls Bar */}
-            {candidateAnswerText && (
-              <div className="viva-pitch-controls-bar">
-                <button
-                  type="button"
-                  className="viva-clear-pitch-btn"
-                  onClick={() => setCandidateAnswerText('')}
-                >
-                  Clear text
-                </button>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="viva-pitch-actions-row">
-              <button
-                className="viva-evaluate-ai-btn"
-                onClick={handleEvaluateAnswer}
-                disabled={isEvaluating}
-              >
-                <Sparkles size={15} />
-                <span>{isEvaluating ? 'Evaluating Keywords...' : 'Evaluate Answer (Keyword & Pattern Analysis)'}</span>
-              </button>
-
-              <button
-                className="viva-quick-reveal-btn"
-                onClick={() => setIsRevealed(true)}
-              >
-                <Eye size={14} />
-                <span>Quick Reveal Answer</span>
-              </button>
-            </div>
+          <div className="viva-reveal-zone">
+            <p className="viva-reveal-hint">Formulate your verbal answer, then check against the model solution.</p>
+            <button
+              type="button"
+              className="viva-reveal-btn"
+              onClick={() => setIsRevealed(true)}
+            >
+              <Eye size={15} />
+              <span>Reveal Model Answer</span>
+            </button>
           </div>
         ) : (
           <div className="viva-answer-panel">
-            {/* Rule-Based Concept & Keyword Evaluation Card */}
-            {evaluation && (
-              <div className={`viva-ai-report-card ${evaluation.verdictClass}`}>
-                <div className="viva-ai-card-top">
-                  <div className="viva-ai-verdict-group">
-                    <span className="viva-ai-chip">
-                      <Target size={13} />
-                      Keyword & Concept Evaluation
-                    </span>
-                    <h4 className="viva-ai-verdict-title">{evaluation.verdict}</h4>
-                  </div>
-                  <div className="viva-ai-score-pill">
-                    <span className="score-num">{evaluation.score}</span>
-                    <span className="score-denom">/100</span>
-                  </div>
-                </div>
-
-                {/* Covered vs Missing Concepts */}
-                <div className="viva-ai-concepts-grid">
-                  <div className="viva-ai-concept-col">
-                    <span className="concept-col-title covered">
-                      <CheckCircle2 size={13} /> Concepts Hit ({evaluation.coveredKeywords.length})
-                    </span>
-                    <div className="concept-chips-wrap">
-                      {evaluation.coveredKeywords.length > 0 ? (
-                        evaluation.coveredKeywords.map((kw, i) => (
-                          <span key={i} className="concept-chip hit">{kw}</span>
-                        ))
-                      ) : (
-                        <span className="concept-empty">None detected yet</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="viva-ai-concept-col">
-                    <span className="concept-col-title missing">
-                      <AlertCircle size={13} /> Missed Placement Keywords ({evaluation.missingKeywords.length})
-                    </span>
-                    <div className="concept-chips-wrap">
-                      {evaluation.missingKeywords.length > 0 ? (
-                        evaluation.missingKeywords.map((kw, i) => (
-                          <span key={i} className="concept-chip missed">{kw}</span>
-                        ))
-                      ) : (
-                        <span className="concept-chip hit">All Key Terms Covered!</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Trap Warning Alert if candidate fell into rookie mistake */}
-                {evaluation.trapTriggered && (
-                  <div className="viva-ai-trap-alert">
-                    <AlertTriangle size={14} />
-                    <div>
-                      <strong>Rookie Trap Detected:</strong> {evaluation.trapFeedback}
-                    </div>
-                  </div>
-                )}
-
-                {/* Key Improvement Suggestions */}
-                {evaluation.actionableTips?.length > 0 && (
-                  <div className="viva-ai-tips-block">
-                    <span className="viva-ai-tips-title">💡 Key Improvement Suggestions:</span>
-                    <ul className="viva-ai-tips-list">
-                      {evaluation.actionableTips.map((tip, i) => (
-                        <li key={i}>{tip}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Summary */}
+            {/* Model Answer */}
             <div className="viva-answer-section-label">
               <BookOpen size={12} />
               Model Answer
@@ -589,7 +364,7 @@ export default function VivaModal({ isOpen, onClose, onOpenCramSheet }) {
               <>
                 <div className="viva-answer-divider" />
                 <div className="viva-answer-section-label">
-                  <Tag size={12} />
+                  <Check size={12} />
                   Must-mention keywords
                 </div>
                 <div className="viva-keywords-row">
@@ -658,7 +433,7 @@ export default function VivaModal({ isOpen, onClose, onOpenCramSheet }) {
         {!isRevealed && (
           <button className="viva-skip-btn" onClick={handleSkip}>
             <SkipForward size={13} />
-            Skip this question (mark as missed)
+            Skip Question (Mark Missed)
           </button>
         )}
       </div>
@@ -667,6 +442,7 @@ export default function VivaModal({ isOpen, onClose, onOpenCramSheet }) {
 
   const renderResults = () => {
     if (!result) return null;
+
     return (
       <div className="viva-results-screen">
         {timedOut && (
@@ -803,7 +579,7 @@ export default function VivaModal({ isOpen, onClose, onOpenCramSheet }) {
             onClick={() => {
               onClose();
               if (onOpenCramSheet) {
-                setTimeout(() => onOpenCramSheet(null, selectedTrack), 100);
+                setTimeout(() => onOpenCramSheet(null, 'all'), 100);
               }
             }}
           >
@@ -838,9 +614,8 @@ export default function VivaModal({ isOpen, onClose, onOpenCramSheet }) {
             <div className="viva-brand-text">
               <div className="viva-brand-title">Diagnostic Interview Viva</div>
               <div className="viva-brand-sub">
-                {screen === 'track-select' && 'Select your company target gate'}
-                {screen === 'configure'    && `${activeTrackData.label} — Configure session`}
-                {screen === 'in-progress' && `Q${currentIndex + 1} of ${vivaQuestions.length} · ${activeTrackData.shortLabel || activeTrackData.label}`}
+                {screen === 'configure'    && 'Configure your practice session'}
+                {screen === 'in-progress' && `Q${currentIndex + 1} of ${vivaQuestions.length}`}
                 {screen === 'results'      && `Session complete · ${result?.verdict}`}
               </div>
             </div>
@@ -852,7 +627,6 @@ export default function VivaModal({ isOpen, onClose, onOpenCramSheet }) {
 
         {/* Body */}
         <div className="viva-body">
-          {screen === 'track-select'  && renderTrackSelect()}
           {screen === 'configure'     && renderConfigure()}
           {screen === 'in-progress'   && renderInProgress()}
           {screen === 'results'       && renderResults()}

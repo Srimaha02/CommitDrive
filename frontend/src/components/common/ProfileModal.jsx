@@ -79,7 +79,11 @@ export default function ProfileModal({ isOpen, onClose, currentUser, onLogout, o
         const sorted = [...list].sort((a, b) => {
           const rCmp = (b.overallReadinessPct || 0) - (a.overallReadinessPct || 0);
           if (rCmp !== 0) return rCmp;
-          return (b.totalXp || 0) - (a.totalXp || 0);
+          const aSolved = a.totalTasksSolved ?? ((a.totalTopicsMastered || 0) + (a.totalMissionsPassed || 0));
+          const bSolved = b.totalTasksSolved ?? ((b.totalTopicsMastered || 0) + (b.totalMissionsPassed || 0));
+          const sCmp = bSolved - aSolved;
+          if (sCmp !== 0) return sCmp;
+          return (b.streak || 0) - (a.streak || 0);
         });
         const idx = sorted.findIndex(c => 
           (currentUser && (c.userId === currentUser.id || c.email === currentUser.email))
@@ -92,7 +96,14 @@ export default function ProfileModal({ isOpen, onClose, currentUser, onLogout, o
   if (!isOpen) return null;
 
   const readinessPct = stats?.overallReadinessPct ?? (currentUser ? 0 : 0);
-  const totalXp = stats?.totalXp ?? (user.streak ? user.streak * 120 : 240);
+  const tasksSolved = stats ? (
+    (stats.osMasteredCount || 0) + 
+    (stats.dbmsMasteredCount || 0) + 
+    (stats.cnMasteredCount || 0) + 
+    (stats.gitMissionsPassedCount || 0) + 
+    (stats.linuxMissionsPassedCount || 0) + 
+    (stats.sqlMissionsPassedCount || 0)
+  ) : 0;
 
   return (
     <div className="profile-modal-backdrop" onClick={onClose}>
@@ -213,15 +224,15 @@ export default function ProfileModal({ isOpen, onClose, currentUser, onLogout, o
               </div>
             </div>
 
-            {/* XP Points */}
-            <div className="stat-card xp-stat-card">
-              <div className="stat-icon-wrapper xp-icon-wrapper">
-                <Zap size={18} />
+            {/* Tasks Solved */}
+            <div className="stat-card tasks-stat-card">
+              <div className="stat-icon-wrapper tasks-icon-wrapper">
+                <CheckCircle2 size={18} />
               </div>
               <div className="stat-details">
-                <span className="stat-label">Earned XP</span>
-                <span className="stat-value">{totalXp} XP</span>
-                <span className="stat-subtext">Theory + Terminal</span>
+                <span className="stat-label">Tasks Solved</span>
+                <span className="stat-value">{tasksSolved} / 54</span>
+                <span className="stat-subtext">Topics & Missions</span>
               </div>
             </div>
 

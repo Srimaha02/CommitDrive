@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Flame, Bell, BellRing, Clock, ArrowRight, X, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Flame, Clock, ArrowRight, X } from 'lucide-react';
 import './PracticeReminderBanner.css';
 
 export default function PracticeReminderBanner({ 
@@ -15,13 +15,6 @@ export default function PracticeReminderBanner({
     } catch {
       return false;
     }
-  });
-
-  const [notificationStatus, setNotificationStatus] = useState(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      return Notification.permission; // 'default', 'granted', 'denied'
-    }
-    return 'unsupported';
   });
 
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0 });
@@ -54,27 +47,6 @@ export default function PracticeReminderBanner({
       const todayStr = new Date().toISOString().split('T')[0];
       localStorage.setItem('commitdrive_reminder_dismissed', todayStr);
     } catch {}
-  };
-
-  const handleRequestNotification = async () => {
-    if (!('Notification' in window)) {
-      alert('Browser notifications are not supported in this browser.');
-      return;
-    }
-
-    try {
-      const permission = await Notification.requestPermission();
-      setNotificationStatus(permission);
-
-      if (permission === 'granted') {
-        new Notification('CommitDrive: Daily Practice Reminder Set!', {
-          body: `Keep your ${streak > 0 ? `${streak}-day ` : ''}placement streak alive! 15 minutes of daily practice unlocks Tier-1 product roles.`,
-          icon: '/favicon.ico'
-        });
-      }
-    } catch (err) {
-      console.error('Error requesting notification permission:', err);
-    }
   };
 
   if (dismissed) return null;
@@ -110,27 +82,6 @@ export default function PracticeReminderBanner({
       </div>
 
       <div className="reminder-actions-right">
-        {notificationStatus !== 'unsupported' && (
-          <button 
-            type="button" 
-            className={`reminder-btn-notify theme-transition ${notificationStatus === 'granted' ? 'active' : ''}`}
-            onClick={handleRequestNotification}
-            title={notificationStatus === 'granted' ? 'Daily reminders enabled' : 'Enable browser practice reminder notification'}
-          >
-            {notificationStatus === 'granted' ? (
-              <>
-                <CheckCircle2 size={13} />
-                <span>Reminders On</span>
-              </>
-            ) : (
-              <>
-                <Bell size={13} />
-                <span>Remind Me</span>
-              </>
-            )}
-          </button>
-        )}
-
         <button 
           type="button" 
           className="reminder-btn-practice theme-transition"

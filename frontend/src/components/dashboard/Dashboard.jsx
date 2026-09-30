@@ -15,12 +15,9 @@ import {
   TrendingUp, 
   Target,
   Zap,
-  Award,
-  Building,
   Trophy,
   ShieldCheck,
   ChevronRight,
-  Info,
   User,
   X,
   RotateCw
@@ -38,7 +35,7 @@ import './Dashboard.css';
 const PLACEMENT_INSIGHTS = [
   {
     source: "Amazon & Uber SDE Interviews",
-    quote: "78% of OS screening rounds test whether you can clearly explain how the Working Set Model and TLB (Translation Lookaside Buffer) mitigate page faults during memory thrashing.",
+    quote: "In operating systems screening rounds, interviewers frequently probe whether you can clearly explain how the Working Set Model and TLB (Translation Lookaside Buffer) mitigate page faults during memory thrashing.",
     highlightWords: ["Working Set Model", "TLB (Translation Lookaside Buffer)"]
   },
   {
@@ -48,7 +45,7 @@ const PLACEMENT_INSIGHTS = [
   },
   {
     source: "Google & Microsoft Systems Round",
-    quote: "Over 65% of network architecture questions test the difference between HTTP/2 multiplexing (HOL blocking at TCP layer) versus HTTP/3 over QUIC (independent UDP streams). Always mention packet loss isolation.",
+    quote: "A frequent network architecture question tests the difference between HTTP/2 multiplexing (HOL blocking at TCP layer) versus HTTP/3 over QUIC (independent UDP streams). Always mention packet loss isolation.",
     highlightWords: ["HTTP/2 multiplexing", "HTTP/3 over QUIC", "packet loss isolation"]
   },
   {
@@ -109,241 +106,6 @@ function renderFormattedInsight(quote, highlightWords = []) {
   });
 }
 
-// Researched public interview patterns for companies with well-documented recruitment data
-const documentedCompanyPatterns = {
-  // --- Tier 1: IT Services & Core Drives ---
-  tcs: {
-    fullName: 'Tata Consultancy Services (TCS Digital / Prime)',
-    roundsOverview: 'Online Assessment (Cognitive + Advanced Coding) → Technical & Managerial Round → HR',
-    practicalPatterns: [
-      {
-        area: 'SQL & Relational Queries',
-        description: 'Multi-table INNER and LEFT JOINs, aggregate grouping (GROUP BY with HAVING), second-highest salary queries (DENSE_RANK() or LIMIT 1 OFFSET 1), and handling NULL values with COALESCE.'
-      },
-      {
-        area: 'Linux Shell & Permissions',
-        description: 'File permission adjustments (chmod 755 / octal notation), process inspection (ps aux, top), terminating hanging jobs (kill -9), and text filtering with grep/head/tail.'
-      },
-      {
-        area: 'Git Fundamentals',
-        description: 'Local repository initialization (git init), atomic staging (git add), writing clean commit messages (git commit -m), and checking branch status with git status.'
-      },
-      {
-        area: 'Core Systems Foundations',
-        description: 'Process vs thread memory spaces (shared heap vs thread-local stack), DBMS ACID transaction principles, and virtual memory / paging basics.'
-      }
-    ],
-    practiceTarget: { view: 'practical', module: 'sql', label: 'Practice SQL & Linux Lab' }
-  },
-  infosys: {
-    fullName: 'Infosys (Specialist Programmer / DSE)',
-    roundsOverview: 'Hands-on Coding Assessment (DSA / Problem Solving) → Technical Interview → HR',
-    practicalPatterns: [
-      {
-        area: 'SQL Relational Queries',
-        description: 'Correlated subqueries, self-joins (employee-manager hierarchies), string pattern matching with LIKE, and aggregate functions (COUNT, MAX, AVG).'
-      },
-      {
-        area: 'OOP Architecture & Principles',
-        description: 'Core object-oriented pillars: inheritance, polymorphism, method overloading vs overriding, encapsulation, interfaces, and abstract classes.'
-      },
-      {
-        area: 'Database Normalization',
-        description: 'Decomposing unnormalized tables into 1NF, 2NF, and 3NF; identifying functional dependencies, composite keys, and foreign keys.'
-      },
-      {
-        area: 'OS Scheduling & Version Control',
-        description: 'CPU scheduling algorithms (FCFS, Round Robin), Git branching basics (git branch, git checkout -b), and Linux directory traversal.'
-      }
-    ],
-    practiceTarget: { view: 'learning', subject: 'dbms', label: 'Practice DBMS Normalization' }
-  },
-  cognizant: {
-    fullName: 'Cognizant (GenC / GenC Next / Elevate)',
-    roundsOverview: 'Aptitude & Technical MCQ Assessment → Coding Evaluation → Technical Interview',
-    practicalPatterns: [
-      {
-        area: 'SQL Deduplication & Analytics',
-        description: 'Identifying duplicate records with GROUP BY and HAVING COUNT(*) > 1, joining tables, and multi-condition filtering with AND/OR/IN.'
-      },
-      {
-        area: 'Operating Systems & Memory',
-        description: 'Paging mechanism, page faults, virtual memory allocation, and differences between preemptive and non-preemptive scheduling.'
-      },
-      {
-        area: 'Computer Networks Transport',
-        description: 'OSI 7-layer model functions, TCP 3-way handshake vs UDP connectionless delivery, and common port numbers (HTTP 80, HTTPS 443, DNS 53).'
-      },
-      {
-        area: 'Terminal Commands & Git',
-        description: 'Piping command sequences (cat file | grep | wc -l), checking repository status (git status, git diff), and inspecting atomic commit history.'
-      }
-    ],
-    practiceTarget: { view: 'learning', subject: 'os', label: 'Practice OS & Systems Topics' }
-  },
-  wipro: {
-    fullName: 'Wipro (Turbo / Elite NLTH)',
-    roundsOverview: 'Online Assessment (Aptitude + Basic Coding + Written English) → Technical Interview → HR',
-    practicalPatterns: [
-      {
-        area: 'SQL CRUD & Constraints',
-        description: 'Table creation with constraints (NOT NULL, UNIQUE, CHECK), filtering with WHERE vs HAVING, and simple multi-table joins.'
-      },
-      {
-        area: 'Concurrency & Deadlocks',
-        description: 'The four Coffman conditions for deadlock (Mutual Exclusion, Hold and Wait, No Preemption, Circular Wait) and deadlock prevention strategies.'
-      },
-      {
-        area: 'Relational Schema Keys',
-        description: 'Primary key vs Unique key distinctions, candidate keys, foreign key constraints with ON DELETE CASCADE, and basic relational integrity.'
-      },
-      {
-        area: 'Linux & Command Utilities',
-        description: 'Navigating directories, file creation and manipulation (touch, cp, mv, rm), text inspection using cat/more/less, and basic grep filtering.'
-      }
-    ],
-    practiceTarget: { view: 'practical', module: 'git', label: 'Practice Git Lab & Terminal' }
-  },
-
-  // --- Tier 2: Researched Growth Product Companies ---
-  razorpay: {
-    fullName: 'Razorpay',
-    roundsOverview: 'OA (HackerEarth/HackerRank, 2-3 DSA problems, medium-hard) → Machine Coding/LLD round (build a working system live) → System Design (HLD) → Hiring Manager round (resume deep-dive + payments domain awareness: UPI, idempotency, reconciliation) → HR',
-    practicalPatterns: [
-      {
-        area: 'Machine Coding / Low-Level Design (LLD)',
-        description: 'Live hands-on round (typically 90-120 mins) building a functional, modular system from scratch (e.g. Splitwise, Rate Limiter, In-Memory Queue, or Parking Lot). Heavily evaluated on clean code, SOLID principles, design patterns (Strategy, Factory), testability, and edge-case handling.'
-      },
-      {
-        area: 'Data Structures & Algorithms',
-        description: 'Medium to hard algorithmic challenges testing Dynamic Programming, Arrays, HashMaps, Binary Trees, and Sliding Window/Two-Pointer techniques with optimal space/time complexity.'
-      },
-      {
-        area: 'Backend Systems & Payments Domain',
-        description: 'Deep dive on transactional consistency (ACID), idempotency keys to prevent duplicate charge processing, distributed locks, database indexing/isolation levels, and payment flows (UPI, webhooks, reconciliation).'
-      },
-      {
-        area: 'High-Level Design (HLD) & Architecture',
-        description: 'Designing scalable distributed services, message queues for asynchronous decoupling (Kafka/RabbitMQ), cache management (Redis), and resilient API gateway design.'
-      }
-    ],
-    practiceTarget: { view: 'practical', module: 'sql', label: 'Practice SQL & Concurrency Lab' }
-  },
-  swiggy: {
-    fullName: 'Swiggy',
-    roundsOverview: 'OA (aptitude + DSA) → Machine Coding round → DSA round → System Design (senior roles) → Managerial/Fitment round',
-    practicalPatterns: [
-      {
-        area: 'Machine Coding & Object-Oriented Design',
-        description: 'Writing functional, production-grade code for practical engineering scenarios (e.g. food delivery order assignment, delivery partner matching, coupon system) within 90 mins. Evaluated on modularity, extensibility, design patterns, and clean abstractions.'
-      },
-      {
-        area: 'Core Data Structures & Algorithms',
-        description: 'Medium-hard problems focusing on Graphs (BFS/DFS, Dijkstra for shortest path routing), Heaps/PriorityQueues, Binary Search, and Tree traversals.'
-      },
-      {
-        area: 'OS Concurrency & Java Multithreading',
-        description: 'Process synchronization, multithreading in Java/Go, thread pools, race conditions, synchronized blocks, atomic variables, and memory models.'
-      },
-      {
-        area: 'Database Architecture & Caching',
-        description: 'Relational query optimization, index design, database locking semantics, and Redis caching/invalidation strategies for high-frequency location, catalog, and cart operations.'
-      }
-    ],
-    practiceTarget: { view: 'learning', subject: 'os', label: 'Practice OS Concurrency & Threads' }
-  },
-
-  // --- Tier 4: Researched Big Tech / Product Companies ---
-  amazon: {
-    fullName: 'Amazon',
-    roundsOverview: 'OA (HackerRank, 2 DSA problems often DP/Graph, + Work Style Assessment) → 2-3 DSA rounds (one problem each) → System Design/HLD round → mandatory Leadership Principles round (heavily weighted — candidates often under-prepare for this)',
-    practicalPatterns: [
-      {
-        area: 'Amazon Leadership Principles (LPs)',
-        description: 'Customer Obsession, Ownership, Bias for Action, Dive Deep, Earn Trust, Deliver Results. Every interviewer allocates 15-20 minutes to behavioral questions evaluated strictly using the STAR format (Situation, Task, Action, Result). LPs carry decisive weight across the entire loop.'
-      },
-      {
-        area: 'DSA Rounds (2-3 Coding Rounds)',
-        description: 'One in-depth algorithmic problem per round. Frequent focus areas include Dynamic Programming (memoization & tabulation), Graphs (BFS/DFS, topological sort), Trees, Sliding Window, and Tries/PriorityQueues.'
-      },
-      {
-        area: 'System Design / High-Level Architecture',
-        description: 'Architecting scalable, fault-tolerant distributed systems: load balancers, database partitioning & replication, caching layers, asynchronous message queues (SQS/SNS/Kafka), and microservices trade-offs.'
-      },
-      {
-        area: 'Core Systems & Concurrency',
-        description: 'Thread safety, memory leaks, process communication, CPU scheduling, and network protocols (TCP vs UDP, REST, RPC).'
-      }
-    ],
-    practiceTarget: { view: 'learning', subject: 'os', label: 'Practice OS Internals & Systems' }
-  },
-  google: {
-    fullName: 'Google',
-    roundsOverview: 'Online Challenge / Technical Phone Screen (DSA) → 3-4 Technical Rounds (DSA & Problem Solving) → Googleyness & Leadership (Behavioral Fit) → Hiring Committee Review',
-    practicalPatterns: [
-      {
-        area: 'Data Structures & Algorithms (Core Focus)',
-        description: 'Medium to hard algorithmic problem solving. Heavy emphasis on Graph algorithms (BFS/DFS, Dijkstra, DAGs), Dynamic Programming, Binary Search on Answer, Tree manipulations, and Disjoint Set Union (DSU).'
-      },
-      {
-        area: 'Complexity & Boundary Analysis',
-        description: 'Rigorous derivation of Big-O time and space complexity, identifying edge cases before writing code, and systematically proving algorithmic correctness.'
-      },
-      {
-        area: 'Code Quality & Collaborative Communication',
-        description: 'Writing clean, idiomatic, modular code without an IDE. Strong emphasis on thinking out loud, discussing trade-offs, and collaborating on ambiguous problem statements.'
-      },
-      {
-        area: 'Googleyness, Leadership & System Design',
-        description: 'Navigating ambiguous requirements, intellectual humility, doing the right thing for the user, collaboration, and high-throughput distributed system design for senior roles.'
-      }
-    ],
-    practiceTarget: { view: 'practical', module: 'linux', label: 'Practice Linux & Systems Lab' }
-  }
-};
-
-const getCompanyData = (companyName, tierItem) => {
-  const normalized = companyName.toLowerCase();
-  let key = null;
-  if (normalized.includes('tcs')) key = 'tcs';
-  else if (normalized.includes('infosys')) key = 'infosys';
-  else if (normalized.includes('cognizant')) key = 'cognizant';
-  else if (normalized.includes('wipro')) key = 'wipro';
-  else if (normalized.includes('razorpay')) key = 'razorpay';
-  else if (normalized.includes('swiggy')) key = 'swiggy';
-  else if (normalized.includes('amazon')) key = 'amazon';
-  else if (normalized.includes('google')) key = 'google';
-
-  if (key && documentedCompanyPatterns[key]) {
-    const data = documentedCompanyPatterns[key];
-    return {
-      isDocumented: true,
-      companyName: data.fullName,
-      shortName: companyName,
-      tier: tierItem.tier,
-      tierTitle: tierItem.title,
-      ctcRange: tierItem.ctcRange,
-      roundsOverview: data.roundsOverview,
-      practicalPatterns: data.practicalPatterns,
-      practiceTarget: data.practiceTarget || tierItem.practiceTarget,
-      disclaimerNote: 'Based on publicly documented interview patterns — not official/leaked material.'
-    };
-  }
-
-  // Generic open-ended technical interview framing for companies without specific documented patterns (Zomato, PhonePe, BrowserStack, Microsoft, Uber, Atlassian, Tier 3 FinTech)
-  return {
-    isDocumented: false,
-    companyName,
-    shortName: companyName,
-    tier: tierItem.tier,
-    tierTitle: tierItem.title,
-    ctcRange: tierItem.ctcRange,
-    focusArea: tierItem.focusArea,
-    practiceTarget: tierItem.practiceTarget,
-    openEndedNote: 'This company uses open-ended technical interviews — focus on strong fundamentals in the areas above.'
-  };
-};
-
 export default function Dashboard({ 
   currentUser, 
   onNavigate, 
@@ -371,8 +133,6 @@ export default function Dashboard({
     diagnosticAlerts: []
   });
 
-  const [selectedCompany, setSelectedCompany] = useState(null);
-
   // Deterministic daily rotation based on day-of-year
   const defaultInsightIndex = useMemo(() => {
     const now = new Date();
@@ -384,17 +144,6 @@ export default function Dashboard({
 
   const [insightIndex, setInsightIndex] = useState(defaultInsightIndex);
   const currentInsight = PLACEMENT_INSIGHTS[insightIndex % PLACEMENT_INSIGHTS.length];
-
-  // Close popup modal on ESC key
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') setSelectedCompany(null);
-    };
-    if (selectedCompany) {
-      document.addEventListener('keydown', handleKeyDown);
-    }
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedCompany]);
 
   // Fetch real-time stats from backend (or fallback)
   const fetchStats = () => {
@@ -589,21 +338,7 @@ export default function Dashboard({
   // Exact average across all 6 core categories
   const overallPct = Math.round((osPct + dbmsPct + cnPct + gitPct + linuxPct + sqlPct) / 6);
 
-  // Gamified XP & Engineering Rank Progression
-  const totalMasteredTopics = osCount + dbmsCount + cnCount;
-  const totalPassedMissions = gitCount + linuxCount + sqlCount;
-  const totalXP = (totalMasteredTopics * 100) + (totalPassedMissions * 150);
 
-  const getRankInfo = (pct) => {
-    if (pct >= 80) return { level: 5, title: 'Tier-1 Scholar', badge: 'FAANG & Dream Offer Ready', nextTarget: 'Top 1% Percentile', nextPct: 100, minPct: 80 };
-    if (pct >= 60) return { level: 4, title: 'Placement Contender', badge: 'Super-Dream Unicorn Track', nextTarget: 'Tier-1 Scholar (80%)', nextPct: 80, minPct: 60 };
-    if (pct >= 40) return { level: 3, title: 'Backend Specialist', badge: 'Systems & Relational Core', nextTarget: 'Placement Contender (60%)', nextPct: 60, minPct: 40 };
-    if (pct >= 20) return { level: 2, title: 'Systems Apprentice', badge: 'Practical Labs Unlocked', nextTarget: 'Backend Specialist (40%)', nextPct: 40, minPct: 20 };
-    return { level: 1, title: 'Code Cadet', badge: 'Foundations & Initiation', nextTarget: 'Systems Apprentice (20%)', nextPct: 20, minPct: 0 };
-  };
-  const currentRank = getRankInfo(overallPct);
-  const tierSpan = currentRank.nextPct - currentRank.minPct;
-  const progressInTier = tierSpan > 0 ? Math.min(100, Math.max(0, Math.round(((overallPct - currentRank.minPct) / tierSpan) * 100))) : 100;
 
   // Adaptive Focus Quest: Identify lowest completion category for highest ROI
   const syllabusTracks = [
@@ -677,57 +412,7 @@ export default function Dashboard({
 
   const focusTrack = [...syllabusTracks].sort((a, b) => a.pct - b.pct)[0];
 
-  // General Industry Awareness & Recruitment Tiers (Public Industry Context)
-  const industryTiers = [
-    {
-      tier: 'Tier 1',
-      title: 'IT Services & Core Drives',
-      ctcRange: '₹3.5 - 9 LPA',
-      focusArea: 'Basic coding, programming fundamentals & general aptitude',
-      companies: ['TCS Digital', 'Infosys SP', 'Cognizant GenC', 'Wipro Turbo'],
-      practiceTarget: { view: 'learning', subject: 'os', label: 'Practice Core Theory & Git' }
-    },
-    {
-      tier: 'Tier 2',
-      title: 'Growth Tech & Product Scale-Ups',
-      ctcRange: '₹8 - 25 LPA',
-      focusArea: 'Data structures, algorithms, OOP, web fundamentals & SQL',
-      companies: ['Swiggy', 'Razorpay', 'Zomato', 'PhonePe', 'BrowserStack'],
-      practiceTarget: { view: 'practical', module: 'sql', label: 'Practice SQL Query Engineering' }
-    },
-    {
-      tier: 'Tier 3',
-      title: 'FinTech & High-Scale Systems',
-      ctcRange: '₹15 - 26 LPA',
-      focusArea: 'Advanced DSA, multithreading, databases & system concepts',
-      companies: ['Morgan Stanley', 'Goldman Sachs', 'JPMorgan', 'Oracle', 'Cisco'],
-      practiceTarget: { view: 'learning', subject: 'cn', label: 'Practice Concurrency & Networks' }
-    },
-    {
-      tier: 'Tier 4',
-      title: 'Tier-1 FAANG & Global Big Tech',
-      ctcRange: '₹38 - 52 LPA',
-      focusArea: 'Advanced DSA, low-level & high-level system design',
-      companies: ['Google', 'Microsoft', 'Amazon', 'Uber', 'Atlassian'],
-      practiceTarget: { view: 'practical', module: 'linux', label: 'Practice Linux & OS Internals' }
-    }
-  ];
 
-  // Action handler to practice topics matching a tier's evaluation focus
-  const handlePracticeTier = (target) => {
-    if (!target) return;
-    if (target.view === 'learning') {
-      try {
-        localStorage.setItem('commitdrive_active_subject', target.subject || 'os');
-      } catch {}
-      onNavigate('learning');
-    } else {
-      try {
-        localStorage.setItem('commitdrive_practical_module', target.module || 'git');
-      } catch {}
-      onNavigate('practical');
-    }
-  };
 
   return (
     <main className="dashboard-page theme-transition">
@@ -880,58 +565,14 @@ export default function Dashboard({
         >
 
           {/* =================================================================
-              2. Distinctive Element: Placement Engineering Rank & Adaptive Focus Quest
+              2. Priority Focus Recommendation
               ================================================================= */}
-          <section className="rank-quest-section theme-transition">
-          <div className="rank-quest-grid">
-            
-            {/* Engineering Rank & XP Card */}
-            <div className="rank-status-card theme-transition">
-              <div className="rank-card-header">
-                <div className="rank-badge-icon-box">
-                  <Award size={22} className="rank-award-icon" />
-                </div>
-                <div className="rank-meta-col">
-                  <div className="rank-level-tag">Rank Level {currentRank.level}</div>
-                  <h3 className="rank-title">{currentRank.title}</h3>
-                </div>
-                <div className="rank-xp-pill">
-                  <Zap size={14} className="xp-zap" />
-                  <span>{totalXP.toLocaleString()} XP</span>
-                </div>
-              </div>
-
-              <p className="rank-status-desc">{currentRank.badge}</p>
-
-              <div className="rank-tier-progress-box">
-                <div className="rank-tier-labels">
-                  <span>Milestone: {currentRank.nextTarget}</span>
-                  <strong>{progressInTier}% Tier Progress</strong>
-                </div>
-                <div className="rank-bar-track">
-                  <div className="rank-bar-fill" style={{ width: `${progressInTier}%` }} />
-                </div>
-              </div>
-
-              <div className="rank-leaderboard-cta">
-                <button 
-                  className="rank-leaderboard-btn theme-transition"
-                  onClick={() => onNavigate('leaderboard')}
-                  title="View Placement Standings"
-                >
-                  <Trophy size={14} />
-                  <span>Check Placement Leaderboard</span>
-                  <ArrowRight size={13} />
-                </button>
-              </div>
-            </div>
-
-            {/* Adaptive Focus Quest Card */}
-            <div className="focus-quest-card theme-transition">
+          <section className="priority-focus-section theme-transition">
+            <div className="focus-quest-card theme-transition" style={{ width: '100%' }}>
               <div className="quest-header">
                 <div className="quest-tag">
-                  <Zap size={14} className="quest-icon" />
-                  <span>Adaptive Focus Quest</span>
+                  <Target size={14} className="quest-icon" />
+                  <span>Recommended Next Focus</span>
                 </div>
                 <span className="quest-duration">~15 mins • High Yield</span>
               </div>
@@ -942,7 +583,7 @@ export default function Dashboard({
                 </h4>
                 <p className="quest-desc">
                   Your {focusTrack.name} readiness is currently at <strong>{focusTrack.pct}%</strong> ({focusTrack.count}/{focusTrack.total} completed). 
-                  Clear <em>{focusTrack.nextUnit}</em> to earn <strong>+{focusTrack.category === 'theory' ? '100' : '150'} XP</strong> and boost overall placement readiness by <strong>+{focusTrack.gainPct}%</strong>.
+                  Clear <em>{focusTrack.nextUnit}</em> to boost overall placement readiness by <strong>+{focusTrack.gainPct}%</strong>.
                 </p>
               </div>
 
@@ -952,14 +593,12 @@ export default function Dashboard({
                   onClick={() => onNavigate(focusTrack.category === 'theory' ? 'learning' : 'practical')}
                 >
                   <Play size={14} />
-                  <span>Launch Quest in {focusTrack.category === 'theory' ? 'Study Corner' : 'Terminal Zone'}</span>
+                  <span>Open in {focusTrack.category === 'theory' ? 'Study Corner' : 'Terminal Zone'}</span>
                   <ArrowRight size={14} />
                 </button>
               </div>
             </div>
-
-          </div>
-        </section>
+          </section>
 
         {/* =================================================================
             3. Interactive 7-Day Practice Streak Bar
@@ -1239,195 +878,15 @@ export default function Dashboard({
               {stats.diagnosticAlerts && stats.diagnosticAlerts.length > 0 ? (
                 stats.diagnosticAlerts.join(' • ')
               ) : (
-                'Focus on zero-progress categories above to rapidly unlock higher company tiers.'
+                'Focus on lowest-progress categories above to balance your core systems and practical skills.'
               )}
             </div>
           </div>
 
-        </section>
-
-        {/* =================================================================
-            6. General Industry Placement Awareness & Hiring Tiers
-            ================================================================= */}
-        <section className="company-runway-section theme-transition">
-          <div className="runway-header">
-            <div>
-              <div className="runway-eyebrow">Industry Landscape • Placement Awareness</div>
-              <h2 className="runway-title">Campus Hiring Tiers & Industry Expectations</h2>
-            </div>
-            <div className="runway-status-indicator">
-              <Building size={15} />
-              <span>General Industry Context</span>
-            </div>
-          </div>
-
-          <div className="company-gates-grid">
-            {industryTiers.map((tierItem, idx) => (
-              <div key={idx} className="gate-card theme-transition">
-                <div className="gate-card-top">
-                  <div className="gate-tier-info">
-                    <span className="gate-tier-badge">{tierItem.tier}</span>
-                    <span className="gate-ctc-pill">{tierItem.ctcRange}</span>
-                  </div>
-                </div>
-
-                <h3 className="gate-title">{tierItem.title}</h3>
-
-                <div className="gate-focus-area">
-                  <span className="focus-area-label">Evaluation Focus</span>
-                  <p className="focus-area-text">{tierItem.focusArea}</p>
-                </div>
-
-                <div className="gate-companies-wrap">
-                  <span className="companies-label">Common Recruiters (Click to inspect):</span>
-                  <div className="companies-tags">
-                    {tierItem.companies.map((co, cIdx) => (
-                      <button 
-                        key={cIdx} 
-                        type="button"
-                        className="company-chip-btn theme-transition"
-                        onClick={() => setSelectedCompany(getCompanyData(co, tierItem))}
-                        title={`View ${co} interview details`}
-                      >
-                        <span>{co}</span>
-                        <ChevronRight size={11} className="chip-arrow" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="gate-card-action">
-                  <button
-                    type="button"
-                    className="tier-practice-btn theme-transition"
-                    onClick={() => handlePracticeTier(tierItem.practiceTarget)}
-                  >
-                    <span>Practice these topics</span>
-                    <ArrowRight size={13} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Illustrative Disclaimer */}
-          <div className="runway-disclaimer theme-transition">
-            <Info size={14} className="disclaimer-icon" />
-            <span>Ranges are approximate 2026 estimates and vary significantly by college, location, and individual performance — always verify current figures on official company career pages before making decisions.</span>
-          </div>
         </section>
       </GatedContentPreview>
 
     </div>
-
-      {/* =================================================================
-          7. Company-Specific Interview Pattern Popup Modal
-          ================================================================= */}
-      {selectedCompany && (
-        <div 
-          className="company-modal-backdrop"
-          onClick={() => setSelectedCompany(null)}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="company-modal-title"
-        >
-          <div 
-            className="company-modal-card theme-transition"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="company-modal-header">
-              <div className="modal-header-titles">
-                <div className="modal-tier-row">
-                  <span className="modal-tier-badge">{selectedCompany.tier}</span>
-                  <span className="modal-tier-title">{selectedCompany.tierTitle}</span>
-                  <span className="modal-ctc-pill">{selectedCompany.ctcRange}</span>
-                </div>
-                <h3 id="company-modal-title" className="modal-company-title">
-                  {selectedCompany.companyName}
-                </h3>
-              </div>
-              <button 
-                type="button"
-                className="modal-close-btn theme-transition"
-                onClick={() => setSelectedCompany(null)}
-                aria-label="Close dialog"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="company-modal-body">
-              {selectedCompany.isDocumented ? (
-                <>
-                  {/* Hiring Process */}
-                  <div className="modal-section-block">
-                    <span className="modal-section-label">Hiring Assessment Process</span>
-                    <p className="modal-rounds-text">{selectedCompany.roundsOverview}</p>
-                  </div>
-
-                  {/* Documented Patterns */}
-                  <div className="modal-section-block">
-                    <span className="modal-section-label">Documented Practical / Technical Round Patterns</span>
-                    <div className="modal-patterns-list">
-                      {selectedCompany.practicalPatterns.map((pat, pIdx) => (
-                        <div key={pIdx} className="modal-pattern-item">
-                          <strong className="pattern-area-title">{pat.area}</strong>
-                          <p className="pattern-desc">{pat.description}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Disclaimer Note */}
-                  <div className="modal-disclaimer-note">
-                    <Info size={14} className="note-icon" />
-                    <span>{selectedCompany.disclaimerNote}</span>
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* Unresearched Companies: Honest General Focus Area */}
-                  <div className="modal-section-block">
-                    <span className="modal-section-label">General Industry Evaluation Focus</span>
-                    <p className="modal-focus-text">{selectedCompany.focusArea}</p>
-                  </div>
-
-                  {/* Open-Ended Interview Note */}
-                  <div className="modal-openended-note">
-                    <Info size={14} className="note-icon" />
-                    <span>{selectedCompany.openEndedNote}</span>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="company-modal-footer">
-              <button
-                type="button"
-                className="modal-practice-btn theme-transition"
-                onClick={() => {
-                  handlePracticeTier(selectedCompany.practiceTarget);
-                  setSelectedCompany(null);
-                }}
-              >
-                <span>{selectedCompany.isDocumented && selectedCompany.practiceTarget?.label ? selectedCompany.practiceTarget.label : 'Practice Relevant Topics'}</span>
-                <ArrowRight size={14} />
-              </button>
-              <button
-                type="button"
-                className="modal-dismiss-btn theme-transition"
-                onClick={() => setSelectedCompany(null)}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-    </main>
-  );
+  </main>
+);
 }

@@ -14,7 +14,8 @@ import {
   BookOpen,
   Terminal,
   ShieldCheck,
-  Award
+  Award,
+  Target
 } from 'lucide-react';
 import { dashboardApi } from '../../services/api';
 import GatedContentPreview from '../layout/GatedContentPreview';
@@ -23,7 +24,7 @@ import './LeaderboardView.css';
 export default function LeaderboardView({ currentUser, onNavigate, onOpenAuth, onDemoLogin }) {
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState('readiness'); // 'readiness' | 'xp'
+  const [sortBy, setSortBy] = useState('readiness'); // 'readiness' | 'tasks'
   const [searchQuery, setSearchQuery] = useState('');
 
   const fetchLeaderboard = () => {
@@ -55,16 +56,23 @@ export default function LeaderboardView({ currentUser, onNavigate, onOpenAuth, o
     };
   }, [currentUser]);
 
-  // Sort candidates
+  // Sort candidates by verified readiness % and tasks solved (No arbitrary XP)
   const sortedCandidates = [...candidates].sort((a, b) => {
+    const aSolved = a.totalTasksSolved ?? ((a.totalTopicsMastered || 0) + (a.totalMissionsPassed || 0));
+    const bSolved = b.totalTasksSolved ?? ((b.totalTopicsMastered || 0) + (b.totalMissionsPassed || 0));
+
     if (sortBy === 'readiness') {
       const cmp = (b.overallReadinessPct || 0) - (a.overallReadinessPct || 0);
       if (cmp !== 0) return cmp;
-      return (b.totalXp || 0) - (a.totalXp || 0);
+      const tasksCmp = bSolved - aSolved;
+      if (tasksCmp !== 0) return tasksCmp;
+      return (b.streak || 0) - (a.streak || 0);
     } else {
-      const cmp = (b.totalXp || 0) - (a.totalXp || 0);
+      const cmp = bSolved - aSolved;
       if (cmp !== 0) return cmp;
-      return (b.overallReadinessPct || 0) - (a.overallReadinessPct || 0);
+      const rCmp = (b.overallReadinessPct || 0) - (a.overallReadinessPct || 0);
+      if (rCmp !== 0) return rCmp;
+      return (b.streak || 0) - (a.streak || 0);
     }
   });
 
@@ -96,11 +104,11 @@ export default function LeaderboardView({ currentUser, onNavigate, onOpenAuth, o
           isGated={!currentUser}
           badgeText="Placement Cohort Leaderboard"
           title="Sign up to view full batch rankings"
-          subtitle="Join the verified 2026 placement cohort. Track peer standings, verified CS theory mastery, hands-on lab XP, and readiness percentiles."
+          subtitle="Join the verified 2026 placement cohort. Track peer standings, verified CS theory mastery, hands-on terminal missions solved, and readiness percentiles."
           features={[
             'Full real-time rankings for all 50+ batch candidate profiles',
             'Search & filter candidates by role, cohort year, and readiness',
-            'Synchronized XP tracking from theory topics & practical labs',
+            'Synchronized tracking of solved theory topics & practical labs',
             'Benchmark your readiness against candidates interviewing at FAANG & Tier 1'
           ]}
           ctaText="Sign up to view full rankings"
@@ -140,7 +148,9 @@ export default function LeaderboardView({ currentUser, onNavigate, onOpenAuth, o
                     </span>
                     <strong className="summary-stat-value">Rank #{userRank}</strong>
                     <span className="summary-stat-sub">
-                      {userStats ? `${userStats.overallReadinessPct || 0}% Ready • ${userStats.totalXp || 0} XP` : 'Active'}
+                      {userStats ? (
+                        `${userStats.overallReadinessPct || 0}% Ready • ${(userStats.totalTasksSolved ?? ((userStats.totalTopicsMastered || 0) + (userStats.totalMissionsPassed || 0)))}/54 Tasks Solved`
+                      ) : 'Active'}
                     </span>
                   </div>
                 </div>
@@ -154,6 +164,7 @@ export default function LeaderboardView({ currentUser, onNavigate, onOpenAuth, o
                       const rankNum = idx + 1;
                       const isCurrentUser = (currentUser && candidate.userId === currentUser.id) || 
                                            (currentUser && candidate.email === currentUser.email);
+                      const candidateSolved = candidate.totalTasksSolved ?? ((candidate.totalTopicsMastered || 0) + (candidate.totalMissionsPassed || 0));
                       
                       let rankClass = 'podium-rank-1';
                       if (rankNum === 2) { rankClass = 'podium-rank-2'; }
@@ -192,8 +203,8 @@ export default function LeaderboardView({ currentUser, onNavigate, onOpenAuth, o
                             </div>
                             <div className="podium-stat-divider" />
                             <div className="podium-stat">
-                              <span className="stat-label">Total XP</span>
-                              <strong className="stat-val xp-val">⚡ {candidate.totalXp || 0}</strong>
+                              <span className="stat-label">Tasks Solved</span>
+                              <strong className="stat-val tasks-val">🎯 {candidateSolved} / 54</strong>
                             </div>
                           </div>
 
@@ -249,12 +260,12 @@ export default function LeaderboardView({ currentUser, onNavigate, onOpenAuth, o
                 </button>
                 <button 
                   role="tab"
-                  aria-selected={sortBy === 'xp'}
-                  className={`sort-pill ${sortBy === 'xp' ? 'active' : ''} theme-transition`}
-                  onClick={() => setSortBy('xp')}
+                  aria-selected={sortBy === 'tasks'}
+                  className={`sort-pill ${sortBy === 'tasks' ? 'active' : ''} theme-transition`}
+                  onClick={() => setSortBy('tasks')}
                 >
-                  <Zap size={14} />
-                  <span>Total XP</span>
+                  <Target size={14} />
+                  <span>Tasks Solved</span>
                 </button>
               </div>
             </div>
@@ -266,9 +277,9 @@ export default function LeaderboardView({ currentUser, onNavigate, onOpenAuth, o
               <div className="col-rank">Rank</div>
               <div className="col-candidate">Candidate</div>
               <div className="col-mastery">Curriculum Progress</div>
+              <div className="col-tasks">Tasks Solved</div>
               <div className="col-streak">Streak</div>
               <div className="col-readiness">Readiness %</div>
-              <div className="col-xp">Total XP</div>
             </div>
 
             {loading ? (
@@ -289,6 +300,7 @@ export default function LeaderboardView({ currentUser, onNavigate, onOpenAuth, o
                   const rank = sortedCandidates.findIndex(c => c.userId === candidate.userId) + 1;
                   const isCurrentUser = (currentUser && candidate.userId === currentUser.id) || 
                                        (currentUser && candidate.email === currentUser.email);
+                  const solvedCount = candidate.totalTasksSolved ?? ((candidate.totalTopicsMastered || 0) + (candidate.totalMissionsPassed || 0));
 
                   return (
                     <div 
@@ -338,6 +350,14 @@ export default function LeaderboardView({ currentUser, onNavigate, onOpenAuth, o
                         </div>
                       </div>
 
+                      {/* Tasks Solved */}
+                      <div className="col-tasks">
+                        <span className="tasks-badge" title={`${solvedCount} of 54 curriculum tasks solved`}>
+                          <Target size={13} className="tasks-icon" />
+                          <span>{solvedCount} / 54</span>
+                        </span>
+                      </div>
+
                       {/* Daily Streak */}
                       <div className="col-streak">
                         {(candidate.streak || 0) > 0 ? (
@@ -361,14 +381,6 @@ export default function LeaderboardView({ currentUser, onNavigate, onOpenAuth, o
                           </div>
                           <span className="readiness-pct-text">{candidate.overallReadinessPct || 0}%</span>
                         </div>
-                      </div>
-
-                      {/* Total XP */}
-                      <div className="col-xp">
-                        <span className="xp-badge">
-                          <Zap size={13} className="xp-icon" />
-                          <span>{candidate.totalXp || 0} XP</span>
-                        </span>
                       </div>
                     </div>
                   );
