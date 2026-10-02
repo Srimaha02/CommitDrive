@@ -6,6 +6,16 @@ pipeline {
             steps {
                 bat 'git --version'
                 bat 'docker --version'
+                bat 'java -version'
+                bat 'mvn -v'
+            }
+        }
+
+        stage('Backend tests') {
+            steps {
+                dir('backend') {
+                    bat 'mvn -B test'
+                }
             }
         }
 
@@ -23,7 +33,10 @@ pipeline {
     }
 
     post {
-        success { echo 'All images built successfully.' }
+        always {
+            junit allowEmptyResults: true, testResults: 'backend/target/surefire-reports/*.xml'
+        }
+        success { echo 'All stages passed.' }
         failure { echo 'Build failed. Check the stage that turned red.' }
     }
 }
