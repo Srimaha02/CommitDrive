@@ -2,7 +2,8 @@ pipeline {
     agent any
 
     environment {
-        PATH = "C:\\Maven\\apache-maven-3.9.16\\bin;${env.PATH}"
+        JAVA_HOME = "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot"
+        PATH = "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\bin;C:\\Maven\\apache-maven-3.9.16\\bin;${env.PATH}"
     }
 
     stages {
