@@ -1,12 +1,13 @@
-# Multi-stage build for Spring Boot Backend on Render / Railway
-FROM maven:3.9.6-eclipse-temurin-17-alpine AS build
+# Stage 1: build
+FROM maven:3.9-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 COPY pom.xml .
 RUN mvn dependency:go-offline -B
 COPY src ./src
 RUN mvn clean package -DskipTests
 
-FROM eclipse-temurin:17-jre-alpine
+# Stage 2: run
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
